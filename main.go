@@ -14,7 +14,6 @@ import (
 
 	"github.com/giorgisio/goav/avutil"
 	"github.com/go-gl/gl/all-core/gl"
-	"github.com/go-gl/glfw/v3.1/glfw"
 )
 
 func init() {
@@ -35,40 +34,17 @@ func main() {
 	scene = opengl.NewScene()
 
 	// Configure the vertex and fragment shaders
-	program, err := scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl")
+	err := scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl")
 	if err != nil {
 		panic(err)
 	}
 
-	// Configure the vertex data
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
-
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, len(cubeVertices)*4, gl.Ptr(cubeVertices), gl.STATIC_DRAW)
-
-	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vert\x00")))
-	gl.EnableVertexAttribArray(vertAttrib)
-	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, false, 5*4, gl.PtrOffset(0))
-
-	texCoordAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vertTexCoord\x00")))
-	gl.EnableVertexAttribArray(texCoordAttrib)
-	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
+	scene.BindBuffers()
 
 	decoder.NextFrame()
 	newTexture()
 
 	for !scene.Window.ShouldClose() {
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-		gl.UseProgram(program)
-		gl.UniformMatrix4fv(scene.ModelUniform, 1, false, &scene.Model[0])
-
-		gl.BindVertexArray(vao)
-
 		if nextFrame.Before(time.Now()) {
 			for nextFrame.Before(time.Now()) {
 				decoder.NextFrame()
@@ -80,19 +56,12 @@ func main() {
 			log.Fatalln(err)
 		}
 
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, texture)
+		scene.Draw()
 
-		gl.DrawArrays(gl.TRIANGLES, 0, 1*2*3)
-
-		// Maintenance
-		scene.Window.SwapBuffers()
-		glfw.PollEvents()
 	}
 }
 
 var nextFrame = time.Now()
-var texture uint32
 
 func newTexture() {
 	width, height := decoder.Dimensions()
@@ -109,9 +78,9 @@ func newTexture() {
 		img = append(img, buf...)
 	}
 
-	gl.GenTextures(1, &texture)
+	gl.GenTextures(1, &scene.Texture)
 	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, texture)
+	gl.BindTexture(gl.TEXTURE_2D, scene.Texture)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
@@ -126,14 +95,4 @@ func newTexture() {
 		gl.RGB,
 		gl.UNSIGNED_BYTE,
 		gl.Ptr(&img[0]))
-}
-
-var cubeVertices = []float32{
-	// Front
-	-1.0, -1.0, 1.0, 0.0, 1.0,
-	1.0, -1.0, 1.0, 1.0, 1.0,
-	-1.0, 1.0, 1.0, 0.0, 0.0,
-	1.0, -1.0, 1.0, 1.0, 1.0,
-	1.0, 1.0, 1.0, 1.0, 0.0,
-	-1.0, 1.0, 1.0, 0.0, 0.0,
 }

@@ -13,6 +13,7 @@ import (
 )
 
 type Decoder struct {
+	pCodecCtx      *avcodec.Context
 	pFormatContext *avformat.Context
 	packet         *avcodec.Packet
 }
@@ -49,14 +50,14 @@ func (d *Decoder) Decode(fname string) {
 				os.Exit(1)
 			}
 			// Copy context
-			pCodecCtx := pCodec.AvcodecAllocContext3()
-			if pCodecCtx.AvcodecCopyContext((*avcodec.Context)(unsafe.Pointer(pCodecCtxOrig))) != 0 {
+			d.pCodecCtx = pCodec.AvcodecAllocContext3()
+			if d.pCodecCtx.AvcodecCopyContext((*avcodec.Context)(unsafe.Pointer(pCodecCtxOrig))) != 0 {
 				fmt.Println("Couldn't copy codec context")
 				os.Exit(1)
 			}
 
 			// Open codec
-			if pCodecCtx.AvcodecOpen2(pCodec, nil) < 0 {
+			if d.pCodecCtx.AvcodecOpen2(pCodec, nil) < 0 {
 				fmt.Println("Could not open codec")
 				os.Exit(1)
 			}
@@ -72,23 +73,23 @@ func (d *Decoder) Decode(fname string) {
 			}
 
 			// Determine required buffer size and allocate buffer
-			numBytes := uintptr(avcodec.AvpictureGetSize(avcodec.AV_PIX_FMT_RGB24, pCodecCtx.Width(),
-				pCodecCtx.Height()))
+			numBytes := uintptr(avcodec.AvpictureGetSize(avcodec.AV_PIX_FMT_RGB24, d.pCodecCtx.Width(),
+				d.pCodecCtx.Height()))
 			buffer := avutil.AvMalloc(numBytes)
 
 			// Assign appropriate parts of buffer to image planes in pFrameRGB
 			// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
 			// of AVPicture
 			avp := (*avcodec.Picture)(unsafe.Pointer(pFrameRGB))
-			avp.AvpictureFill((*uint8)(buffer), avcodec.AV_PIX_FMT_RGB24, pCodecCtx.Width(), pCodecCtx.Height())
+			avp.AvpictureFill((*uint8)(buffer), avcodec.AV_PIX_FMT_RGB24, d.pCodecCtx.Width(), d.pCodecCtx.Height())
 
 			// initialize SWS context for software scaling
 			swsCtx := swscale.SwsGetcontext(
-				pCodecCtx.Width(),
-				pCodecCtx.Height(),
-				(swscale.PixelFormat)(pCodecCtx.PixFmt()),
-				pCodecCtx.Width(),
-				pCodecCtx.Height(),
+				d.pCodecCtx.Width(),
+				d.pCodecCtx.Height(),
+				(swscale.PixelFormat)(d.pCodecCtx.PixFmt()),
+				d.pCodecCtx.Width(),
+				d.pCodecCtx.Height(),
 				avcodec.AV_PIX_FMT_RGB24,
 				avcodec.SWS_BILINEAR,
 				nil,
@@ -103,12 +104,12 @@ func (d *Decoder) Decode(fname string) {
 				// Is this a packet from the video stream?
 				if d.packet.StreamIndex() == i {
 					// Decode video frame
-					response := pCodecCtx.AvcodecSendPacket(d.packet)
+					response := d.pCodecCtx.AvcodecSendPacket(d.packet)
 					if response < 0 {
 						fmt.Printf("Error while sending a packet to the decoder: %s\n", avutil.ErrorFromCode(response))
 					}
 					for response >= 0 {
-						response = pCodecCtx.AvcodecReceiveFrame((*avcodec.Frame)(unsafe.Pointer(pFrame)))
+						response = d.pCodecCtx.AvcodecReceiveFrame((*avcodec.Frame)(unsafe.Pointer(pFrame)))
 						if response == avutil.AvErrorEAGAIN || response == avutil.AvErrorEOF {
 							break
 						} else if response < 0 {
@@ -119,12 +120,12 @@ func (d *Decoder) Decode(fname string) {
 						if frameNumber <= 5 {
 							// Convert the image from its native format to RGB
 							swscale.SwsScale2(swsCtx, avutil.Data(pFrame),
-								avutil.Linesize(pFrame), 0, pCodecCtx.Height(),
+								avutil.Linesize(pFrame), 0, d.pCodecCtx.Height(),
 								avutil.Data(pFrameRGB), avutil.Linesize(pFrameRGB))
 
 							// Save the frame to disk
 							fmt.Printf("Writing frame %d\n", frameNumber)
-							SaveFrame(pFrameRGB, pCodecCtx.Width(), pCodecCtx.Height(), frameNumber)
+							SaveFrame(pFrameRGB, d.pCodecCtx.Width(), d.pCodecCtx.Height(), frameNumber)
 						} else {
 							return
 						}
@@ -144,7 +145,7 @@ func (d *Decoder) Decode(fname string) {
 			avutil.AvFrameFree(pFrame)
 
 			// Close the codecs
-			pCodecCtx.AvcodecClose()
+			d.pCodecCtx.AvcodecClose()
 			(*avcodec.Context)(unsafe.Pointer(pCodecCtxOrig)).AvcodecClose()
 
 			// Close the video file

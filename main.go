@@ -11,7 +11,7 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/dianelooney/gvd/pkg/ffmpeg"
+	"github.com/dianelooney/gvd/internal/ffmpeg"
 	"github.com/giorgisio/goav/avutil"
 	"github.com/go-gl/gl/all-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
@@ -61,7 +61,7 @@ func main() {
 	fmt.Println("OpenGL version", version)
 
 	// Configure the vertex and fragment shaders
-	program, err := newProgram(vertexShader, fragmentShader)
+	program, err := newProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl")
 	if err != nil {
 		panic(err)
 	}
@@ -108,6 +108,9 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
 
+	decoder.NextFrame()
+	newTexture()
+
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
@@ -145,7 +148,7 @@ var nextFrame = time.Now()
 var texture uint32
 
 func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
-	data, err := ioutil.ReadFile("shaders/vert/default.glsl")
+	data, err := ioutil.ReadFile(vertexShaderSource)
 	if err != nil {
 		return 0, err
 	}
@@ -153,7 +156,7 @@ func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error)
 	if err != nil {
 		return 0, err
 	}
-	data, err = ioutil.ReadFile("shaders/frag/default.glsl")
+	data, err = ioutil.ReadFile(fragmentShaderSource)
 	if err != nil {
 		return 0, err
 	}

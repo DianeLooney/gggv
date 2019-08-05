@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	_ "image/png"
+	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
@@ -273,7 +274,7 @@ func main() {
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 
-	camera := mgl32.LookAtV(mgl32.Vec3{3, 3, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	camera := mgl32.LookAtV(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
 	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
 	gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
 
@@ -309,19 +310,8 @@ func main() {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
 
-	angle := 0.0
-	previousTime := glfw.GetTime()
-
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
-		// Update
-		time := glfw.GetTime()
-		elapsed := time - previousTime
-		previousTime = time
-
-		angle += elapsed
-		model = mgl32.HomogRotate3D(float32(angle), mgl32.Vec3{0, 1, 0})
 
 		// Render
 		gl.UseProgram(program)
@@ -330,7 +320,14 @@ func main() {
 		gl.BindVertexArray(vao)
 
 		// Load the texture
-		texture, err := newTexture()
+
+		if nextFrame.Before(time.Now()) {
+			for nextFrame.Before(time.Now()) {
+				decoder.NextFrame()
+				nextFrame = nextFrame.Add(42 * time.Millisecond)
+			}
+			newTexture()
+		}
 		if err != nil {
 			log.Fatalln(err)
 		}
@@ -338,7 +335,7 @@ func main() {
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
 
-		gl.DrawArrays(gl.TRIANGLES, 0, 6*2*3)
+		gl.DrawArrays(gl.TRIANGLES, 0, 1*2*3)
 
 		// Maintenance
 		window.SwapBuffers()
@@ -346,13 +343,23 @@ func main() {
 	}
 }
 
+var nextFrame = time.Now()
+var texture uint32
+
 func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
-	vertexShader, err := compileShader(vertexShaderSource, gl.VERTEX_SHADER)
+	data, err := ioutil.ReadFile("shaders/vert/default.glsl")
 	if err != nil {
 		return 0, err
 	}
-
-	fragmentShader, err := compileShader(fragmentShaderSource, gl.FRAGMENT_SHADER)
+	vertexShader, err := compileShader(string(data)+"\x00", gl.VERTEX_SHADER)
+	if err != nil {
+		return 0, err
+	}
+	data, err = ioutil.ReadFile("shaders/frag/default.glsl")
+	if err != nil {
+		return 0, err
+	}
+	fragmentShader, err := compileShader(string(data)+"\x00", gl.FRAGMENT_SHADER)
 	if err != nil {
 		return 0, err
 	}
@@ -404,13 +411,7 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 	return shader, nil
 }
 
-var nextFrame = time.Now()
-
-func newTexture() (uint32, error) {
-	if nextFrame.Before(time.Now()) {
-		decoder.NextFrame()
-		nextFrame = nextFrame.Add(42 * time.Millisecond)
-	}
+func newTexture() {
 	height := decoder.pCodecCtx.Height()
 	width := decoder.pCodecCtx.Width()
 
@@ -426,7 +427,6 @@ func newTexture() (uint32, error) {
 		img = append(img, buf...)
 	}
 
-	var texture uint32
 	gl.GenTextures(1, &texture)
 	gl.ActiveTexture(gl.TEXTURE0)
 	gl.BindTexture(gl.TEXTURE_2D, texture)
@@ -444,89 +444,18 @@ func newTexture() (uint32, error) {
 		gl.RGB,
 		gl.UNSIGNED_BYTE,
 		gl.Ptr(&img[0]))
-
-	return texture, nil
 }
 
-var vertexShader = `
-#version 330
+var vertexShader = `` + "\x00"
 
-uniform mat4 projection;
-uniform mat4 camera;
-uniform mat4 model;
-
-in vec3 vert;
-in vec2 vertTexCoord;
-
-out vec2 fragTexCoord;
-
-void main() {
-    fragTexCoord = vertTexCoord;
-    gl_Position = projection * camera * model * vec4(vert, 1);
-}
-` + "\x00"
-
-var fragmentShader = `
-#version 330
-
-uniform sampler2D tex;
-
-in vec2 fragTexCoord;
-
-out vec4 outputColor;
-
-void main() {
-    outputColor = texture(tex, fragTexCoord);
-}
-` + "\x00"
+var fragmentShader = `` + "\x00"
 
 var cubeVertices = []float32{
-	//  X, Y, Z, U, V
-	// Bottom
-	-1.0, -1.0, -1.0, 0.0, 0.0,
-	1.0, -1.0, -1.0, 1.0, 0.0,
-	-1.0, -1.0, 1.0, 0.0, 1.0,
-	1.0, -1.0, -1.0, 1.0, 0.0,
-	1.0, -1.0, 1.0, 1.0, 1.0,
-	-1.0, -1.0, 1.0, 0.0, 1.0,
-
-	// Top
-	-1.0, 1.0, -1.0, 0.0, 0.0,
-	-1.0, 1.0, 1.0, 0.0, 1.0,
-	1.0, 1.0, -1.0, 1.0, 0.0,
-	1.0, 1.0, -1.0, 1.0, 0.0,
-	-1.0, 1.0, 1.0, 0.0, 1.0,
-	1.0, 1.0, 1.0, 1.0, 1.0,
-
 	// Front
-	-1.0, -1.0, 1.0, 1.0, 0.0,
-	1.0, -1.0, 1.0, 0.0, 0.0,
-	-1.0, 1.0, 1.0, 1.0, 1.0,
-	1.0, -1.0, 1.0, 0.0, 0.0,
-	1.0, 1.0, 1.0, 0.0, 1.0,
-	-1.0, 1.0, 1.0, 1.0, 1.0,
-
-	// Back
-	-1.0, -1.0, -1.0, 0.0, 0.0,
-	-1.0, 1.0, -1.0, 0.0, 1.0,
-	1.0, -1.0, -1.0, 1.0, 0.0,
-	1.0, -1.0, -1.0, 1.0, 0.0,
-	-1.0, 1.0, -1.0, 0.0, 1.0,
-	1.0, 1.0, -1.0, 1.0, 1.0,
-
-	// Left
 	-1.0, -1.0, 1.0, 0.0, 1.0,
-	-1.0, 1.0, -1.0, 1.0, 0.0,
-	-1.0, -1.0, -1.0, 0.0, 0.0,
-	-1.0, -1.0, 1.0, 0.0, 1.0,
-	-1.0, 1.0, 1.0, 1.0, 1.0,
-	-1.0, 1.0, -1.0, 1.0, 0.0,
-
-	// Right
 	1.0, -1.0, 1.0, 1.0, 1.0,
-	1.0, -1.0, -1.0, 1.0, 0.0,
-	1.0, 1.0, -1.0, 0.0, 0.0,
+	-1.0, 1.0, 1.0, 0.0, 0.0,
 	1.0, -1.0, 1.0, 1.0, 1.0,
-	1.0, 1.0, -1.0, 0.0, 0.0,
-	1.0, 1.0, 1.0, 0.0, 1.0,
+	1.0, 1.0, 1.0, 1.0, 0.0,
+	-1.0, 1.0, 1.0, 0.0, 0.0,
 }

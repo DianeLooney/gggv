@@ -15,7 +15,10 @@ import (
 type Decoder struct {
 	pCodecCtx      *avcodec.Context
 	pFormatContext *avformat.Context
+	pFrame         *avutil.Frame
+	pFrameRGB      *avutil.Frame
 	packet         *avcodec.Packet
+	swsCtx         *swscale.Context
 }
 
 func (d *Decoder) Decode(fname string) {
@@ -63,11 +66,10 @@ func (d *Decoder) Decode(fname string) {
 			}
 
 			// Allocate video frame
-			pFrame := avutil.AvFrameAlloc()
+			d.pFrame = avutil.AvFrameAlloc()
 
 			// Allocate an AVFrame structure
-			pFrameRGB := avutil.AvFrameAlloc()
-			if pFrameRGB == nil {
+			if d.pFrameRGB = avutil.AvFrameAlloc(); d.pFrameRGB == nil {
 				fmt.Println("Unable to allocate RGB Frame")
 				os.Exit(1)
 			}
@@ -80,11 +82,11 @@ func (d *Decoder) Decode(fname string) {
 			// Assign appropriate parts of buffer to image planes in pFrameRGB
 			// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
 			// of AVPicture
-			avp := (*avcodec.Picture)(unsafe.Pointer(pFrameRGB))
+			avp := (*avcodec.Picture)(unsafe.Pointer(d.pFrameRGB))
 			avp.AvpictureFill((*uint8)(buffer), avcodec.AV_PIX_FMT_RGB24, d.pCodecCtx.Width(), d.pCodecCtx.Height())
 
 			// initialize SWS context for software scaling
-			swsCtx := swscale.SwsGetcontext(
+			d.swsCtx = swscale.SwsGetcontext(
 				d.pCodecCtx.Width(),
 				d.pCodecCtx.Height(),
 				(swscale.PixelFormat)(d.pCodecCtx.PixFmt()),
@@ -101,36 +103,13 @@ func (d *Decoder) Decode(fname string) {
 			frameNumber := 1
 			d.packet = avcodec.AvPacketAlloc()
 			for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
+				if frameNumber > 5 {
+					break
+				}
 				// Is this a packet from the video stream?
-				if d.packet.StreamIndex() == i {
-					// Decode video frame
-					response := d.pCodecCtx.AvcodecSendPacket(d.packet)
-					if response < 0 {
-						fmt.Printf("Error while sending a packet to the decoder: %s\n", avutil.ErrorFromCode(response))
-					}
-					for response >= 0 {
-						response = d.pCodecCtx.AvcodecReceiveFrame((*avcodec.Frame)(unsafe.Pointer(pFrame)))
-						if response == avutil.AvErrorEAGAIN || response == avutil.AvErrorEOF {
-							break
-						} else if response < 0 {
-							fmt.Printf("Error while receiving a frame from the decoder: %s\n", avutil.ErrorFromCode(response))
-							return
-						}
-
-						if frameNumber <= 5 {
-							// Convert the image from its native format to RGB
-							swscale.SwsScale2(swsCtx, avutil.Data(pFrame),
-								avutil.Linesize(pFrame), 0, d.pCodecCtx.Height(),
-								avutil.Data(pFrameRGB), avutil.Linesize(pFrameRGB))
-
-							// Save the frame to disk
-							fmt.Printf("Writing frame %d\n", frameNumber)
-							SaveFrame(pFrameRGB, d.pCodecCtx.Width(), d.pCodecCtx.Height(), frameNumber)
-						} else {
-							return
-						}
-						frameNumber++
-					}
+				ok := d.readFrame(frameNumber, i)
+				if ok {
+					frameNumber++
 				}
 
 				// Free the packet that was allocated by av_read_frame
@@ -139,10 +118,10 @@ func (d *Decoder) Decode(fname string) {
 
 			// Free the RGB image
 			avutil.AvFree(buffer)
-			avutil.AvFrameFree(pFrameRGB)
+			avutil.AvFrameFree(d.pFrameRGB)
 
 			// Free the YUV frame
-			avutil.AvFrameFree(pFrame)
+			avutil.AvFrameFree(d.pFrame)
 
 			// Close the codecs
 			d.pCodecCtx.AvcodecClose()
@@ -159,6 +138,39 @@ func (d *Decoder) Decode(fname string) {
 			os.Exit(1)
 		}
 	}
+}
+
+func (d *Decoder) readFrame(frameNumber, streamIdx int) (ok bool) {
+	if d.packet.StreamIndex() != streamIdx {
+		return false
+	}
+
+	// Decode video frame
+	response := d.pCodecCtx.AvcodecSendPacket(d.packet)
+	if response < 0 {
+		fmt.Printf("Error while sending a packet to the decoder: %s\n", avutil.ErrorFromCode(response))
+	}
+	for response >= 0 {
+		response = d.pCodecCtx.AvcodecReceiveFrame((*avcodec.Frame)(unsafe.Pointer(d.pFrame)))
+		if response == avutil.AvErrorEAGAIN || response == avutil.AvErrorEOF {
+			return false
+		} else if response < 0 {
+			fmt.Printf("Error while receiving a frame from the decoder: %s\n", avutil.ErrorFromCode(response))
+			return false
+		}
+
+		// Convert the image from its native format to RGB
+		swscale.SwsScale2(d.swsCtx, avutil.Data(d.pFrame),
+			avutil.Linesize(d.pFrame), 0, d.pCodecCtx.Height(),
+			avutil.Data(d.pFrameRGB), avutil.Linesize(d.pFrameRGB))
+
+		// Save the frame to disk
+		fmt.Printf("Writing frame %d\n", frameNumber)
+		SaveFrame(d.pFrameRGB, d.pCodecCtx.Width(), d.pCodecCtx.Height(), frameNumber)
+		return true
+	}
+
+	return false
 }
 
 // SaveFrame writes a single frame to disk as a PPM file

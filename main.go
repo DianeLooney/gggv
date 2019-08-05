@@ -13,33 +13,34 @@ import (
 )
 
 type Decoder struct {
+	pFormatContext *avformat.Context
 }
 
 func (d *Decoder) Decode(fname string) {
 
 	// Open video file
-	pFormatContext := avformat.AvformatAllocContext()
-	if avformat.AvformatOpenInput(&pFormatContext, fname, nil, nil) != 0 {
+	d.pFormatContext = avformat.AvformatAllocContext()
+	if avformat.AvformatOpenInput(&d.pFormatContext, fname, nil, nil) != 0 {
 		fmt.Printf("Unable to open file %s\n", os.Args[1])
 		os.Exit(1)
 	}
 
 	// Retrieve stream information
-	if pFormatContext.AvformatFindStreamInfo(nil) < 0 {
+	if d.pFormatContext.AvformatFindStreamInfo(nil) < 0 {
 		fmt.Println("Couldn't find stream information")
 		os.Exit(1)
 	}
 
 	// Dump information about file onto standard error
-	pFormatContext.AvDumpFormat(0, fname, 0)
+	d.pFormatContext.AvDumpFormat(0, fname, 0)
 
 	// Find the first video stream
-	for i := 0; i < int(pFormatContext.NbStreams()); i++ {
-		switch pFormatContext.Streams()[i].CodecParameters().AvCodecGetType() {
+	for i := 0; i < int(d.pFormatContext.NbStreams()); i++ {
+		switch d.pFormatContext.Streams()[i].CodecParameters().AvCodecGetType() {
 		case avformat.AVMEDIA_TYPE_VIDEO:
 
 			// Get a pointer to the codec context for the video stream
-			pCodecCtxOrig := pFormatContext.Streams()[i].Codec()
+			pCodecCtxOrig := d.pFormatContext.Streams()[i].Codec()
 			// Find the decoder for the video stream
 			pCodec := avcodec.AvcodecFindDecoder(avcodec.CodecId(pCodecCtxOrig.GetCodecId()))
 			if pCodec == nil {
@@ -97,7 +98,7 @@ func (d *Decoder) Decode(fname string) {
 			// Read frames and save first five frames to disk
 			frameNumber := 1
 			packet := avcodec.AvPacketAlloc()
-			for pFormatContext.AvReadFrame(packet) >= 0 {
+			for d.pFormatContext.AvReadFrame(packet) >= 0 {
 				// Is this a packet from the video stream?
 				if packet.StreamIndex() == i {
 					// Decode video frame
@@ -146,7 +147,7 @@ func (d *Decoder) Decode(fname string) {
 			(*avcodec.Context)(unsafe.Pointer(pCodecCtxOrig)).AvcodecClose()
 
 			// Close the video file
-			pFormatContext.AvformatCloseInput()
+			d.pFormatContext.AvformatCloseInput()
 
 			// Stop after saving frames of first video straem
 			break

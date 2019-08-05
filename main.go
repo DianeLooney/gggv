@@ -14,6 +14,7 @@ import (
 
 type Decoder struct {
 	pFormatContext *avformat.Context
+	packet         *avcodec.Packet
 }
 
 func (d *Decoder) Decode(fname string) {
@@ -97,12 +98,12 @@ func (d *Decoder) Decode(fname string) {
 
 			// Read frames and save first five frames to disk
 			frameNumber := 1
-			packet := avcodec.AvPacketAlloc()
-			for d.pFormatContext.AvReadFrame(packet) >= 0 {
+			d.packet = avcodec.AvPacketAlloc()
+			for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
 				// Is this a packet from the video stream?
-				if packet.StreamIndex() == i {
+				if d.packet.StreamIndex() == i {
 					// Decode video frame
-					response := pCodecCtx.AvcodecSendPacket(packet)
+					response := pCodecCtx.AvcodecSendPacket(d.packet)
 					if response < 0 {
 						fmt.Printf("Error while sending a packet to the decoder: %s\n", avutil.ErrorFromCode(response))
 					}
@@ -132,7 +133,7 @@ func (d *Decoder) Decode(fname string) {
 				}
 
 				// Free the packet that was allocated by av_read_frame
-				packet.AvFreePacket()
+				d.packet.AvFreePacket()
 			}
 
 			// Free the RGB image

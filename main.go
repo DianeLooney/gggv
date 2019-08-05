@@ -68,7 +68,7 @@ func main() {
 
 	gl.UseProgram(program)
 
-	projection := mgl32.Perspective(mgl32.DegToRad(45.0), float32(windowWidth)/windowHeight, 0.1, 10.0)
+	projection := mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
 

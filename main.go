@@ -17,7 +17,6 @@ import (
 	"github.com/giorgisio/goav/avutil"
 	"github.com/go-gl/gl/all-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
-	"github.com/go-gl/mathgl/mgl32"
 )
 
 func init() {
@@ -45,21 +44,14 @@ func main() {
 
 	gl.UseProgram(program)
 
-	projection := mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
 	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
-	gl.UniformMatrix4fv(projectionUniform, 1, false, &projection[0])
-
-	camera := mgl32.LookAtV(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	gl.UniformMatrix4fv(projectionUniform, 1, false, &scene.Projection[0])
 	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
-	gl.UniformMatrix4fv(cameraUniform, 1, false, &camera[0])
-
-	model := mgl32.Ident4()
+	gl.UniformMatrix4fv(cameraUniform, 1, false, &scene.Camera[0])
 	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
-	gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
-
+	gl.UniformMatrix4fv(modelUniform, 1, false, &scene.Model[0])
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
-
 	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
 
 	// Configure the vertex data
@@ -93,7 +85,7 @@ func main() {
 
 		// Render
 		gl.UseProgram(program)
-		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
+		gl.UniformMatrix4fv(modelUniform, 1, false, &scene.Model[0])
 
 		gl.BindVertexArray(vao)
 

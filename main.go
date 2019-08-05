@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"unsafe"
 
 	"github.com/giorgisio/goav/avcodec"
@@ -13,15 +14,18 @@ import (
 )
 
 type Decoder struct {
+	buffer         unsafe.Pointer
+	pCodecCtxOrig  *avformat.CodecContext
 	pCodecCtx      *avcodec.Context
 	pFormatContext *avformat.Context
 	pFrame         *avutil.Frame
 	pFrameRGB      *avutil.Frame
 	packet         *avcodec.Packet
+	videoStreamNum int
 	swsCtx         *swscale.Context
 }
 
-func (d *Decoder) Decode(fname string) {
+func (d *Decoder) Begin(fname string) {
 
 	// Open video file
 	d.pFormatContext = avformat.AvformatAllocContext()
@@ -45,16 +49,16 @@ func (d *Decoder) Decode(fname string) {
 		case avformat.AVMEDIA_TYPE_VIDEO:
 
 			// Get a pointer to the codec context for the video stream
-			pCodecCtxOrig := d.pFormatContext.Streams()[i].Codec()
+			d.pCodecCtxOrig = d.pFormatContext.Streams()[i].Codec()
 			// Find the decoder for the video stream
-			pCodec := avcodec.AvcodecFindDecoder(avcodec.CodecId(pCodecCtxOrig.GetCodecId()))
+			pCodec := avcodec.AvcodecFindDecoder(avcodec.CodecId(d.pCodecCtxOrig.GetCodecId()))
 			if pCodec == nil {
 				fmt.Println("Unsupported codec!")
 				os.Exit(1)
 			}
 			// Copy context
 			d.pCodecCtx = pCodec.AvcodecAllocContext3()
-			if d.pCodecCtx.AvcodecCopyContext((*avcodec.Context)(unsafe.Pointer(pCodecCtxOrig))) != 0 {
+			if d.pCodecCtx.AvcodecCopyContext((*avcodec.Context)(unsafe.Pointer(d.pCodecCtxOrig))) != 0 {
 				fmt.Println("Couldn't copy codec context")
 				os.Exit(1)
 			}
@@ -77,13 +81,13 @@ func (d *Decoder) Decode(fname string) {
 			// Determine required buffer size and allocate buffer
 			numBytes := uintptr(avcodec.AvpictureGetSize(avcodec.AV_PIX_FMT_RGB24, d.pCodecCtx.Width(),
 				d.pCodecCtx.Height()))
-			buffer := avutil.AvMalloc(numBytes)
+			d.buffer = avutil.AvMalloc(numBytes)
 
 			// Assign appropriate parts of buffer to image planes in pFrameRGB
 			// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
 			// of AVPicture
 			avp := (*avcodec.Picture)(unsafe.Pointer(d.pFrameRGB))
-			avp.AvpictureFill((*uint8)(buffer), avcodec.AV_PIX_FMT_RGB24, d.pCodecCtx.Width(), d.pCodecCtx.Height())
+			avp.AvpictureFill((*uint8)(d.buffer), avcodec.AV_PIX_FMT_RGB24, d.pCodecCtx.Width(), d.pCodecCtx.Height())
 
 			// initialize SWS context for software scaling
 			d.swsCtx = swscale.SwsGetcontext(
@@ -100,48 +104,18 @@ func (d *Decoder) Decode(fname string) {
 			)
 
 			// Read frames and save first five frames to disk
-			frameNumber := 1
+			d.videoStreamNum = i
 			d.packet = avcodec.AvPacketAlloc()
-			for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
-				if frameNumber > 5 {
-					break
-				}
-				// Is this a packet from the video stream?
-				ok := d.readFrame(frameNumber, i)
-				if ok {
-					frameNumber++
-				}
 
-				// Free the packet that was allocated by av_read_frame
-				d.packet.AvFreePacket()
-			}
-
-			// Free the RGB image
-			avutil.AvFree(buffer)
-			avutil.AvFrameFree(d.pFrameRGB)
-
-			// Free the YUV frame
-			avutil.AvFrameFree(d.pFrame)
-
-			// Close the codecs
-			d.pCodecCtx.AvcodecClose()
-			(*avcodec.Context)(unsafe.Pointer(pCodecCtxOrig)).AvcodecClose()
-
-			// Close the video file
-			d.pFormatContext.AvformatCloseInput()
-
-			// Stop after saving frames of first video straem
-			break
-
+			return
 		default:
 			fmt.Println("Didn't find a video stream")
 			os.Exit(1)
 		}
 	}
 }
-
-func (d *Decoder) readFrame(frameNumber, streamIdx int) (ok bool) {
-	if d.packet.StreamIndex() != streamIdx {
+func (d *Decoder) readFrame(frameNumber int) (ok bool) {
+	if d.packet.StreamIndex() != d.videoStreamNum {
 		return false
 	}
 
@@ -171,6 +145,23 @@ func (d *Decoder) readFrame(frameNumber, streamIdx int) (ok bool) {
 	}
 
 	return false
+}
+
+func finalizeDecoder(d *Decoder) {
+	d.packet.AvFreePacket()
+	// Free the RGB image
+	avutil.AvFree(d.buffer)
+	avutil.AvFrameFree(d.pFrameRGB)
+
+	// Free the YUV frame
+	avutil.AvFrameFree(d.pFrame)
+
+	// Close the codecs
+	d.pCodecCtx.AvcodecClose()
+	(*avcodec.Context)(unsafe.Pointer(d.pCodecCtxOrig)).AvcodecClose()
+
+	// Close the video file
+	d.pFormatContext.AvformatCloseInput()
 }
 
 // SaveFrame writes a single frame to disk as a PPM file
@@ -205,6 +196,25 @@ func main() {
 		fmt.Println("Please provide a movie file")
 		os.Exit(1)
 	}
+	DecodeFile(os.Args[1])
+}
+func DecodeFile(fname string) {
 	d := &Decoder{}
-	d.Decode(os.Args[1])
+	runtime.SetFinalizer(d, finalizeDecoder)
+	d.Begin(fname)
+
+	frameNumber := 1
+	for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
+		if frameNumber > 5 {
+			break
+		}
+		// Is this a packet from the video stream?
+		ok := d.readFrame(frameNumber)
+		if ok {
+			frameNumber++
+		}
+
+		// Free the packet that was allocated by av_read_frame
+		d.packet.AvFreePacket()
+	}
 }

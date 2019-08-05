@@ -3,11 +3,9 @@ package main
 import (
 	"fmt"
 	_ "image/png"
-	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
-	"strings"
 	"time"
 	"unsafe"
 
@@ -37,22 +35,10 @@ func main() {
 	scene = opengl.NewScene()
 
 	// Configure the vertex and fragment shaders
-	program, err := newProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl")
+	program, err := scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl")
 	if err != nil {
 		panic(err)
 	}
-
-	gl.UseProgram(program)
-
-	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
-	gl.UniformMatrix4fv(projectionUniform, 1, false, &scene.Projection[0])
-	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
-	gl.UniformMatrix4fv(cameraUniform, 1, false, &scene.Camera[0])
-	modelUniform := gl.GetUniformLocation(program, gl.Str("model\x00"))
-	gl.UniformMatrix4fv(modelUniform, 1, false, &scene.Model[0])
-	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
-	gl.Uniform1i(textureUniform, 0)
-	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
 
 	// Configure the vertex data
 	var vao uint32
@@ -78,13 +64,10 @@ func main() {
 	for !scene.Window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		// Render
 		gl.UseProgram(program)
-		gl.UniformMatrix4fv(modelUniform, 1, false, &scene.Model[0])
+		gl.UniformMatrix4fv(scene.ModelUniform, 1, false, &scene.Model[0])
 
 		gl.BindVertexArray(vao)
-
-		// Load the texture
 
 		if nextFrame.Before(time.Now()) {
 			for nextFrame.Before(time.Now()) {
@@ -110,71 +93,6 @@ func main() {
 
 var nextFrame = time.Now()
 var texture uint32
-
-func newProgram(vertexShaderSource, fragmentShaderSource string) (uint32, error) {
-	data, err := ioutil.ReadFile(vertexShaderSource)
-	if err != nil {
-		return 0, err
-	}
-	vertexShader, err := compileShader(string(data)+"\x00", gl.VERTEX_SHADER)
-	if err != nil {
-		return 0, err
-	}
-	data, err = ioutil.ReadFile(fragmentShaderSource)
-	if err != nil {
-		return 0, err
-	}
-	fragmentShader, err := compileShader(string(data)+"\x00", gl.FRAGMENT_SHADER)
-	if err != nil {
-		return 0, err
-	}
-
-	program := gl.CreateProgram()
-
-	gl.AttachShader(program, vertexShader)
-	gl.AttachShader(program, fragmentShader)
-	gl.LinkProgram(program)
-
-	var status int32
-	gl.GetProgramiv(program, gl.LINK_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetProgramiv(program, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
-
-		return 0, fmt.Errorf("failed to link program: %v", log)
-	}
-
-	gl.DeleteShader(vertexShader)
-	gl.DeleteShader(fragmentShader)
-
-	return program, nil
-}
-
-func compileShader(source string, shaderType uint32) (uint32, error) {
-	shader := gl.CreateShader(shaderType)
-
-	csources, free := gl.Strs(source)
-	gl.ShaderSource(shader, 1, csources, nil)
-	free()
-	gl.CompileShader(shader)
-
-	var status int32
-	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)
-	if status == gl.FALSE {
-		var logLength int32
-		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
-
-		return 0, fmt.Errorf("failed to compile %v: %v", source, log)
-	}
-
-	return shader, nil
-}
 
 func newTexture() {
 	width, height := decoder.Dimensions()

@@ -243,10 +243,6 @@ func newTexture() {
 		gl.Ptr(&img[0]))
 }
 
-var vertexShader = `` + "\x00"
-
-var fragmentShader = `` + "\x00"
-
 var cubeVertices = []float32{
 	// Front
 	-1.0, -1.0, 1.0, 0.0, 1.0,

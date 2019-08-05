@@ -2,13 +2,12 @@ package main
 
 import (
 	"fmt"
-	"image"
-	"image/draw"
 	_ "image/png"
 	"log"
 	"os"
 	"runtime"
 	"strings"
+	"time"
 	"unsafe"
 
 	"github.com/giorgisio/goav/avcodec"
@@ -287,12 +286,6 @@ func main() {
 
 	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
 
-	// Load the texture
-	texture, err := newTexture()
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	// Configure the vertex data
 	var vao uint32
 	gl.GenVertexArrays(1, &vao)
@@ -335,6 +328,12 @@ func main() {
 		gl.UniformMatrix4fv(modelUniform, 1, false, &model[0])
 
 		gl.BindVertexArray(vao)
+
+		// Load the texture
+		texture, err := newTexture()
+		if err != nil {
+			log.Fatalln(err)
+		}
 
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, texture)
@@ -405,21 +404,27 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 	return shader, nil
 }
 
-func newTexture() (uint32, error) {
-	imgFile, err := os.Open("/Users/dianelooney/Desktop/screenie.png")
-	if err != nil {
-		return 0, fmt.Errorf("texture %q not found on disk: %v", "~/Desktop/screenie.png", err)
-	}
-	img, _, err := image.Decode(imgFile)
-	if err != nil {
-		return 0, err
-	}
+var nextFrame = time.Now()
 
-	rgba := image.NewRGBA(img.Bounds())
-	if rgba.Stride != rgba.Rect.Size().X*4 {
-		return 0, fmt.Errorf("unsupported stride")
+func newTexture() (uint32, error) {
+	if nextFrame.Before(time.Now()) {
+		decoder.NextFrame()
+		nextFrame = nextFrame.Add(42 * time.Millisecond)
 	}
-	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
+	height := decoder.pCodecCtx.Height()
+	width := decoder.pCodecCtx.Width()
+
+	var img []uint8
+	for y := 0; y < height; y++ {
+		data0 := avutil.Data(frame)[0]
+		buf := make([]byte, width*3)
+		startPos := uintptr(unsafe.Pointer(data0)) + uintptr(y)*uintptr(avutil.Linesize(frame)[0])
+		for i := 0; i < width*3; i++ {
+			element := *(*uint8)(unsafe.Pointer(startPos + uintptr(i)))
+			buf[i] = element
+		}
+		img = append(img, buf...)
+	}
 
 	var texture uint32
 	gl.GenTextures(1, &texture)
@@ -433,12 +438,12 @@ func newTexture() (uint32, error) {
 		gl.TEXTURE_2D,
 		0,
 		gl.RGBA,
-		int32(rgba.Rect.Size().X),
-		int32(rgba.Rect.Size().Y),
+		int32(width),
+		int32(height),
 		0,
-		gl.RGBA,
+		gl.RGB,
 		gl.UNSIGNED_BYTE,
-		gl.Ptr(rgba.Pix))
+		gl.Ptr(&img[0]))
 
 	return texture, nil
 }

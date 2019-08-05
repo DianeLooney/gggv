@@ -19,7 +19,7 @@ func (d *Decoder) Decode(fname string) {
 
 	// Open video file
 	pFormatContext := avformat.AvformatAllocContext()
-	if avformat.AvformatOpenInput(&pFormatContext, os.Args[1], nil, nil) != 0 {
+	if avformat.AvformatOpenInput(&pFormatContext, fname, nil, nil) != 0 {
 		fmt.Printf("Unable to open file %s\n", os.Args[1])
 		os.Exit(1)
 	}
@@ -31,7 +31,7 @@ func (d *Decoder) Decode(fname string) {
 	}
 
 	// Dump information about file onto standard error
-	pFormatContext.AvDumpFormat(0, os.Args[1], 0)
+	pFormatContext.AvDumpFormat(0, fname, 0)
 
 	// Find the first video stream
 	for i := 0; i < int(pFormatContext.NbStreams()); i++ {

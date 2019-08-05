@@ -11,6 +11,7 @@ import (
 
 	"github.com/dianelooney/gvd/internal/ffmpeg"
 	"github.com/dianelooney/gvd/internal/opengl"
+	"github.com/fsnotify/fsnotify"
 
 	"github.com/giorgisio/goav/avutil"
 	"github.com/go-gl/gl/all-core/gl"
@@ -44,7 +45,19 @@ func main() {
 	decoder.NextFrame()
 	newTexture()
 
+	go watchShaders()
+
 	for !scene.Window.ShouldClose() {
+		select {
+		case <-reloadShaders:
+			fmt.Println("Reloading shaders")
+			err := scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl")
+			if err != nil {
+				panic(err)
+			}
+
+		default:
+		}
 		if nextFrame.Before(time.Now()) {
 			for nextFrame.Before(time.Now()) {
 				decoder.NextFrame()
@@ -61,7 +74,26 @@ func main() {
 	}
 }
 
+var reloadShaders = make(chan bool)
 var nextFrame = time.Now()
+
+func watchShaders() {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Panic(err)
+	}
+	watcher.Add("shaders/frag/default.glsl")
+	watcher.Add("shaders/vert/default.glsl")
+
+	go func() {
+		for {
+			if (<-watcher.Events).Op != fsnotify.Write {
+				continue
+			}
+			reloadShaders <- true
+		}
+	}()
+}
 
 func newTexture() {
 	width, height := decoder.Dimensions()

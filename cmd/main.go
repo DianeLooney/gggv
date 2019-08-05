@@ -3,15 +3,17 @@ package main
 import (
 	"fmt"
 	_ "image/png"
+	"io/ioutil"
 	"log"
-	"os"
 	"runtime"
 	"time"
 	"unsafe"
 
 	"github.com/dianelooney/gvd/internal/ffmpeg"
 	"github.com/dianelooney/gvd/internal/opengl"
+	"github.com/dianelooney/gvd/internal/playlist"
 	"github.com/fsnotify/fsnotify"
+	"gopkg.in/yaml.v2"
 
 	"github.com/giorgisio/goav/avutil"
 	"github.com/go-gl/gl/all-core/gl"
@@ -22,21 +24,25 @@ func init() {
 	runtime.LockOSThread()
 }
 
+var pl *playlist.Playlist
 var scene *opengl.Scene
 var decoder *ffmpeg.Decoder
 var frame *avutil.Frame
 
 func main() {
-	if len(os.Args) < 2 {
-		fmt.Println("Please provide a movie file")
-		os.Exit(1)
+	data, err := ioutil.ReadFile("playlist.yml")
+	if err != nil {
+		panic(err)
 	}
-	decoder, frame = ffmpeg.NewFileDecoder(os.Args[1])
+	pl = &playlist.Playlist{}
+	if err := yaml.Unmarshal(data, pl); err != nil {
+		panic(err)
+	}
+	decoder, frame = ffmpeg.NewFileDecoder(pl.Videos[0].Path)
+	go coordinatePlaylist()
 	scene = opengl.NewScene()
 
-	// Configure the vertex and fragment shaders
-	err := scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl")
-	if err != nil {
+	if err := scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
 		panic(err)
 	}
 
@@ -93,6 +99,16 @@ func watchShaders() {
 			reloadShaders <- true
 		}
 	}()
+}
+
+func coordinatePlaylist() {
+	for {
+		for _, pv := range pl.Videos {
+			fmt.Println("Loading file", pv.Path, pv.Duration)
+			decoder, frame = ffmpeg.NewFileDecoder(pv.Path)
+			time.Sleep(time.Duration(pv.Duration * float64(time.Second)))
+		}
+	}
 }
 
 func newTexture() {

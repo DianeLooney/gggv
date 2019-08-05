@@ -20,9 +20,6 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const windowWidth = 800
-const windowHeight = 600
-
 func init() {
 	// GLFW event handling must run on the main OS thread
 	runtime.LockOSThread()
@@ -38,30 +35,7 @@ func main() {
 		os.Exit(1)
 	}
 	decoder, frame = ffmpeg.NewFileDecoder(os.Args[1])
-
-	if err := glfw.Init(); err != nil {
-		log.Fatalln("failed to initialize glfw:", err)
-	}
-	defer glfw.Terminate()
-
-	glfw.WindowHint(glfw.Resizable, glfw.False)
-	glfw.WindowHint(glfw.ContextVersionMajor, 4)
-	glfw.WindowHint(glfw.ContextVersionMinor, 1)
-	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
-	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-	window, err := glfw.CreateWindow(windowWidth, windowHeight, "Cube", nil, nil)
-	if err != nil {
-		panic(err)
-	}
-	window.MakeContextCurrent()
-
-	// Initialize Glow
-	if err := gl.Init(); err != nil {
-		panic(err)
-	}
-
-	version := gl.GoStr(gl.GetString(gl.VERSION))
-	fmt.Println("OpenGL version", version)
+	scene = opengl.NewScene()
 
 	// Configure the vertex and fragment shaders
 	program, err := newProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl")
@@ -114,7 +88,7 @@ func main() {
 	decoder.NextFrame()
 	newTexture()
 
-	for !window.ShouldClose() {
+	for !scene.Window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		// Render
@@ -142,7 +116,7 @@ func main() {
 		gl.DrawArrays(gl.TRIANGLES, 0, 1*2*3)
 
 		// Maintenance
-		window.SwapBuffers()
+		scene.Window.SwapBuffers()
 		glfw.PollEvents()
 	}
 }

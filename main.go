@@ -12,6 +12,8 @@ import (
 	"unsafe"
 
 	"github.com/dianelooney/gvd/internal/ffmpeg"
+	"github.com/dianelooney/gvd/internal/opengl"
+
 	"github.com/giorgisio/goav/avutil"
 	"github.com/go-gl/gl/all-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
@@ -26,6 +28,7 @@ func init() {
 	runtime.LockOSThread()
 }
 
+var scene *opengl.Scene
 var decoder *ffmpeg.Decoder
 var frame *avutil.Frame
 

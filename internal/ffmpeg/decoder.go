@@ -117,6 +117,7 @@ func (d *Decoder) Begin(fname string) {
 		}
 	}
 }
+
 func (d *Decoder) readFrame() (ok bool) {
 	if d.packet.StreamIndex() != d.videoStreamNum {
 		return false
@@ -151,6 +152,7 @@ func (d *Decoder) readFrame() (ok bool) {
 
 	return false
 }
+
 func (d *Decoder) NextFrame() {
 	for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
 		// Is this a packet from the video stream?

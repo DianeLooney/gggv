@@ -1,5 +1,5 @@
 videos:
 - path: sample.mp4
-  duration: 20
+  duration: 0.2
 - path: sample2.mp4
-  duration: 20
+  duration: 0.2

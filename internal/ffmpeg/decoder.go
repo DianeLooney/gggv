@@ -3,7 +3,6 @@ package ffmpeg
 import (
 	"fmt"
 	"os"
-	"runtime"
 	"unsafe"
 
 	"github.com/giorgisio/goav/avcodec"
@@ -166,7 +165,8 @@ func (d *Decoder) NextFrame() {
 	}
 }
 
-func finalizeDecoder(d *Decoder) {
+func (d *Decoder) Dealloc() {
+	fmt.Println("Finalizing decoder")
 	d.packet.AvFreePacket()
 	// Free the RGB image
 	avutil.AvFree(d.buffer)
@@ -185,7 +185,6 @@ func finalizeDecoder(d *Decoder) {
 
 func NewFileDecoder(fname string) (d *Decoder, frame *avutil.Frame) {
 	d = &Decoder{}
-	runtime.SetFinalizer(d, finalizeDecoder)
 	d.Begin(fname)
 
 	return d, d.pFrameRGB

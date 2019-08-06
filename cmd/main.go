@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"runtime"
+	"sync"
 	"time"
 	"unsafe"
 
@@ -27,6 +28,7 @@ func init() {
 
 var pl *playlist.Playlist
 var scene *opengl.Scene
+var mtx sync.Mutex
 var decoder *ffmpeg.Decoder
 var frame *avutil.Frame
 
@@ -66,11 +68,13 @@ func main() {
 		default:
 		}
 		if nextFrame.Before(time.Now()) {
+			mtx.Lock()
 			for nextFrame.Before(time.Now()) {
 				decoder.NextFrame()
 				nextFrame = nextFrame.Add(42 * time.Millisecond)
 			}
 			newTexture()
+			mtx.Unlock()
 		}
 		if err != nil {
 			log.Fatalln(err)
@@ -105,7 +109,13 @@ func coordinatePlaylist() {
 	for {
 		for _, pv := range pl.Videos {
 			fmt.Println("Loading file", pv.Path, pv.Duration)
+			dealloc := decoder
+			mtx.Lock()
 			decoder, frame = ffmpeg.NewFileDecoder(pv.Path)
+			mtx.Unlock()
+			if dealloc != nil {
+				dealloc.Dealloc()
+			}
 			time.Sleep(time.Duration(pv.Duration * float64(time.Second)))
 		}
 	}
@@ -117,17 +127,11 @@ func newTexture() {
 	var img []uint8
 	for y := 0; y < height; y++ {
 		data0 := avutil.Data(frame)[0]
-		buf := make([]byte, width*4)
+		buf := make([]byte, width*3)
 		startPos := uintptr(unsafe.Pointer(data0)) + uintptr(y)*uintptr(avutil.Linesize(frame)[0])
-		j := 0
-		for i := 0; i < width*4; i++ {
-			if i%4 == 3 {
-				buf[i] = 255
-			} else {
-				element := *(*uint8)(unsafe.Pointer(startPos + uintptr(j)))
-				buf[i] = element
-				j++
-			}
+		for i := 0; i < width*3; i++ {
+			element := *(*uint8)(unsafe.Pointer(startPos + uintptr(i)))
+			buf[i] = element
 		}
 		img = append(img, buf...)
 	}
@@ -153,7 +157,7 @@ func newTexture() {
 		int32(width),
 		int32(height),
 		0,
-		gl.RGBA,
+		gl.RGB,
 		gl.UNSIGNED_BYTE,
 		gl.Ptr(&img[0]))
 }

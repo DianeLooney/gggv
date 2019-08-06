@@ -9,6 +9,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/dianelooney/gvd/filters"
 	"github.com/dianelooney/gvd/internal/ffmpeg"
 	"github.com/dianelooney/gvd/internal/opengl"
 	"github.com/dianelooney/gvd/internal/playlist"
@@ -76,7 +77,6 @@ func main() {
 		}
 
 		scene.Draw()
-
 	}
 }
 
@@ -117,13 +117,26 @@ func newTexture() {
 	var img []uint8
 	for y := 0; y < height; y++ {
 		data0 := avutil.Data(frame)[0]
-		buf := make([]byte, width*3)
+		buf := make([]byte, width*4)
 		startPos := uintptr(unsafe.Pointer(data0)) + uintptr(y)*uintptr(avutil.Linesize(frame)[0])
-		for i := 0; i < width*3; i++ {
-			element := *(*uint8)(unsafe.Pointer(startPos + uintptr(i)))
-			buf[i] = element
+		j := 0
+		for i := 0; i < width*4; i++ {
+			if i%4 == 3 {
+				buf[i] = 255
+			} else {
+				element := *(*uint8)(unsafe.Pointer(startPos + uintptr(j)))
+				buf[i] = element
+				j++
+			}
 		}
 		img = append(img, buf...)
+	}
+	filters := []filters.Interface{
+		// invert.New(),
+		// onlygreen.New(),
+	}
+	for _, f := range filters {
+		f.Apply(img)
 	}
 
 	gl.GenTextures(1, &scene.Texture)
@@ -140,7 +153,7 @@ func newTexture() {
 		int32(width),
 		int32(height),
 		0,
-		gl.RGB,
+		gl.RGBA,
 		gl.UNSIGNED_BYTE,
 		gl.Ptr(&img[0]))
 }

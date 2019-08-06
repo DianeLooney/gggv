@@ -1,9 +1,13 @@
 build: off
 
+
 clone_folder: c:\go\gvd
 
 environment:
+  CYG_MIRROR: http://cygwin.mirror.constant.com
+  CYG_PACKAGES: gcc-core
   GO111MODULES: yes
+
 
 stack: go 1.11
 

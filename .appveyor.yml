@@ -24,5 +24,6 @@ environment:
 stack: go 1.11	
 
 test_script:
+- set PATH=C:\msys64\usr\bin;%PATH%
 - bash -lc "pacman --noconfirm -S ffmpeg"
 - go build cmd/main.go

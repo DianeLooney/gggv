@@ -5,11 +5,16 @@ import (
 	"io/ioutil"
 	"log"
 	"strings"
+	"time"
 
 	"github.com/go-gl/gl/all-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )
+
+const NANOSTOSEC = 1000000000
+
+var tStart = time.Now()
 
 const windowWidth = 800
 const windowHeight = 600
@@ -66,6 +71,7 @@ type Scene struct {
 	Model        mgl32.Mat4
 	Projection   mgl32.Mat4
 	ModelUniform int32
+	TimeUniform  int32
 
 	Texture uint32
 }
@@ -120,6 +126,7 @@ func (s *Scene) LoadProgram(vertShaderLocation, fragShaderFlocation string) erro
 	textureUniform := gl.GetUniformLocation(s.program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
 	gl.BindFragDataLocation(s.program, 0, gl.Str("outputColor\x00"))
+	s.TimeUniform = gl.GetUniformLocation(s.program, gl.Str("time\x00"))
 
 	return nil
 }
@@ -172,6 +179,9 @@ func (s *Scene) Draw() {
 	gl.UseProgram(s.program)
 	gl.UniformMatrix4fv(s.ModelUniform, 1, false, &s.Model[0])
 
+	t := float32(time.Since(tStart)) / NANOSTOSEC
+	fmt.Println(t)
+	gl.Uniform1f(s.TimeUniform, t)
 	gl.BindVertexArray(s.vao)
 
 	gl.ActiveTexture(gl.TEXTURE0)

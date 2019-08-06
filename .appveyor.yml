@@ -1,0 +1,28 @@
+build: off	
+
+clone_folder: c:\go\gvd	
+
+environment:	
+  global:	
+    CYG_MIRROR: http://cygwin.mirror.constant.com	
+    CYG_PACKAGES: gcc-core,mingw64-i686-gcc-core,mingw64-x86_64-gcc-core,pkg-config	
+    GO111MODULES: yes	
+    GOPATH: C:\gopath	
+    CC: gcc.exe	
+matrix:	
+- GETH_ARCH: amd64	
+    MSYS2_ARCH: x86_64	
+    MSYS2_BITS: 64	
+    MSYSTEM: MINGW64	
+    PATH: C:\msys64\mingw64\bin\;C:\Program Files (x86)\NSIS\;%PATH%	
+- GETH_ARCH: 386	
+    MSYS2_ARCH: i686	
+    MSYS2_BITS: 32	
+    MSYSTEM: MINGW32	
+    PATH: C:\msys64\mingw32\bin\;C:\Program Files (x86)\NSIS\;%PATH%	
+
+stack: go 1.11	
+
+test_script:
+- bash -lc "pacman --noconfirm -S ffmpeg"
+- go build cmd/main.go

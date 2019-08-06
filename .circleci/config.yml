@@ -10,7 +10,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: Build Docker image
-          command: docker build -t $IMAGE_NAME:latest build/gvd
+          command: docker build -t diane/gvd:latest -f build/gvd/Dockerfile .
       - run:
           name: Publish Docker Image to Docker Hub
           command: |

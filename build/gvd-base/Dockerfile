@@ -18,9 +18,3 @@ RUN cd ffmpeg && ./configure && make && make install
 # begin github.com/go-gl/gl
 RUN apt-get install -y libgl1-mesa-dev xorg-dev
 # end
-
-WORKDIR /go/src/app
-COPY . .
-ENV GO111MODULE=on
-RUN go get -d -v ./...
-RUN go build cmd/main.go

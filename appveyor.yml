@@ -5,7 +5,7 @@ clone_folder: c:\go\gvd
 
 environment:
   CYG_MIRROR: http://cygwin.mirror.constant.com
-  CYG_PACKAGES: gcc-core
+  CYG_PACKAGES: gcc-core,pkg-config
   GO111MODULES: yes
 
 

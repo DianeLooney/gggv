@@ -1,6 +1,6 @@
 version: 2
 jobs:
-  build:
+  publish-latest:
     environment:
       IMAGE_NAME: diane/gvd
     docker:
@@ -11,13 +11,6 @@ jobs:
       - run:
           name: Build Docker image
           command: docker build -t $IMAGE_NAME:latest .
-  publish-latest:
-    environment:
-      IMAGE_NAME: diane/gvd
-    docker:
-      - image: circleci/buildpack-deps:stretch
-    steps:
-      - setup_remote_docker
       - run:
           name: Publish Docker Image to Docker Hub
           command: |
@@ -27,13 +20,7 @@ workflows:
   version: 2
   build-master:
     jobs:
-      - build:
-          filters:
-            branches:
-              only: master
       - publish-latest:
-          requires:
-            - build
           filters:
             branches:
               only: master

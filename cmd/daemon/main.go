@@ -34,6 +34,8 @@ func main() {
 		panic(err)
 	}
 
+	dmn.Scene.SetLayer("default", 0, "default")
+
 	dmn.Scene.BindBuffers()
 	dmn.Scene.TextureInit("default")
 	dmn.AddSource("default", "sample.mp4")

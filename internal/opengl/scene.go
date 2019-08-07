@@ -30,6 +30,7 @@ func NewScene() *Scene {
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
 	s := &Scene{
+		layers:   make(map[string]Layer),
 		programs: make(map[string]uint32),
 		textures: make(map[string]uint32),
 	}
@@ -67,6 +68,7 @@ type Scene struct {
 	Window *glfw.Window
 
 	vao uint32
+	vbo uint32
 
 	Camera       mgl32.Mat4
 	Model        mgl32.Mat4
@@ -74,8 +76,21 @@ type Scene struct {
 	ModelUniform int32
 	TimeUniform  int32
 
+	layers   map[string]Layer
 	programs map[string]uint32
 	textures map[string]uint32
+}
+
+type Layer struct {
+	Depth   float32
+	Texture string
+}
+
+func (s *Scene) SetLayer(name string, depth float32, source string) {
+	s.layers[name] = Layer{
+		Depth:   depth,
+		Texture: source,
+	}
 }
 
 func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string) error {
@@ -139,10 +154,8 @@ func (s *Scene) BindBuffers() {
 	gl.GenVertexArrays(1, &s.vao)
 	gl.BindVertexArray(s.vao)
 
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
-	gl.BufferData(gl.ARRAY_BUFFER, len(cubeVertices)*4, gl.Ptr(cubeVertices), gl.STATIC_DRAW)
+	gl.GenBuffers(1, &s.vbo)
+	gl.BindBuffer(gl.ARRAY_BUFFER, s.vbo)
 
 	vertAttrib := uint32(gl.GetAttribLocation(s.programs["default"], gl.Str("vert\x00")))
 	gl.EnableVertexAttribArray(vertAttrib)
@@ -218,10 +231,14 @@ func (s *Scene) Draw() {
 	gl.Uniform1f(s.TimeUniform, t)
 	gl.BindVertexArray(s.vao)
 
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, s.textures["default"])
+	for _, l := range s.layers {
+		gl.BufferData(gl.ARRAY_BUFFER, len(cubeVertices)*4, gl.Ptr(cubeVertices), gl.STATIC_DRAW)
 
-	gl.DrawArrays(gl.TRIANGLES, 0, 1*2*3)
+		gl.ActiveTexture(gl.TEXTURE0)
+		gl.BindTexture(gl.TEXTURE_2D, s.textures[l.Texture])
+
+		gl.DrawArrays(gl.TRIANGLES, 0, 1*2*3)
+	}
 
 	// Maintenance
 	s.Window.SwapBuffers()

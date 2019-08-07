@@ -33,7 +33,7 @@ func (d *D) DrawLoop() {
 	for !d.Scene.Window.ShouldClose() {
 		v := atomic.LoadInt32(&d.reloadShaders)
 		if v != 0 {
-			if err := d.Scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
+			if err := d.Scene.LoadProgram("default", "shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
 				fmt.Fprintf(os.Stderr, "Error while loading shaders: %v\n", err)
 			}
 			atomic.AddInt32(&d.reloadShaders, -v)

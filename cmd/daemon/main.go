@@ -51,11 +51,11 @@ func main() {
 	}
 
 	scene.BindBuffers()
-	scene.TextureInit()
+	scene.TextureInit("default")
 	{
 		img := decoder.NextFrame()
 		width, height := decoder.Dimensions()
-		filterAndRebind(width, height, img)
+		filterAndBind("default", width, height, img)
 	}
 
 	go watchShaders()
@@ -77,7 +77,7 @@ func main() {
 				nextFrame = nextFrame.Add(42 * time.Millisecond)
 			}
 			width, height := decoder.Dimensions()
-			filterAndRebind(width, height, img)
+			filterAndBind("default", width, height, img)
 			mtx.Unlock()
 		}
 		if err != nil {
@@ -125,7 +125,7 @@ func coordinatePlaylist() {
 	}
 }
 
-func filterAndRebind(width, height int, img []uint8) {
+func filterAndBind(name string, width, height int, img []uint8) {
 	filters := []filters.Interface{
 		invert.New(),
 		onlygreen.New(),
@@ -134,5 +134,5 @@ func filterAndRebind(width, height int, img []uint8) {
 		f.Apply(img)
 	}
 
-	scene.RebindTexture(width, height, img)
+	scene.RebindTexture(name, width, height, img)
 }

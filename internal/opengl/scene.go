@@ -29,7 +29,9 @@ func NewScene() *Scene {
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
-	s := &Scene{}
+	s := &Scene{
+		textures: make(map[string]uint32),
+	}
 
 	var err error
 	s.Window, err = glfw.CreateWindow(windowWidth, windowHeight, "Cube", nil, nil)
@@ -73,7 +75,7 @@ type Scene struct {
 	ModelUniform int32
 	TimeUniform  int32
 
-	texture uint32
+	textures map[string]uint32
 }
 
 func (s *Scene) LoadProgram(vertShaderLocation, fragShaderFlocation string) error {
@@ -150,17 +152,26 @@ func (s *Scene) BindBuffers() {
 	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
 }
 
-func (s *Scene) TextureInit() {
-	gl.GenTextures(1, &s.texture)
+func (s *Scene) TextureInit(name string) {
+	var t uint32
+	gl.GenTextures(1, &t)
 	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, s.texture)
+	gl.BindTexture(gl.TEXTURE_2D, t)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+	s.textures[name] = t
 }
 
-func (s *Scene) RebindTexture(width, height int, img []uint8) {
+func (s *Scene) RebindTexture(name string, width, height int, img []uint8) {
+	t, ok := s.textures[name]
+	if !ok {
+		fmt.Printf("Unrecognized texture name %v\n", name)
+		return
+	}
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, t)
 	gl.TexImage2D(
 		gl.TEXTURE_2D,
 		0,
@@ -207,7 +218,7 @@ func (s *Scene) Draw() {
 	gl.BindVertexArray(s.vao)
 
 	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, s.texture)
+	gl.BindTexture(gl.TEXTURE_2D, s.textures["default"])
 
 	gl.DrawArrays(gl.TRIANGLES, 0, 1*2*3)
 

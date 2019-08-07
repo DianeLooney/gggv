@@ -5,6 +5,7 @@ import (
 	_ "image/png"
 	"io/ioutil"
 	"log"
+	"os"
 	"runtime"
 	"sync"
 	"time"
@@ -60,11 +61,9 @@ func main() {
 		select {
 		case <-reloadShaders:
 			fmt.Println("Reloading shaders")
-			err := scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl")
-			if err != nil {
-				panic(err)
+			if err := scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
+				fmt.Fprintf(os.Stderr, "Error while loading shaders: %v\n", err)
 			}
-
 		default:
 		}
 		if nextFrame.Before(time.Now()) {
@@ -122,6 +121,8 @@ func coordinatePlaylist() {
 }
 
 func newTexture() {
+	scene.TextureInit()
+
 	width, height := decoder.Dimensions()
 
 	var img []uint8
@@ -143,13 +144,6 @@ func newTexture() {
 		f.Apply(img)
 	}
 
-	gl.GenTextures(1, &scene.Texture)
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, scene.Texture)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 	gl.TexImage2D(
 		gl.TEXTURE_2D,
 		0,

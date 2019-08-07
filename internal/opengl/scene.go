@@ -73,7 +73,7 @@ type Scene struct {
 	ModelUniform int32
 	TimeUniform  int32
 
-	Texture uint32
+	texture uint32
 }
 
 func (s *Scene) LoadProgram(vertShaderLocation, fragShaderFlocation string) error {
@@ -150,6 +150,16 @@ func (s *Scene) BindBuffers() {
 	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
 }
 
+func (s *Scene) TextureInit() {
+	gl.GenTextures(1, &s.texture)
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, s.texture)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+}
+
 func compileShader(source string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 
@@ -180,12 +190,11 @@ func (s *Scene) Draw() {
 	gl.UniformMatrix4fv(s.ModelUniform, 1, false, &s.Model[0])
 
 	t := float32(time.Since(tStart)) / NANOSTOSEC
-	fmt.Println(t)
 	gl.Uniform1f(s.TimeUniform, t)
 	gl.BindVertexArray(s.vao)
 
 	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, s.Texture)
+	gl.BindTexture(gl.TEXTURE_2D, s.texture)
 
 	gl.DrawArrays(gl.TRIANGLES, 0, 1*2*3)
 

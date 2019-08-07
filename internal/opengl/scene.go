@@ -30,6 +30,7 @@ func NewScene() *Scene {
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
 	s := &Scene{
+		programs: make(map[string]uint32),
 		textures: make(map[string]uint32),
 	}
 
@@ -65,8 +66,6 @@ func finalizeScene(s *Scene) {
 type Scene struct {
 	Window *glfw.Window
 
-	program uint32
-
 	vao uint32
 
 	Camera       mgl32.Mat4
@@ -75,10 +74,11 @@ type Scene struct {
 	ModelUniform int32
 	TimeUniform  int32
 
+	programs map[string]uint32
 	textures map[string]uint32
 }
 
-func (s *Scene) LoadProgram(vertShaderLocation, fragShaderFlocation string) error {
+func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string) error {
 	data, err := ioutil.ReadFile(vertShaderLocation)
 	if err != nil {
 		return err
@@ -96,20 +96,21 @@ func (s *Scene) LoadProgram(vertShaderLocation, fragShaderFlocation string) erro
 		return err
 	}
 
-	s.program = gl.CreateProgram()
+	program := gl.CreateProgram()
+	s.programs[name] = program
 
-	gl.AttachShader(s.program, vertexShader)
-	gl.AttachShader(s.program, fragmentShader)
-	gl.LinkProgram(s.program)
+	gl.AttachShader(program, vertexShader)
+	gl.AttachShader(program, fragmentShader)
+	gl.LinkProgram(program)
 
 	var status int32
-	gl.GetProgramiv(s.program, gl.LINK_STATUS, &status)
+	gl.GetProgramiv(program, gl.LINK_STATUS, &status)
 	if status == gl.FALSE {
 		var logLength int32
-		gl.GetProgramiv(s.program, gl.INFO_LOG_LENGTH, &logLength)
+		gl.GetProgramiv(program, gl.INFO_LOG_LENGTH, &logLength)
 
 		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetProgramInfoLog(s.program, logLength, nil, gl.Str(log))
+		gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
 
 		return fmt.Errorf("failed to link program: %v", log)
 	}
@@ -117,18 +118,18 @@ func (s *Scene) LoadProgram(vertShaderLocation, fragShaderFlocation string) erro
 	gl.DeleteShader(vertexShader)
 	gl.DeleteShader(fragmentShader)
 
-	gl.UseProgram(s.program)
+	gl.UseProgram(program)
 
-	projectionUniform := gl.GetUniformLocation(s.program, gl.Str("projection\x00"))
+	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &s.Projection[0])
-	cameraUniform := gl.GetUniformLocation(s.program, gl.Str("camera\x00"))
+	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
 	gl.UniformMatrix4fv(cameraUniform, 1, false, &s.Camera[0])
-	s.ModelUniform = gl.GetUniformLocation(s.program, gl.Str("model\x00"))
+	s.ModelUniform = gl.GetUniformLocation(program, gl.Str("model\x00"))
 	gl.UniformMatrix4fv(s.ModelUniform, 1, false, &s.Model[0])
-	textureUniform := gl.GetUniformLocation(s.program, gl.Str("tex\x00"))
+	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
-	gl.BindFragDataLocation(s.program, 0, gl.Str("outputColor\x00"))
-	s.TimeUniform = gl.GetUniformLocation(s.program, gl.Str("time\x00"))
+	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
+	s.TimeUniform = gl.GetUniformLocation(program, gl.Str("time\x00"))
 
 	return nil
 }
@@ -143,11 +144,11 @@ func (s *Scene) BindBuffers() {
 	gl.BindBuffer(gl.ARRAY_BUFFER, vbo)
 	gl.BufferData(gl.ARRAY_BUFFER, len(cubeVertices)*4, gl.Ptr(cubeVertices), gl.STATIC_DRAW)
 
-	vertAttrib := uint32(gl.GetAttribLocation(s.program, gl.Str("vert\x00")))
+	vertAttrib := uint32(gl.GetAttribLocation(s.programs["default"], gl.Str("vert\x00")))
 	gl.EnableVertexAttribArray(vertAttrib)
 	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, false, 5*4, gl.PtrOffset(0))
 
-	texCoordAttrib := uint32(gl.GetAttribLocation(s.program, gl.Str("vertTexCoord\x00")))
+	texCoordAttrib := uint32(gl.GetAttribLocation(s.programs["default"], gl.Str("vertTexCoord\x00")))
 	gl.EnableVertexAttribArray(texCoordAttrib)
 	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
 }
@@ -210,7 +211,7 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 func (s *Scene) Draw() {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-	gl.UseProgram(s.program)
+	gl.UseProgram(s.programs["default"])
 	gl.UniformMatrix4fv(s.ModelUniform, 1, false, &s.Model[0])
 
 	t := float32(time.Since(tStart)) / NANOSTOSEC

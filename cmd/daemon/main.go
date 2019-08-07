@@ -30,7 +30,7 @@ func main() {
 	//
 	// into the console
 
-	if err := dmn.Scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
+	if err := dmn.Scene.LoadProgram("default", "shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
 		panic(err)
 	}
 
@@ -39,7 +39,6 @@ func main() {
 	dmn.AddSource("default", "sample.mp4")
 
 	go watchShaders()
-
 	go listenForInput()
 
 	dmn.DrawLoop()

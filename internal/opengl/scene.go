@@ -160,6 +160,19 @@ func (s *Scene) TextureInit() {
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
 }
 
+func (s *Scene) RebindTexture(width, height int, img []uint8) {
+	gl.TexImage2D(
+		gl.TEXTURE_2D,
+		0,
+		gl.RGBA,
+		int32(width),
+		int32(height),
+		0,
+		gl.RGB,
+		gl.UNSIGNED_BYTE,
+		gl.Ptr(&img[0]))
+}
+
 func compileShader(source string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 

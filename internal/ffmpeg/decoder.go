@@ -152,17 +152,29 @@ func (d *Decoder) readFrame() (ok bool) {
 	return false
 }
 
-func (d *Decoder) NextFrame() {
+func (d *Decoder) NextFrame() (rgb []uint8) {
 	for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
 		// Is this a packet from the video stream?
 		ok := d.readFrame()
 		if ok {
+			width, height := d.Dimensions()
+			for y := 0; y < height; y++ {
+				data0 := avutil.Data(d.pFrameRGB)[0]
+				buf := make([]byte, width*3)
+				startPos := uintptr(unsafe.Pointer(data0)) + uintptr(y)*uintptr(avutil.Linesize(d.pFrameRGB)[0])
+				for i := 0; i < width*3; i++ {
+					element := *(*uint8)(unsafe.Pointer(startPos + uintptr(i)))
+					buf[i] = element
+				}
+				rgb = append(rgb, buf...)
+			}
 			return
 		}
 
 		// Free the packet that was allocated by av_read_frame
 		d.packet.AvFreePacket()
 	}
+	return
 }
 
 func (d *Decoder) Dealloc() {

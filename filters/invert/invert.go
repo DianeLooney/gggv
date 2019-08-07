@@ -10,8 +10,6 @@ type filter struct{}
 
 func (*filter) Apply(img []uint8) {
 	for i := range img {
-		if i%4 != 3 {
-			img[i] = 255 - img[i]
-		}
+		img[i] = 255 - img[i]
 	}
 }

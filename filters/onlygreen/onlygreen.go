@@ -12,7 +12,7 @@ type filter struct{}
 
 func (*filter) Apply(img []uint8) {
 	for i := range img {
-		if i%4 == 1 {
+		if i%3 != 1 {
 			img[i] = 0
 		}
 	}

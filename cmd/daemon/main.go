@@ -9,9 +9,10 @@ import (
 	"runtime"
 	"sync"
 	"time"
-	"unsafe"
 
 	"github.com/dianelooney/gvd/filters"
+	"github.com/dianelooney/gvd/filters/invert"
+	"github.com/dianelooney/gvd/filters/onlygreen"
 	"github.com/dianelooney/gvd/internal/ffmpeg"
 	"github.com/dianelooney/gvd/internal/opengl"
 	"github.com/dianelooney/gvd/internal/playlist"
@@ -19,7 +20,6 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/giorgisio/goav/avutil"
-	"github.com/go-gl/gl/all-core/gl"
 )
 
 func init() {
@@ -51,9 +51,12 @@ func main() {
 	}
 
 	scene.BindBuffers()
-
-	decoder.NextFrame()
-	newTexture()
+	scene.TextureInit()
+	{
+		img := decoder.NextFrame()
+		width, height := decoder.Dimensions()
+		filterAndRebind(width, height, img)
+	}
 
 	go watchShaders()
 
@@ -68,11 +71,13 @@ func main() {
 		}
 		if nextFrame.Before(time.Now()) {
 			mtx.Lock()
+			var img []uint8
 			for nextFrame.Before(time.Now()) {
-				decoder.NextFrame()
+				img = decoder.NextFrame()
 				nextFrame = nextFrame.Add(42 * time.Millisecond)
 			}
-			newTexture()
+			width, height := decoder.Dimensions()
+			filterAndRebind(width, height, img)
 			mtx.Unlock()
 		}
 		if err != nil {
@@ -120,38 +125,14 @@ func coordinatePlaylist() {
 	}
 }
 
-func newTexture() {
-	scene.TextureInit()
-
-	width, height := decoder.Dimensions()
-
-	var img []uint8
-	for y := 0; y < height; y++ {
-		data0 := avutil.Data(frame)[0]
-		buf := make([]byte, width*3)
-		startPos := uintptr(unsafe.Pointer(data0)) + uintptr(y)*uintptr(avutil.Linesize(frame)[0])
-		for i := 0; i < width*3; i++ {
-			element := *(*uint8)(unsafe.Pointer(startPos + uintptr(i)))
-			buf[i] = element
-		}
-		img = append(img, buf...)
-	}
+func filterAndRebind(width, height int, img []uint8) {
 	filters := []filters.Interface{
-		// invert.New(),
-		// onlygreen.New(),
+		invert.New(),
+		onlygreen.New(),
 	}
 	for _, f := range filters {
 		f.Apply(img)
 	}
 
-	gl.TexImage2D(
-		gl.TEXTURE_2D,
-		0,
-		gl.RGBA,
-		int32(width),
-		int32(height),
-		0,
-		gl.RGB,
-		gl.UNSIGNED_BYTE,
-		gl.Ptr(&img[0]))
+	scene.RebindTexture(width, height, img)
 }

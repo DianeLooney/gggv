@@ -12,6 +12,7 @@ import (
 	"github.com/dianelooney/gvd/filters"
 	"github.com/dianelooney/gvd/internal/ffmpeg"
 	"github.com/dianelooney/gvd/internal/opengl"
+	"github.com/dianelooney/gvd/pkg/daemon"
 	"github.com/fsnotify/fsnotify"
 
 	"github.com/giorgisio/goav/avutil"
@@ -22,12 +23,14 @@ func init() {
 	runtime.LockOSThread()
 }
 
-var scene *opengl.Scene
+var dmn *daemon.Daemon
+
 var mtx sync.Mutex
 var decoders = make(map[string]*ffmpeg.AsyncDecoder)
 var frame *avutil.Frame
 
 func main() {
+	dmn = &daemon.Daemon{}
 	decoders["default"] = ffmpeg.NewAsyncFileDecoder("sample.mp4")
 	decoders["swap"] = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
 	decoders["swap2"] = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
@@ -35,18 +38,18 @@ func main() {
 	decoders["swap4"] = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
 
 	go coordinatePlaylist()
-	scene = opengl.NewScene()
+	dmn.Scene = opengl.NewScene()
 
-	if err := scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
+	if err := dmn.Scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
 		panic(err)
 	}
 
-	scene.BindBuffers()
-	scene.TextureInit("default")
-	scene.TextureInit("swap")
-	scene.TextureInit("swap2")
-	scene.TextureInit("swap3")
-	scene.TextureInit("swap4")
+	dmn.Scene.BindBuffers()
+	dmn.Scene.TextureInit("default")
+	dmn.Scene.TextureInit("swap")
+	dmn.Scene.TextureInit("swap2")
+	dmn.Scene.TextureInit("swap3")
+	dmn.Scene.TextureInit("swap4")
 	{
 		for name, decoder := range decoders {
 			img := decoder.NextFrame()
@@ -57,11 +60,11 @@ func main() {
 
 	go watchShaders()
 
-	for !scene.Window.ShouldClose() {
+	for !dmn.Scene.Window.ShouldClose() {
 		select {
 		case <-reloadShaders:
 			fmt.Println("Reloading shaders")
-			if err := scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
+			if err := dmn.Scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
 				fmt.Fprintf(os.Stderr, "Error while loading shaders: %v\n", err)
 			}
 		default:
@@ -77,7 +80,7 @@ func main() {
 			mtx.Unlock()
 		}
 
-		scene.Draw()
+		dmn.Scene.Draw()
 	}
 }
 
@@ -120,5 +123,5 @@ func filterAndBind(name string, width, height int, img []uint8) {
 		f.Apply(img)
 	}
 
-	scene.RebindTexture(name, width, height, img)
+	dmn.Scene.RebindTexture(name, width, height, img)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"sort"
 	"strings"
 	"time"
 
@@ -53,6 +54,10 @@ func NewScene() *Scene {
 
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
+	gl.Disable(gl.CULL_FACE)
+	gl.Enable(gl.BLEND)
+	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
@@ -84,6 +89,18 @@ type Scene struct {
 type Layer struct {
 	Depth   float32
 	Texture string
+}
+
+type layers []Layer
+
+func (l layers) Less(i, j int) bool {
+	return l[i].Depth < l[j].Depth
+}
+func (l layers) Swap(i, j int) {
+	l[i], l[j] = l[j], l[i]
+}
+func (l layers) Len() int {
+	return len(l)
 }
 
 func (s *Scene) SetLayer(name string, depth float32, source string) {
@@ -231,8 +248,15 @@ func (s *Scene) Draw() {
 	gl.Uniform1f(s.TimeUniform, t)
 	gl.BindVertexArray(s.vao)
 
+	var ls []Layer
 	for _, l := range s.layers {
-		gl.BufferData(gl.ARRAY_BUFFER, len(cubeVertices)*4, gl.Ptr(cubeVertices), gl.STATIC_DRAW)
+		ls = append(ls, l)
+	}
+	sort.Sort(layers(ls))
+
+	for _, l := range ls {
+		v := verts(l.Depth)
+		gl.BufferData(gl.ARRAY_BUFFER, len(v)*4, gl.Ptr(v), gl.STATIC_DRAW)
 
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, s.textures[l.Texture])
@@ -245,12 +269,13 @@ func (s *Scene) Draw() {
 	glfw.PollEvents()
 }
 
-var cubeVertices = []float32{
-	// Front
-	-1.0, -1.0, 1.0, 0.0, 1.0,
-	1.0, -1.0, 1.0, 1.0, 1.0,
-	-1.0, 1.0, 1.0, 0.0, 0.0,
-	1.0, -1.0, 1.0, 1.0, 1.0,
-	1.0, 1.0, 1.0, 1.0, 0.0,
-	-1.0, 1.0, 1.0, 0.0, 0.0,
+func verts(depth float32) []float32 {
+	return []float32{
+		-1.0, -1.0, depth, 0.0, 1.0,
+		1.0, -1.0, depth, 1.0, 1.0,
+		-1.0, 1.0, depth, 0.0, 0.0,
+		1.0, -1.0, depth, 1.0, 1.0,
+		1.0, 1.0, depth, 1.0, 0.0,
+		-1.0, 1.0, depth, 0.0, 0.0,
+	}
 }

@@ -151,11 +151,9 @@ func (d *Decoder) NextFrame() (rgb []uint8) {
 				}
 				rgb = append(rgb, buf...)
 			}
+			d.packet.AvFreePacket()
 			return
 		}
-
-		// Free the packet that was allocated by av_read_frame
-		d.packet.AvFreePacket()
 	}
 	return
 }

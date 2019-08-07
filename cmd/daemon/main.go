@@ -66,11 +66,9 @@ func main() {
 		if nextFrame.Before(time.Now()) {
 			mtx.Lock()
 			var img1, img2 []uint8
-			for nextFrame.Before(time.Now()) {
-				nextFrame = nextFrame.Add(42 * time.Millisecond)
-				img1 = decoder1.NextFrame()
-				img2 = decoder2.NextFrame()
-			}
+			nextFrame = nextFrame.Add(42 * time.Millisecond)
+			img1 = decoder1.NextFrame()
+			img2 = decoder2.NextFrame()
 
 			width, height := decoder1.Dimensions()
 			filterAndBind("default", width, height, img1)

@@ -1,0 +1,3 @@
+```
+add source {name} {path};
+```

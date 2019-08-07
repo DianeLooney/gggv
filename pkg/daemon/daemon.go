@@ -77,7 +77,10 @@ func (d *D) AddSource(name, path string) (err error) {
 	if dec, ok := d.decoders[name]; ok {
 		dec.Dealloc()
 	}
-
-	d.decoders[name] = ffmpeg.NewAsyncFileDecoder(path)
-	return
+	dec, err := ffmpeg.NewAsyncFileDecoder(path)
+	if err != nil {
+		return err
+	}
+	d.decoders[name] = dec
+	return nil
 }

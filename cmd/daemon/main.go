@@ -1,9 +1,14 @@
 package main
 
 import (
+	"bufio"
+	"fmt"
 	_ "image/png"
 	"log"
+	"os"
 	"runtime"
+
+	"github.com/dianelooney/gvd/pkg/gvdl"
 
 	"github.com/dianelooney/gvd/pkg/daemon"
 	"github.com/fsnotify/fsnotify"
@@ -19,11 +24,11 @@ var dmn *daemon.D
 func main() {
 	dmn = daemon.New()
 
-	dmn.AddSource("default", "sample.mp4")
-	dmn.AddSource("swap", "sample2.mp4")
-	dmn.AddSource("swap2", "sample2.mp4")
-	dmn.AddSource("swap3", "sample2.mp4")
-	dmn.AddSource("swap4", "sample2.mp4")
+	// startup, type:
+	//
+	// add source default "sample2.mp4"
+	//
+	// into the console
 
 	if err := dmn.Scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
 		panic(err)
@@ -31,14 +36,27 @@ func main() {
 
 	dmn.Scene.BindBuffers()
 	dmn.Scene.TextureInit("default")
-	dmn.Scene.TextureInit("swap")
-	dmn.Scene.TextureInit("swap2")
-	dmn.Scene.TextureInit("swap3")
-	dmn.Scene.TextureInit("swap4")
 
 	go watchShaders()
 
+	go listenForInput()
+
 	dmn.DrawLoop()
+}
+
+func listenForInput() {
+	r := bufio.NewReader(os.Stdin)
+	for {
+		line, _, err := r.ReadLine()
+		if err != nil {
+			fmt.Println("Error reading input:", err)
+			continue
+		}
+		err = gvdl.Exec(line, dmn)
+		if err != nil {
+			fmt.Println("Error executing line:", err)
+		}
+	}
 }
 
 func watchShaders() {

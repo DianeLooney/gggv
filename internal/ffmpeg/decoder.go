@@ -27,11 +27,10 @@ func (d *Decoder) Dimensions() (width, height int) {
 	return d.pCodecCtx.Width(), d.pCodecCtx.Height()
 }
 
-func (d *Decoder) Begin(fname string) {
+func (d *Decoder) Begin(fname string) (err error) {
 	d.pFormatContext = avformat.AvformatAllocContext()
 	if avformat.AvformatOpenInput(&d.pFormatContext, fname, nil, nil) != 0 {
-		fmt.Printf("Unable to open file %s\n", os.Args[1])
-		os.Exit(1)
+		return fmt.Errorf("unable to open file %s", fname)
 	}
 
 	if d.pFormatContext.AvformatFindStreamInfo(nil) < 0 {
@@ -93,12 +92,13 @@ func (d *Decoder) Begin(fname string) {
 			d.videoStreamNum = i
 			d.packet = avcodec.AvPacketAlloc()
 
-			return
+			return nil
 		default:
 			fmt.Println("Didn't find a video stream")
 			os.Exit(1)
 		}
 	}
+	return nil
 }
 
 func (d *Decoder) readFrame() (ok bool) {
@@ -178,19 +178,24 @@ func (d *Decoder) Dealloc() {
 	d.pFormatContext.AvformatCloseInput()
 }
 
-func NewFileDecoder(fname string) (d *Decoder, frame *avutil.Frame) {
+func NewFileDecoder(fname string) (d *Decoder, err error) {
 	d = &Decoder{}
-	d.Begin(fname)
-
-	return d, d.pFrameRGB
+	err = d.Begin(fname)
+	if err != nil {
+		return nil, err
+	}
+	return
 }
 
-func NewAsyncFileDecoder(fname string) (a *AsyncDecoder) {
+func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 	a = &AsyncDecoder{
 		d:         &Decoder{},
 		nextFrame: make(chan bool),
 	}
-	a.Begin(fname)
+	err = a.Begin(fname)
+	if err != nil {
+		return nil, err
+	}
 
 	a.rgb = a.d.NextFrame()
 	go func() {
@@ -202,9 +207,11 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder) {
 			}
 			a.rgb = rgb
 		}
+
+		a.d.Dealloc()
 	}()
 
-	return a
+	return a, nil
 }
 
 type AsyncDecoder struct {
@@ -217,8 +224,8 @@ func (a *AsyncDecoder) Dimensions() (width, height int) {
 	return a.d.Dimensions()
 }
 
-func (a *AsyncDecoder) Begin(fname string) {
-	a.d.Begin(fname)
+func (a *AsyncDecoder) Begin(fname string) (err error) {
+	return a.d.Begin(fname)
 }
 
 func (a *AsyncDecoder) NextFrame() (rgb []uint8) {
@@ -228,5 +235,5 @@ func (a *AsyncDecoder) NextFrame() (rgb []uint8) {
 }
 
 func (a *AsyncDecoder) Dealloc() {
-	a.d.Dealloc()
+	close(a.nextFrame)
 }

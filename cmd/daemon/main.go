@@ -10,8 +10,6 @@ import (
 	"time"
 
 	"github.com/dianelooney/gvd/filters"
-	"github.com/dianelooney/gvd/filters/invert"
-	"github.com/dianelooney/gvd/filters/onlygreen"
 	"github.com/dianelooney/gvd/internal/ffmpeg"
 	"github.com/dianelooney/gvd/internal/opengl"
 	"github.com/fsnotify/fsnotify"
@@ -26,12 +24,13 @@ func init() {
 
 var scene *opengl.Scene
 var mtx sync.Mutex
-var decoder1 *ffmpeg.Decoder
-var decoder2 *ffmpeg.Decoder
+var decoder1 *ffmpeg.AsyncDecoder
+var decoder2 *ffmpeg.AsyncDecoder
 var frame *avutil.Frame
 
 func main() {
-	decoder1, _ = ffmpeg.NewFileDecoder("sample.mp4")
+	decoder1 = ffmpeg.NewAsyncFileDecoder("sample.mp4")
+	decoder2 = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
 
 	go coordinatePlaylist()
 	scene = opengl.NewScene()
@@ -42,10 +41,15 @@ func main() {
 
 	scene.BindBuffers()
 	scene.TextureInit("default")
+	scene.TextureInit("swap")
 	{
 		img := decoder1.NextFrame()
 		width, height := decoder1.Dimensions()
 		filterAndBind("default", width, height, img)
+
+		img = decoder2.NextFrame()
+		width, height = decoder2.Dimensions()
+		filterAndBind("swap", width, height, img)
 	}
 
 	go watchShaders()
@@ -61,13 +65,17 @@ func main() {
 		}
 		if nextFrame.Before(time.Now()) {
 			mtx.Lock()
-			var img []uint8
+			var img1, img2 []uint8
 			for nextFrame.Before(time.Now()) {
-				img = decoder1.NextFrame()
 				nextFrame = nextFrame.Add(42 * time.Millisecond)
+				img1 = decoder1.NextFrame()
+				img2 = decoder2.NextFrame()
 			}
+
 			width, height := decoder1.Dimensions()
-			filterAndBind("default", width, height, img)
+			filterAndBind("default", width, height, img1)
+			width, height = decoder2.Dimensions()
+			filterAndBind("swap", width, height, img2)
 			mtx.Unlock()
 		}
 
@@ -107,8 +115,8 @@ func coordinatePlaylist() {
 
 func filterAndBind(name string, width, height int, img []uint8) {
 	filters := []filters.Interface{
-		invert.New(),
-		onlygreen.New(),
+		//invert.New(),
+		//onlygreen.New(),
 	}
 	for _, f := range filters {
 		f.Apply(img)

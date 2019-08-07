@@ -154,7 +154,6 @@ func (d *Decoder) readFrame() (ok bool) {
 
 func (d *Decoder) NextFrame() (rgb []uint8) {
 	for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
-		// Is this a packet from the video stream?
 		ok := d.readFrame()
 		if ok {
 			width, height := d.Dimensions()
@@ -200,4 +199,49 @@ func NewFileDecoder(fname string) (d *Decoder, frame *avutil.Frame) {
 	d.Begin(fname)
 
 	return d, d.pFrameRGB
+}
+
+func NewAsyncFileDecoder(fname string) (a *AsyncDecoder) {
+	a = &AsyncDecoder{
+		d:         &Decoder{},
+		nextFrame: make(chan bool),
+	}
+	a.Begin(fname)
+	a.rgb = a.d.NextFrame()
+
+	go func() {
+		for {
+			_, ok := <-a.nextFrame
+			if !ok {
+				break
+			}
+			a.rgb = a.d.NextFrame()
+		}
+	}()
+
+	return a
+}
+
+type AsyncDecoder struct {
+	d         *Decoder
+	nextFrame chan bool
+	rgb       []uint8
+}
+
+func (a *AsyncDecoder) Dimensions() (width, height int) {
+	return a.d.Dimensions()
+}
+
+func (a *AsyncDecoder) Begin(fname string) {
+	a.d.Begin(fname)
+}
+
+func (a *AsyncDecoder) NextFrame() (rgb []uint8) {
+	rgb = a.rgb
+	a.nextFrame <- true
+	return
+}
+
+func (a *AsyncDecoder) Dealloc() {
+	a.d.Dealloc()
 }

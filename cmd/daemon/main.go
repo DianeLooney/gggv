@@ -24,13 +24,15 @@ func init() {
 
 var scene *opengl.Scene
 var mtx sync.Mutex
-var decoder1 *ffmpeg.AsyncDecoder
-var decoder2 *ffmpeg.AsyncDecoder
+var decoders = make(map[string]*ffmpeg.AsyncDecoder)
 var frame *avutil.Frame
 
 func main() {
-	decoder1 = ffmpeg.NewAsyncFileDecoder("sample.mp4")
-	decoder2 = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
+	decoders["default"] = ffmpeg.NewAsyncFileDecoder("sample.mp4")
+	decoders["swap"] = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
+	decoders["swap2"] = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
+	decoders["swap3"] = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
+	decoders["swap4"] = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
 
 	go coordinatePlaylist()
 	scene = opengl.NewScene()
@@ -42,14 +44,15 @@ func main() {
 	scene.BindBuffers()
 	scene.TextureInit("default")
 	scene.TextureInit("swap")
+	scene.TextureInit("swap2")
+	scene.TextureInit("swap3")
+	scene.TextureInit("swap4")
 	{
-		img := decoder1.NextFrame()
-		width, height := decoder1.Dimensions()
-		filterAndBind("default", width, height, img)
-
-		img = decoder2.NextFrame()
-		width, height = decoder2.Dimensions()
-		filterAndBind("swap", width, height, img)
+		for name, decoder := range decoders {
+			img := decoder.NextFrame()
+			w, h := decoder.Dimensions()
+			filterAndBind(name, w, h, img)
+		}
 	}
 
 	go watchShaders()
@@ -65,15 +68,12 @@ func main() {
 		}
 		if nextFrame.Before(time.Now()) {
 			mtx.Lock()
-			var img1, img2 []uint8
 			nextFrame = nextFrame.Add(42 * time.Millisecond)
-			img1 = decoder1.NextFrame()
-			img2 = decoder2.NextFrame()
-
-			width, height := decoder1.Dimensions()
-			filterAndBind("default", width, height, img1)
-			width, height = decoder2.Dimensions()
-			filterAndBind("swap", width, height, img2)
+			for name, decoder := range decoders {
+				img := decoder.NextFrame()
+				w, h := decoder.Dimensions()
+				filterAndBind(name, w, h, img)
+			}
 			mtx.Unlock()
 		}
 

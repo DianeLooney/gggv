@@ -36,6 +36,7 @@ func main() {
 
 	dmn.Scene.BindBuffers()
 	dmn.Scene.TextureInit("default")
+	dmn.AddSource("default", "sample.mp4")
 
 	go watchShaders()
 

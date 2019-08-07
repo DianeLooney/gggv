@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/dianelooney/gvd/filters"
@@ -24,20 +25,20 @@ type Daemon struct {
 	Scene    *opengl.Scene
 	Decoders map[string]*ffmpeg.AsyncDecoder
 
-	reloadShaders chan bool
+	reloadShaders int32
 }
 
 func (d *Daemon) DrawLoop() {
 	nextFrame := time.Now()
 	for !d.Scene.Window.ShouldClose() {
-		select {
-		case <-d.reloadShaders:
-			fmt.Println("Reloading shaders")
+		v := atomic.LoadInt32(&d.reloadShaders)
+		if v != 0 {
 			if err := d.Scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
 				fmt.Fprintf(os.Stderr, "Error while loading shaders: %v\n", err)
 			}
-		default:
+			atomic.AddInt32(&d.reloadShaders, -v)
 		}
+
 		if nextFrame.Before(time.Now()) {
 			d.Mtx.Lock()
 			nextFrame = nextFrame.Add(42 * time.Millisecond)
@@ -63,4 +64,8 @@ func (d *Daemon) filterAndBind(name string, width, height int, img []uint8) {
 	}
 
 	d.Scene.RebindTexture(name, width, height, img)
+}
+
+func (d *Daemon) ReloadShaders() {
+	atomic.AddInt32(&d.reloadShaders, 1)
 }

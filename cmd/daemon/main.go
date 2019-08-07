@@ -57,7 +57,7 @@ func watchShaders() {
 			if (<-watcher.Events).Op != fsnotify.Write {
 				continue
 			}
-			reloadShaders <- true
+			dmn.ReloadShaders()
 		}
 	}()
 }

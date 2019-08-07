@@ -42,8 +42,6 @@ func main() {
 	dmn.DrawLoop()
 }
 
-var reloadShaders = make(chan bool)
-
 func watchShaders() {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {

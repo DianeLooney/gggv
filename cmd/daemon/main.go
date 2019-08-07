@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	_ "image/png"
-	"io/ioutil"
 	"log"
 	"os"
 	"runtime"
@@ -15,9 +14,7 @@ import (
 	"github.com/dianelooney/gvd/filters/onlygreen"
 	"github.com/dianelooney/gvd/internal/ffmpeg"
 	"github.com/dianelooney/gvd/internal/opengl"
-	"github.com/dianelooney/gvd/internal/playlist"
 	"github.com/fsnotify/fsnotify"
-	"gopkg.in/yaml.v2"
 
 	"github.com/giorgisio/goav/avutil"
 )
@@ -27,22 +24,15 @@ func init() {
 	runtime.LockOSThread()
 }
 
-var pl *playlist.Playlist
 var scene *opengl.Scene
 var mtx sync.Mutex
-var decoder *ffmpeg.Decoder
+var decoder1 *ffmpeg.Decoder
+var decoder2 *ffmpeg.Decoder
 var frame *avutil.Frame
 
 func main() {
-	data, err := ioutil.ReadFile("playlist.yml")
-	if err != nil {
-		panic(err)
-	}
-	pl = &playlist.Playlist{}
-	if err := yaml.Unmarshal(data, pl); err != nil {
-		panic(err)
-	}
-	decoder, frame = ffmpeg.NewFileDecoder(pl.Videos[0].Path)
+	decoder1, _ = ffmpeg.NewFileDecoder("sample.mp4")
+
 	go coordinatePlaylist()
 	scene = opengl.NewScene()
 
@@ -53,8 +43,8 @@ func main() {
 	scene.BindBuffers()
 	scene.TextureInit("default")
 	{
-		img := decoder.NextFrame()
-		width, height := decoder.Dimensions()
+		img := decoder1.NextFrame()
+		width, height := decoder1.Dimensions()
 		filterAndBind("default", width, height, img)
 	}
 
@@ -73,15 +63,12 @@ func main() {
 			mtx.Lock()
 			var img []uint8
 			for nextFrame.Before(time.Now()) {
-				img = decoder.NextFrame()
+				img = decoder1.NextFrame()
 				nextFrame = nextFrame.Add(42 * time.Millisecond)
 			}
-			width, height := decoder.Dimensions()
+			width, height := decoder1.Dimensions()
 			filterAndBind("default", width, height, img)
 			mtx.Unlock()
-		}
-		if err != nil {
-			log.Fatalln(err)
 		}
 
 		scene.Draw()
@@ -111,17 +98,10 @@ func watchShaders() {
 
 func coordinatePlaylist() {
 	for {
-		for _, pv := range pl.Videos {
-			fmt.Println("Loading file", pv.Path, pv.Duration)
-			dealloc := decoder
-			mtx.Lock()
-			decoder, frame = ffmpeg.NewFileDecoder(pv.Path)
-			mtx.Unlock()
-			if dealloc != nil {
-				dealloc.Dealloc()
-			}
-			time.Sleep(time.Duration(pv.Duration * float64(time.Second)))
-		}
+		time.Sleep(time.Second)
+		mtx.Lock()
+
+		mtx.Unlock()
 	}
 }
 

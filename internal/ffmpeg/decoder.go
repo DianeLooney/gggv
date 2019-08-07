@@ -28,70 +28,55 @@ func (d *Decoder) Dimensions() (width, height int) {
 }
 
 func (d *Decoder) Begin(fname string) {
-
-	// Open video file
 	d.pFormatContext = avformat.AvformatAllocContext()
 	if avformat.AvformatOpenInput(&d.pFormatContext, fname, nil, nil) != 0 {
 		fmt.Printf("Unable to open file %s\n", os.Args[1])
 		os.Exit(1)
 	}
 
-	// Retrieve stream information
 	if d.pFormatContext.AvformatFindStreamInfo(nil) < 0 {
 		fmt.Println("Couldn't find stream information")
 		os.Exit(1)
 	}
 
-	// Dump information about file onto standard error
 	d.pFormatContext.AvDumpFormat(0, fname, 0)
 
-	// Find the first video stream
 	for i := 0; i < int(d.pFormatContext.NbStreams()); i++ {
 		switch d.pFormatContext.Streams()[i].CodecParameters().AvCodecGetType() {
 		case avformat.AVMEDIA_TYPE_VIDEO:
-
-			// Get a pointer to the codec context for the video stream
 			d.pCodecCtxOrig = d.pFormatContext.Streams()[i].Codec()
-			// Find the decoder for the video stream
+
 			pCodec := avcodec.AvcodecFindDecoder(avcodec.CodecId(d.pCodecCtxOrig.GetCodecId()))
 			if pCodec == nil {
 				fmt.Println("Unsupported codec!")
 				os.Exit(1)
 			}
-			// Copy context
+
 			d.pCodecCtx = pCodec.AvcodecAllocContext3()
 			if d.pCodecCtx.AvcodecCopyContext((*avcodec.Context)(unsafe.Pointer(d.pCodecCtxOrig))) != 0 {
 				fmt.Println("Couldn't copy codec context")
 				os.Exit(1)
 			}
 
-			// Open codec
 			if d.pCodecCtx.AvcodecOpen2(pCodec, nil) < 0 {
 				fmt.Println("Could not open codec")
 				os.Exit(1)
 			}
 
-			// Allocate video frame
 			d.pFrame = avutil.AvFrameAlloc()
 
-			// Allocate an AVFrame structure
 			if d.pFrameRGB = avutil.AvFrameAlloc(); d.pFrameRGB == nil {
 				fmt.Println("Unable to allocate RGB Frame")
 				os.Exit(1)
 			}
 
-			// Determine required buffer size and allocate buffer
 			numBytes := uintptr(avcodec.AvpictureGetSize(avcodec.AV_PIX_FMT_RGB24, d.pCodecCtx.Width(),
 				d.pCodecCtx.Height()))
 			d.buffer = avutil.AvMalloc(numBytes)
 
-			// Assign appropriate parts of buffer to image planes in pFrameRGB
-			// Note that pFrameRGB is an AVFrame, but AVFrame is a superset
-			// of AVPicture
 			avp := (*avcodec.Picture)(unsafe.Pointer(d.pFrameRGB))
 			avp.AvpictureFill((*uint8)(d.buffer), avcodec.AV_PIX_FMT_RGB24, d.pCodecCtx.Width(), d.pCodecCtx.Height())
 
-			// initialize SWS context for software scaling
 			d.swsCtx = swscale.SwsGetcontext(
 				d.pCodecCtx.Width(),
 				d.pCodecCtx.Height(),
@@ -105,7 +90,6 @@ func (d *Decoder) Begin(fname string) {
 				nil,
 			)
 
-			// Read frames and save first five frames to disk
 			d.videoStreamNum = i
 			d.packet = avcodec.AvPacketAlloc()
 
@@ -207,15 +191,16 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder) {
 		nextFrame: make(chan bool),
 	}
 	a.Begin(fname)
-	a.rgb = a.d.NextFrame()
 
+	a.rgb = a.d.NextFrame()
 	go func() {
 		for {
-			_, ok := <-a.nextFrame
-			if !ok {
+			rgb := a.d.NextFrame()
+
+			if _, ok := <-a.nextFrame; !ok {
 				break
 			}
-			a.rgb = a.d.NextFrame()
+			a.rgb = rgb
 		}
 	}()
 

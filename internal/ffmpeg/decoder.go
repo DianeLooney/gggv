@@ -200,6 +200,14 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 		for {
 			rgb := a.d.NextFrame()
 
+			if rgb == nil {
+				old := a.d
+				a.d = &Decoder{}
+				old.Dealloc()
+				a.Begin(fname)
+				rgb = a.d.NextFrame()
+			}
+
 			if _, ok := <-a.nextFrame; !ok {
 				break
 			}

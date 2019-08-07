@@ -13,22 +13,22 @@ import (
 	"github.com/dianelooney/gvd/internal/opengl"
 )
 
-func New() *Daemon {
-	return &Daemon{
+func New() *D {
+	return &D{
 		Scene:    opengl.NewScene(),
-		Decoders: make(map[string]*ffmpeg.AsyncDecoder),
+		decoders: make(map[string]*ffmpeg.AsyncDecoder),
 	}
 }
 
-type Daemon struct {
+type D struct {
 	Mtx      sync.Mutex
 	Scene    *opengl.Scene
-	Decoders map[string]*ffmpeg.AsyncDecoder
+	decoders map[string]*ffmpeg.AsyncDecoder
 
 	reloadShaders int32
 }
 
-func (d *Daemon) DrawLoop() {
+func (d *D) DrawLoop() {
 	nextFrame := time.Now()
 	for !d.Scene.Window.ShouldClose() {
 		v := atomic.LoadInt32(&d.reloadShaders)
@@ -42,7 +42,7 @@ func (d *Daemon) DrawLoop() {
 		if nextFrame.Before(time.Now()) {
 			d.Mtx.Lock()
 			nextFrame = nextFrame.Add(42 * time.Millisecond)
-			for name, decoder := range d.Decoders {
+			for name, decoder := range d.decoders {
 				img := decoder.NextFrame()
 				w, h := decoder.Dimensions()
 				d.filterAndBind(name, w, h, img)
@@ -54,7 +54,7 @@ func (d *Daemon) DrawLoop() {
 	}
 }
 
-func (d *Daemon) filterAndBind(name string, width, height int, img []uint8) {
+func (d *D) filterAndBind(name string, width, height int, img []uint8) {
 	filters := []filters.Interface{
 		//invert.New(),
 		//onlygreen.New(),
@@ -66,6 +66,18 @@ func (d *Daemon) filterAndBind(name string, width, height int, img []uint8) {
 	d.Scene.RebindTexture(name, width, height, img)
 }
 
-func (d *Daemon) ReloadShaders() {
+func (d *D) ReloadShaders() {
 	atomic.AddInt32(&d.reloadShaders, 1)
+}
+
+func (d *D) AddSource(name, path string) (err error) {
+	d.Mtx.Lock()
+	defer d.Mtx.Unlock()
+
+	if dec, ok := d.decoders[name]; ok {
+		dec.Dealloc()
+	}
+
+	d.decoders[name] = ffmpeg.NewAsyncFileDecoder(path)
+	return
 }

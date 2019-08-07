@@ -5,7 +5,6 @@ import (
 	"log"
 	"runtime"
 
-	"github.com/dianelooney/gvd/internal/ffmpeg"
 	"github.com/dianelooney/gvd/pkg/daemon"
 	"github.com/fsnotify/fsnotify"
 )
@@ -15,16 +14,16 @@ func init() {
 	runtime.LockOSThread()
 }
 
-var dmn *daemon.Daemon
+var dmn *daemon.D
 
 func main() {
 	dmn = daemon.New()
 
-	dmn.Decoders["default"] = ffmpeg.NewAsyncFileDecoder("sample.mp4")
-	dmn.Decoders["swap"] = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
-	dmn.Decoders["swap2"] = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
-	dmn.Decoders["swap3"] = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
-	dmn.Decoders["swap4"] = ffmpeg.NewAsyncFileDecoder("sample2.mp4")
+	dmn.AddSource("default", "sample.mp4")
+	dmn.AddSource("swap", "sample2.mp4")
+	dmn.AddSource("swap2", "sample2.mp4")
+	dmn.AddSource("swap3", "sample2.mp4")
+	dmn.AddSource("swap4", "sample2.mp4")
 
 	if err := dmn.Scene.LoadProgram("shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
 		panic(err)

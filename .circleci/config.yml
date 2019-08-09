@@ -1,5 +1,16 @@
-version: 2
+version: 2.1
+
+orbs:
+  win: circleci/windows@1.0.0
+
 jobs:
+  win-build:
+    executor:
+      name: win/vs2019
+      shell: bash.exe
+    steps:
+      - checkout
+      - run: go build cmd/daemon/main.go
   publish-latest:
     environment:
       IMAGE_NAME: diane/gvd

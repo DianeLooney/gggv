@@ -6,7 +6,7 @@ orbs:
 jobs:
   win-build:
     environment:
-      PKG_CONFIG_PATH: $HOME/pkg-config
+      PKG_CONFIG_PATH: ~/pkg-config
     executor:
       name: win/vs2019
       shell: bash.exe

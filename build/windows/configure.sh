@@ -1,5 +1,3 @@
-export PKG_CONFIG_PATH=~/pkg-config
-
 ( echo "name=libavcodec" ; cat base.pc ) > $PKG_CONFIG_PATH/libavcodec.pc;
 ( echo "name=libavfilter" ; cat base.pc ) > $PKG_CONFIG_PATH/libavfilter.pc;
 ( echo "name=libavutil" ; cat base.pc ) > $PKG_CONFIG_PATH/libavutil.pc;

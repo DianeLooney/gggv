@@ -10,6 +10,8 @@ jobs:
       shell: bash.exe
     steps:
       - checkout
+      - run: choco install mingw pkgconfiglite
+      - run: ./build/windows/configure.sh
       - run: go build cmd/daemon/main.go
   publish-latest:
     environment:

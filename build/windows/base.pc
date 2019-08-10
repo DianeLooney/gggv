@@ -1,5 +1,5 @@
 
-prefix=$HOME/ffmpeg-latest-win64-dev
+prefix=/tmp/ffmpeg-latest-win64-dev
 exec_prefix=${prefix}
 includedir=${prefix}/include
 libdir=${exec_prefix}/lib

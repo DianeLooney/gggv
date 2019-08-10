@@ -1,4 +1,4 @@
-mkdir ~/pkg-config
+mkdir /tmp/pkg-config
 
 ( echo "name=libavcodec" ; cat build/windows/base.pc ) > $PKG_CONFIG_PATH/libavcodec.pc;
 ( echo "name=libavfilter" ; cat build/windows/base.pc ) > $PKG_CONFIG_PATH/libavfilter.pc;
@@ -9,5 +9,5 @@ mkdir ~/pkg-config
 ( echo "name=libswresample" ; cat build/windows/base.pc ) > $PKG_CONFIG_PATH/libswresample.pc;
 ( echo "name=swresample" ; cat build/windows/base.pc ) > $PKG_CONFIG_PATH/swresample.pc;
 
-curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > $HOME/ffmpeg-latest-win64-dev.zip
-unzip $HOME/ffmpeg-latest-win64-dev.zip -d $HOME/
+curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip
+unzip /tmp/ffmpeg-latest-win64-dev.zip -d /tmp/

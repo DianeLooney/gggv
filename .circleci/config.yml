@@ -6,6 +6,7 @@ orbs:
 jobs:
   win-build:
     environment:
+      PKG_CONFIG_PATH: /tmp/pkg-config
       CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
       CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
       LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib

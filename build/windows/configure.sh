@@ -1,4 +1,4 @@
-mkdir /tmp/pkg-config
+mkdir $PKG_CONFIG_PATH
 
 ( echo "name=libavcodec" ; cat build/windows/base.pc ) > $PKG_CONFIG_PATH/libavcodec.pc;
 ( echo "name=libavfilter" ; cat build/windows/base.pc ) > $PKG_CONFIG_PATH/libavfilter.pc;

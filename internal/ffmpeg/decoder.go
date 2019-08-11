@@ -21,10 +21,13 @@ type Decoder struct {
 	packet         *avcodec.Packet
 	videoStreamNum int
 	swsCtx         *swscale.Context
+
+	width  int
+	height int
 }
 
 func (d *Decoder) Dimensions() (width, height int) {
-	return d.pCodecCtx.Width(), d.pCodecCtx.Height()
+	return d.width, d.height
 }
 
 func (d *Decoder) Begin(fname string) (err error) {
@@ -151,6 +154,11 @@ func (d *Decoder) NextFrame() (rgb []uint8) {
 				}
 				rgb = append(rgb, buf...)
 			}
+
+			if len(rgb) == 0 {
+				continue
+			}
+
 			d.packet.AvFreePacket()
 			return
 		}
@@ -182,6 +190,8 @@ func NewFileDecoder(fname string) (d *Decoder, err error) {
 	if err != nil {
 		return nil, err
 	}
+	d.width = d.pCodecCtx.Width()
+	d.height = d.pCodecCtx.Height()
 	return
 }
 
@@ -195,6 +205,9 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 	if err != nil {
 		return nil, err
 	}
+
+	a.d.width = a.d.pCodecCtx.Width()
+	a.d.height = a.d.pCodecCtx.Height()
 
 	go func() {
 		for {

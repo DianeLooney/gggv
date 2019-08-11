@@ -63,6 +63,10 @@ func (d *D) filterAndBind(name string, width, height int, img []uint8) {
 		f.Apply(img)
 	}
 
+	if len(img) == 0 {
+		return
+	}
+
 	d.Scene.RebindTexture(name, width, height, img)
 }
 

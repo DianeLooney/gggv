@@ -43,7 +43,7 @@ func main() {
 	dmn.Scene.BindBuffers()
 	dmn.Scene.TextureInit("default")
 	//dmn.Scene.TextureInit("swap")
-	dmn.AddSource("default", "leto-1.mp4")
+	dmn.AddSource("default", "sample.mp4")
 	//dmn.AddSource("swap", "sample2.mp4")
 
 	go watchShaders()

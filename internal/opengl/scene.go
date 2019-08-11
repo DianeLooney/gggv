@@ -58,7 +58,6 @@ func NewScene() *Scene {
 
 	s.Projection = mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
 	s.Camera = mgl32.LookAtV(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
-	s.Model = mgl32.Ident4()
 
 	// Configure global settings
 	gl.Enable(gl.DEPTH_TEST)
@@ -70,6 +69,7 @@ func NewScene() *Scene {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	glfw.SwapInterval(0)
 
 	return s
 }
@@ -85,10 +85,10 @@ type Scene struct {
 	vbo uint32
 
 	Camera       mgl32.Mat4
-	Model        mgl32.Mat4
 	Projection   mgl32.Mat4
 	ModelUniform int32
 	TimeUniform  int32
+	DepthUniform int32
 
 	layers   map[string]Layer
 	programs map[string]uint32
@@ -165,12 +165,12 @@ func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string
 	gl.UniformMatrix4fv(projectionUniform, 1, false, &s.Projection[0])
 	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
 	gl.UniformMatrix4fv(cameraUniform, 1, false, &s.Camera[0])
-	s.ModelUniform = gl.GetUniformLocation(program, gl.Str("model\x00"))
-	gl.UniformMatrix4fv(s.ModelUniform, 1, false, &s.Model[0])
 	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
 	gl.Uniform1i(textureUniform, 0)
 	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
 	s.TimeUniform = gl.GetUniformLocation(program, gl.Str("time\x00"))
+	s.ModelUniform = gl.GetUniformLocation(program, gl.Str("model\x00"))
+	s.DepthUniform = gl.GetUniformLocation(program, gl.Str("depth\x00"))
 
 	return nil
 }
@@ -251,7 +251,6 @@ func (s *Scene) Draw() {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 	gl.UseProgram(s.programs["default"])
-	gl.UniformMatrix4fv(s.ModelUniform, 1, false, &s.Model[0])
 
 	t := float32(time.Since(tStart)) / NANOSTOSEC
 	gl.Uniform1f(s.TimeUniform, t)
@@ -264,9 +263,11 @@ func (s *Scene) Draw() {
 	sort.Sort(layers(ls))
 
 	for _, l := range ls {
-		v := verts(l.Depth)
-		gl.BufferData(gl.ARRAY_BUFFER, len(v)*4, gl.Ptr(v), gl.STATIC_DRAW)
+		gl.BufferData(gl.ARRAY_BUFFER, len(verts)*4, gl.Ptr(verts), gl.STATIC_DRAW)
 
+		gl.Uniform1f(s.DepthUniform, l.Depth)
+		depthVerts[11] = l.Depth
+		gl.UniformMatrix4fv(s.ModelUniform, 1, false, &depthVerts[0])
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, s.textures[l.Texture])
 
@@ -278,13 +279,17 @@ func (s *Scene) Draw() {
 	glfw.PollEvents()
 }
 
-func verts(depth float32) []float32 {
-	return []float32{
-		-1.0, -1.0, depth, 0.0, 1.0,
-		1.0, -1.0, depth, 1.0, 1.0,
-		-1.0, 1.0, depth, 0.0, 0.0,
-		1.0, -1.0, depth, 1.0, 1.0,
-		1.0, 1.0, depth, 1.0, 0.0,
-		-1.0, 1.0, depth, 0.0, 0.0,
-	}
+var verts = []float32{
+	-1.0, -1.0, 0.0, 0.0, 1.0,
+	1.0, -1.0, 0.0, 1.0, 1.0,
+	-1.0, 1.0, 0.0, 0.0, 0.0,
+	1.0, -1.0, 0.0, 1.0, 1.0,
+	1.0, 1.0, 0.0, 1.0, 0.0,
+	-1.0, 1.0, 0.0, 0.0, 0.0,
+}
+var depthVerts = [16]float32{
+	1, 0, 0, 0,
+	0, 1, 0, 0,
+	0, 0, 1, 1,
+	0, 0, 0, 1,
 }

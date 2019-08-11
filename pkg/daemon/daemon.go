@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"sync"
@@ -9,9 +10,12 @@ import (
 
 	"github.com/dianelooney/gvd/filters"
 	"github.com/dianelooney/gvd/internal/ffmpeg"
+	"github.com/dianelooney/gvd/internal/fps"
 
 	"github.com/dianelooney/gvd/internal/opengl"
 )
+
+var showFPS = flag.Bool("fps", false, "Log fps to the command line")
 
 func New() *D {
 	return &D{
@@ -51,6 +55,10 @@ func (d *D) DrawLoop() {
 		}
 
 		d.Scene.Draw()
+		fps.Next()
+		if *showFPS {
+			fmt.Printf("FPS: %v\t%v\n", fps.LastSec(), fps.FrameDuration())
+		}
 	}
 }
 

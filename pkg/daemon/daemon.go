@@ -19,21 +19,22 @@ var showFPS = flag.Bool("fps", false, "Log fps to the command line")
 
 func New() *D {
 	return &D{
-		Scene:    opengl.NewScene(),
-		decoders: make(map[string]*ffmpeg.AsyncDecoder),
+		Scene:      opengl.NewScene(),
+		decoders:   make(map[string]*ffmpeg.AsyncDecoder),
+		nextFrames: make(map[string]time.Time),
 	}
 }
 
 type D struct {
-	Mtx      sync.Mutex
-	Scene    *opengl.Scene
-	decoders map[string]*ffmpeg.AsyncDecoder
+	Mtx        sync.Mutex
+	Scene      *opengl.Scene
+	nextFrames map[string]time.Time
+	decoders   map[string]*ffmpeg.AsyncDecoder
 
 	reloadShaders int32
 }
 
 func (d *D) DrawLoop() {
-	nextFrame := time.Now()
 	for !d.Scene.Window.ShouldClose() {
 		v := atomic.LoadInt32(&d.reloadShaders)
 		if v != 0 {
@@ -43,16 +44,20 @@ func (d *D) DrawLoop() {
 			atomic.AddInt32(&d.reloadShaders, -v)
 		}
 
-		if nextFrame.Before(time.Now()) {
-			d.Mtx.Lock()
-			nextFrame = nextFrame.Add(42 * time.Millisecond)
-			for name, decoder := range d.decoders {
-				img := decoder.NextFrame()
-				w, h := decoder.Dimensions()
-				d.filterAndBind(name, w, h, img)
+		d.Mtx.Lock()
+		for name, decoder := range d.decoders {
+			nextFrame := d.nextFrames[name]
+			if !nextFrame.Before(time.Now()) {
+				continue
 			}
-			d.Mtx.Unlock()
+
+			img, duration := decoder.NextFrame()
+			d.nextFrames[name] = nextFrame.Add(duration)
+			w, h := decoder.Dimensions()
+			d.filterAndBind(name, w, h, img)
 		}
+
+		d.Mtx.Unlock()
 
 		d.Scene.Draw()
 		fps.Next()
@@ -85,6 +90,10 @@ func (d *D) ReloadShaders() {
 func (d *D) AddSource(name, path string) (err error) {
 	d.Mtx.Lock()
 	defer d.Mtx.Unlock()
+
+	if _, ok := d.nextFrames[name]; !ok {
+		d.nextFrames[name] = time.Now()
+	}
 
 	if dec, ok := d.decoders[name]; ok {
 		dec.Dealloc()

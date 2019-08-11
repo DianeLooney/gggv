@@ -3,6 +3,7 @@ package ffmpeg
 import (
 	"fmt"
 	"os"
+	"time"
 	"unsafe"
 
 	"github.com/giorgisio/goav/avcodec"
@@ -142,7 +143,12 @@ func (d *Decoder) readFrame() (ok bool) {
 	return false
 }
 
-func (d *Decoder) NextFrame() (rgb []uint8) {
+func (d *Decoder) frameDuration() time.Duration {
+	r := d.pCodecCtx.AvCodecGetPktTimebase()
+	return (time.Duration)(r.Num()) * time.Second / time.Duration(r.Den())
+}
+
+func (d *Decoder) NextFrame() (rgb []uint8, duration int) {
 	for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
 		ok := d.readFrame()
 		if !ok {
@@ -165,7 +171,7 @@ func (d *Decoder) NextFrame() (rgb []uint8) {
 		if len(rgb) == 0 {
 			continue
 		}
-
+		duration = d.packet.Duration()
 		d.packet.AvFreePacket()
 		return
 	}
@@ -204,7 +210,7 @@ func NewFileDecoder(fname string) (d *Decoder, err error) {
 func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 	a = &AsyncDecoder{
 		d:         &Decoder{},
-		nextFrame: make(chan []uint8, 20),
+		nextFrame: make(chan frame, 20),
 		done:      make(chan bool),
 	}
 	err = a.Begin(fname)
@@ -219,7 +225,7 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 		defer a.d.Dealloc()
 
 		for {
-			rgb := a.d.NextFrame()
+			rgb, duration := a.d.NextFrame()
 
 			if rgb == nil {
 				a.d.pCodecCtx.AvcodecFlushBuffers()
@@ -228,7 +234,7 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 			}
 
 			select {
-			case a.nextFrame <- rgb:
+			case a.nextFrame <- frame{rgb, duration}:
 			case <-a.done:
 				return
 			}
@@ -238,9 +244,13 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 	return a, nil
 }
 
+type frame struct {
+	pix      []uint8
+	duration int
+}
 type AsyncDecoder struct {
 	d         *Decoder
-	nextFrame chan []uint8
+	nextFrame chan frame
 	done      chan bool
 }
 
@@ -252,8 +262,9 @@ func (a *AsyncDecoder) Begin(fname string) (err error) {
 	return a.d.Begin(fname)
 }
 
-func (a *AsyncDecoder) NextFrame() (rgb []uint8) {
-	return <-a.nextFrame
+func (a *AsyncDecoder) NextFrame() (rgb []uint8, duration time.Duration) {
+	f := <-a.nextFrame
+	return f.pix, time.Duration(f.duration) * a.d.frameDuration()
 }
 
 func (a *AsyncDecoder) Dealloc() {

@@ -57,7 +57,10 @@ workflows:
   version: 2
   build-master:
     jobs:
-      - win-build
+      - win-build:
+          filters:
+            branches:
+              only: master
       - publish-latest:
           filters:
             branches:

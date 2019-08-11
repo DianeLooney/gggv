@@ -37,6 +37,12 @@ jobs:
       - store_artifacts:
           path: daemon.exe
           destination: daemon.exe
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            go get github.com/tcnksm/ghr
+            VERSION=$CIRCLE_SHA1
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} daemon.exe
   publish-latest:
     environment:
       IMAGE_NAME: diane/gvd
@@ -55,7 +61,7 @@ jobs:
             docker push $IMAGE_NAME:latest
 workflows:
   version: 2
-  build-master:
+  release:
     jobs:
       - win-build:
           filters:
@@ -65,3 +71,11 @@ workflows:
           filters:
             branches:
               only: master
+      - publish-github-release:
+          requires:
+            - win-build
+          filters:
+            branches:
+              ignore: /.*/
+            tags:
+              only: /^\d+\.\d+\.\d+$/

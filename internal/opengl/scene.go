@@ -18,9 +18,6 @@ const NANOSTOSEC = 1000000000
 
 var tStart = time.Now()
 
-const windowWidth = 800
-const windowHeight = 600
-
 var fullscreen = flag.Bool("fullscreen", true, "Start in fullscreen mode")
 
 func NewScene() *Scene {

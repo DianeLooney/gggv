@@ -72,8 +72,11 @@ func (d *Decoder) Begin(fname string) (err error) {
 				os.Exit(1)
 			}
 
-			numBytes := uintptr(avcodec.AvpictureGetSize(avcodec.AV_PIX_FMT_RGB24, d.pCodecCtx.Width(),
-				d.pCodecCtx.Height()))
+			numBytes := uintptr(avcodec.AvpictureGetSize(
+				avcodec.AV_PIX_FMT_RGB24,
+				d.pCodecCtx.Width(),
+				d.pCodecCtx.Height(),
+			))
 			d.buffer = avutil.AvMalloc(numBytes)
 
 			avp := (*avcodec.Picture)(unsafe.Pointer(d.pFrameRGB))
@@ -117,6 +120,7 @@ func (d *Decoder) readFrame() (ok bool) {
 	for response >= 0 {
 		response = d.pCodecCtx.AvcodecReceiveFrame((*avcodec.Frame)(unsafe.Pointer(d.pFrame)))
 		if response == avutil.AvErrorEAGAIN || response == avutil.AvErrorEOF {
+			fmt.Println("Return false", response)
 			return false
 		} else if response < 0 {
 			fmt.Printf("Error while receiving a frame from the decoder: %s\n", avutil.ErrorFromCode(response))
@@ -142,26 +146,29 @@ func (d *Decoder) readFrame() (ok bool) {
 func (d *Decoder) NextFrame() (rgb []uint8) {
 	for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
 		ok := d.readFrame()
-		if ok {
-			width, height := d.Dimensions()
-			for y := 0; y < height; y++ {
-				data0 := avutil.Data(d.pFrameRGB)[0]
-				buf := make([]byte, width*3)
-				startPos := uintptr(unsafe.Pointer(data0)) + uintptr(y)*uintptr(avutil.Linesize(d.pFrameRGB)[0])
-				for i := 0; i < width*3; i++ {
-					element := *(*uint8)(unsafe.Pointer(startPos + uintptr(i)))
-					buf[i] = element
-				}
-				rgb = append(rgb, buf...)
-			}
-
-			if len(rgb) == 0 {
-				continue
-			}
-
-			d.packet.AvFreePacket()
-			return
+		if !ok {
+			continue
 		}
+		width, height := d.Dimensions()
+		offset := uintptr(unsafe.Pointer(avutil.Data(d.pFrameRGB)[0]))
+		linesize := uintptr(avutil.Linesize(d.pFrameRGB)[0])
+		for y := 0; y < height; y++ {
+			buf := make([]uint8, width*3)
+			for i := 0; i < width*3; i++ {
+				ptr := offset + uintptr(i)
+				buf[i] = *(*uint8)(unsafe.Pointer(ptr))
+			}
+			rgb = append(rgb, buf...)
+
+			offset += linesize
+		}
+
+		if len(rgb) == 0 {
+			continue
+		}
+
+		d.packet.AvFreePacket()
+		return
 	}
 	return
 }
@@ -210,6 +217,8 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 	a.d.height = a.d.pCodecCtx.Height()
 
 	go func() {
+		defer a.d.Dealloc()
+
 		for {
 			rgb := a.d.NextFrame()
 
@@ -224,11 +233,9 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 			select {
 			case a.nextFrame <- rgb:
 			case <-a.done:
-				break
+				return
 			}
 		}
-
-		a.d.Dealloc()
 	}()
 
 	return a, nil

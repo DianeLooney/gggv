@@ -18,9 +18,6 @@ const NANOSTOSEC = 1000000000
 
 var tStart = time.Now()
 
-const windowWidth = 800
-const windowHeight = 600
-
 var fullscreen = flag.Bool("fullscreen", true, "Start in fullscreen mode")
 
 func NewScene() *Scene {
@@ -68,6 +65,7 @@ func NewScene() *Scene {
 	gl.Disable(gl.CULL_FACE)
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
+	gl.PixelStorei(gl.UNPACK_ALIGNMENT, 1)
 
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(1.0, 1.0, 1.0, 1.0)

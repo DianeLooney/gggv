@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"flag"
 	"fmt"
 	_ "image/png"
 	"log"
@@ -22,6 +23,8 @@ func init() {
 var dmn *daemon.D
 
 func main() {
+	flag.Parse()
+
 	dmn = daemon.New()
 
 	// startup, type:

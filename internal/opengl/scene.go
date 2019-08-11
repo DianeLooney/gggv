@@ -1,6 +1,7 @@
 package opengl
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -20,10 +21,15 @@ var tStart = time.Now()
 const windowWidth = 800
 const windowHeight = 600
 
+var fullscreen = flag.Bool("fullscreen", true, "Start in fullscreen mode")
+
 func NewScene() *Scene {
 	if err := glfw.Init(); err != nil {
 		log.Fatalln("failed to initialize glfw:", err)
 	}
+	monitor := glfw.GetPrimaryMonitor()
+	mode := monitor.GetVideoMode()
+
 	glfw.WindowHint(glfw.Resizable, glfw.False)
 	glfw.WindowHint(glfw.ContextVersionMajor, 4)
 	glfw.WindowHint(glfw.ContextVersionMinor, 1)
@@ -37,7 +43,12 @@ func NewScene() *Scene {
 	}
 
 	var err error
-	s.Window, err = glfw.CreateWindow(windowWidth, windowHeight, "Cube", nil, nil)
+	if *fullscreen {
+		s.Window, err = glfw.CreateWindow(mode.Width, mode.Height, "gvd", monitor, nil)
+	} else {
+		s.Window, err = glfw.CreateWindow(mode.Width/2, mode.Height/2, "gvd", nil, nil)
+	}
+
 	if err != nil {
 		panic(err)
 	}

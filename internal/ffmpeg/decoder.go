@@ -120,7 +120,6 @@ func (d *Decoder) readFrame() (ok bool) {
 	for response >= 0 {
 		response = d.pCodecCtx.AvcodecReceiveFrame((*avcodec.Frame)(unsafe.Pointer(d.pFrame)))
 		if response == avutil.AvErrorEAGAIN || response == avutil.AvErrorEOF {
-			fmt.Println("Return false", response)
 			return false
 		} else if response < 0 {
 			fmt.Printf("Error while receiving a frame from the decoder: %s\n", avutil.ErrorFromCode(response))
@@ -223,11 +222,9 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 			rgb := a.d.NextFrame()
 
 			if rgb == nil {
-				old := a.d
-				a.d = &Decoder{}
-				old.Dealloc()
+				a.d.pCodecCtx.AvcodecFlushBuffers()
 				a.Begin(fname)
-				rgb = a.d.NextFrame()
+				continue
 			}
 
 			select {

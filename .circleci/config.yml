@@ -6,7 +6,6 @@ orbs:
 jobs:
   win-build:
     environment:
-      PKG_CONFIG_PATH: /tmp/pkg-config
       CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
       CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
       LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
@@ -16,9 +15,21 @@ jobs:
       shell: bash.exe
     steps:
       - checkout
-      - run: choco install mingw pkgconfiglite
-      - run: ./build/windows/configure.sh
-      - run: go build -o=daemon.exe cmd/daemon/main.go
+      - run:
+          name: Install MinGW
+          command: choco install mingw
+      - run:
+          name: Download FFMPEG-dev
+          command: curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip
+      - run:
+          name: Extract FFMPEG-dev
+          command: unzip /tmp/ffmpeg-latest-win64-dev.zip -d /tmp/
+      - run:
+          name: Build Daemon
+          command: go build -o=daemon.exe cmd/daemon/main.go
+      - store_artifacts:
+          path: daemon.exe
+          destination: daemon.exe
   publish-latest:
     environment:
       IMAGE_NAME: diane/gvd

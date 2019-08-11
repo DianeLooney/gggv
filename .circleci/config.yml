@@ -16,6 +16,12 @@ jobs:
     steps:
       - checkout
       - run:
+          name: Install dependencies
+          command: choco install mingw pkgconfiglite
+      - run:
+          name: Setup pkg-config stubs
+          command: ./build/windows/configure.sh
+      - run:
           name: Install MinGW
           command: choco install mingw
       - run:

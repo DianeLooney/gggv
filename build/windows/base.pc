@@ -1,0 +1,11 @@
+
+prefix=/tmp/ffmpeg-latest-win64-dev
+exec_prefix=${prefix}
+includedir=${prefix}/include
+libdir=${exec_prefix}/lib
+
+Name: ${name}
+Description: ${name}
+Version: 1.0.0
+Cflags: -I${includedir}/${name}
+Libs: -L${libdir} -l${name}

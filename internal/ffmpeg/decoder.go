@@ -188,14 +188,14 @@ func NewFileDecoder(fname string) (d *Decoder, err error) {
 func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 	a = &AsyncDecoder{
 		d:         &Decoder{},
-		nextFrame: make(chan bool),
+		nextFrame: make(chan []uint8, 20),
+		done:      make(chan bool),
 	}
 	err = a.Begin(fname)
 	if err != nil {
 		return nil, err
 	}
 
-	a.rgb = a.d.NextFrame()
 	go func() {
 		for {
 			rgb := a.d.NextFrame()
@@ -208,10 +208,11 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 				rgb = a.d.NextFrame()
 			}
 
-			if _, ok := <-a.nextFrame; !ok {
+			select {
+			case a.nextFrame <- rgb:
+			case <-a.done:
 				break
 			}
-			a.rgb = rgb
 		}
 
 		a.d.Dealloc()
@@ -222,8 +223,8 @@ func NewAsyncFileDecoder(fname string) (a *AsyncDecoder, err error) {
 
 type AsyncDecoder struct {
 	d         *Decoder
-	nextFrame chan bool
-	rgb       []uint8
+	nextFrame chan []uint8
+	done      chan bool
 }
 
 func (a *AsyncDecoder) Dimensions() (width, height int) {
@@ -235,11 +236,10 @@ func (a *AsyncDecoder) Begin(fname string) (err error) {
 }
 
 func (a *AsyncDecoder) NextFrame() (rgb []uint8) {
-	rgb = a.rgb
-	a.nextFrame <- true
-	return
+	return <-a.nextFrame
 }
 
 func (a *AsyncDecoder) Dealloc() {
+	a.done <- true
 	close(a.nextFrame)
 }

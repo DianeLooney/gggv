@@ -84,3 +84,9 @@ func (d *D) AddSource(name, path string) (err error) {
 	d.decoders[name] = dec
 	return nil
 }
+
+func (d *D) AddLayer(name, source, program string, depth float32) (err error) {
+	d.Scene.SetLayer(name, depth, source)
+
+	return nil
+}

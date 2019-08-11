@@ -35,13 +35,13 @@ func main() {
 	}
 
 	dmn.Scene.SetLayer("default", 1.0, "default")
-	dmn.Scene.SetLayer("sub", -1.0, "swap")
+	//dmn.Scene.SetLayer("sub", -1.0, "swap")
 
 	dmn.Scene.BindBuffers()
 	dmn.Scene.TextureInit("default")
-	dmn.Scene.TextureInit("swap")
+	//dmn.Scene.TextureInit("swap")
 	dmn.AddSource("default", "sample.mp4")
-	dmn.AddSource("swap", "sample2.mp4")
+	//dmn.AddSource("swap", "sample2.mp4")
 
 	go watchShaders()
 	go listenForInput()

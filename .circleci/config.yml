@@ -1,5 +1,42 @@
-version: 2
+version: 2.1
+
+orbs:
+  win: circleci/windows@1.0.0
+
 jobs:
+  win-build:
+    environment:
+      PKG_CONFIG_PATH: /tmp/pkg-config
+      CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
+      CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
+      LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
+
+    executor:
+      name: win/vs2019
+      shell: bash.exe
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: choco install mingw pkgconfiglite
+      - run:
+          name: Setup pkg-config stubs
+          command: ./build/windows/configure.sh
+      - run:
+          name: Install MinGW
+          command: choco install mingw
+      - run:
+          name: Download FFMPEG-dev
+          command: curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip
+      - run:
+          name: Extract FFMPEG-dev
+          command: unzip /tmp/ffmpeg-latest-win64-dev.zip -d /tmp/
+      - run:
+          name: Build Daemon
+          command: go build -o=daemon.exe cmd/daemon/main.go
+      - store_artifacts:
+          path: daemon.exe
+          destination: daemon.exe
   publish-latest:
     environment:
       IMAGE_NAME: diane/gvd
@@ -20,6 +57,10 @@ workflows:
   version: 2
   build-master:
     jobs:
+      - win-build:
+          filters:
+            branches:
+              only: master
       - publish-latest:
           filters:
             branches:

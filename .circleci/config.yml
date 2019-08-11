@@ -71,11 +71,3 @@ workflows:
           filters:
             branches:
               only: master
-      - publish-github-release:
-          requires:
-            - win-build
-          filters:
-            branches:
-              ignore: /.*/
-            tags:
-              only: /^\d+\.\d+\.\d+$/

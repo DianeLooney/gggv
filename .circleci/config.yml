@@ -43,7 +43,7 @@ jobs:
             go get github.com/tcnksm/ghr
             VERSION=$CIRCLE_SHA1
             ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} daemon.exe
-  publish-latest:
+  docker-build:
     environment:
       IMAGE_NAME: diane/gvd
     docker:
@@ -67,7 +67,7 @@ workflows:
           filters:
             branches:
               only: master
-      - publish-latest:
+      - docker-build:
           filters:
             branches:
               only: master

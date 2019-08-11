@@ -8,6 +8,3 @@ mkdir /tmp/pkg-config
 ( echo "name=libavformat" ; cat build/windows/base.pc ) > $PKG_CONFIG_PATH/libavformat.pc;
 ( echo "name=libswresample" ; cat build/windows/base.pc ) > $PKG_CONFIG_PATH/libswresample.pc;
 ( echo "name=swresample" ; cat build/windows/base.pc ) > $PKG_CONFIG_PATH/swresample.pc;
-
-curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip
-unzip /tmp/ffmpeg-latest-win64-dev.zip -d /tmp/

@@ -7,6 +7,10 @@ jobs:
   win-build:
     environment:
       PKG_CONFIG_PATH: /tmp/pkg-config
+      CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
+      CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
+      LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
+
     executor:
       name: win/vs2019
       shell: bash.exe
@@ -14,7 +18,7 @@ jobs:
       - checkout
       - run: choco install mingw pkgconfiglite
       - run: ./build/windows/configure.sh
-      - run: go build cmd/daemon/main.go
+      - run: go build -o=daemon.exe cmd/daemon/main.go
   publish-latest:
     environment:
       IMAGE_NAME: diane/gvd

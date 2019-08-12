@@ -3,9 +3,7 @@ package daemon
 import (
 	"flag"
 	"fmt"
-	"os"
 	"sync"
-	"sync/atomic"
 	"time"
 
 	"github.com/dianelooney/gvd/filters"
@@ -19,9 +17,10 @@ var showFPS = flag.Bool("fps", false, "Log fps to the command line")
 
 func New() *D {
 	return &D{
-		Scene:      opengl.NewScene(),
-		decoders:   make(map[string]*ffmpeg.AsyncDecoder),
-		nextFrames: make(map[string]time.Time),
+		Scene:           opengl.NewScene(),
+		decoders:        make(map[string]*ffmpeg.AsyncDecoder),
+		nextFrames:      make(map[string]time.Time),
+		mainThreadTasks: make(chan func(), 20),
 	}
 }
 
@@ -31,18 +30,27 @@ type D struct {
 	nextFrames map[string]time.Time
 	decoders   map[string]*ffmpeg.AsyncDecoder
 
-	reloadShaders int32
+	mainThreadTasks chan func()
+}
+
+func (d *D) Schedule(f func()) {
+	d.mainThreadTasks <- f
+}
+
+func (d *D) FlushTasks() {
+	for {
+		select {
+		case f := <-d.mainThreadTasks:
+			f()
+		default:
+			return
+		}
+	}
 }
 
 func (d *D) DrawLoop() {
 	for !d.Scene.Window.ShouldClose() {
-		v := atomic.LoadInt32(&d.reloadShaders)
-		if v != 0 {
-			if err := d.Scene.LoadProgram("default", "shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
-				fmt.Fprintf(os.Stderr, "Error while loading shaders: %v\n", err)
-			}
-			atomic.AddInt32(&d.reloadShaders, -v)
-		}
+		d.FlushTasks()
 
 		d.Mtx.Lock()
 		for name, decoder := range d.decoders {
@@ -83,31 +91,38 @@ func (d *D) filterAndBind(name string, width, height int, img []uint8) {
 	d.Scene.RebindTexture(name, width, height, img)
 }
 
-func (d *D) ReloadShaders() {
-	atomic.AddInt32(&d.reloadShaders, 1)
+func (d *D) AddSource(name, path string) {
+	d.Schedule(func() {
+		if _, ok := d.nextFrames[name]; !ok {
+			d.nextFrames[name] = time.Now()
+		}
+
+		if dec, ok := d.decoders[name]; ok {
+			dec.Dealloc()
+		}
+		dec, err := ffmpeg.NewAsyncFileDecoder(path)
+		if err != nil {
+			fmt.Println("Error adding source:", err)
+			return
+		}
+		d.decoders[name] = dec
+	})
 }
 
-func (d *D) AddSource(name, path string) (err error) {
-	d.Mtx.Lock()
-	defer d.Mtx.Unlock()
-
-	if _, ok := d.nextFrames[name]; !ok {
-		d.nextFrames[name] = time.Now()
-	}
-
-	if dec, ok := d.decoders[name]; ok {
-		dec.Dealloc()
-	}
-	dec, err := ffmpeg.NewAsyncFileDecoder(path)
-	if err != nil {
-		return err
-	}
-	d.decoders[name] = dec
-	return nil
+func (d *D) AddLayer(name, source, program string, depth float32) {
+	d.Schedule(func() {
+		d.Scene.SetLayer(name, depth, source)
+	})
 }
 
-func (d *D) AddLayer(name, source, program string, depth float32) (err error) {
-	d.Scene.SetLayer(name, depth, source)
+func (d *D) AddProgram(name, pathV, pathF string) {
+	d.Schedule(func() {
+		d.Scene.LoadProgram(name, pathV, pathF)
+	})
+}
 
-	return nil
+func (d *D) ReloadPrograms() {
+	d.Schedule(func() {
+		d.Scene.ReloadPrograms()
+	})
 }

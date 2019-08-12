@@ -23,6 +23,8 @@ func exec(sc *bufio.Scanner, d *daemon.D) (err error) {
 	switch sc.Text() {
 	case "add":
 		return execAdd(sc, d)
+	case "reload":
+		return execReload(sc, d)
 	}
 	return fmt.Errorf("unrecognized command '%s'", sc.Text())
 }
@@ -36,6 +38,8 @@ func execAdd(sc *bufio.Scanner, d *daemon.D) (err error) {
 		return execAddSource(sc, d)
 	case "layer":
 		return execAddLayer(sc, d)
+	case "program":
+		return execAddProgram(sc, d)
 	}
 	return fmt.Errorf("unrecognized add subcommand '%s'", sc.Text())
 }
@@ -51,10 +55,11 @@ func execAddSource(sc *bufio.Scanner, d *daemon.D) (err error) {
 	}
 	path := sc.Text()
 
-	return d.AddSource(name, path)
+	d.AddSource(name, path)
+
+	return
 }
 
-/*
 func execAddProgram(sc *bufio.Scanner, d *daemon.D) (err error) {
 	if !sc.Scan() {
 		return io.ErrUnexpectedEOF
@@ -71,9 +76,9 @@ func execAddProgram(sc *bufio.Scanner, d *daemon.D) (err error) {
 	}
 	pathF := sc.Text()
 
-	return d.AddProgram(name, pathV, pathF)
+	d.AddProgram(name, pathV, pathF)
+	return
 }
-*/
 
 func execAddLayer(sc *bufio.Scanner, d *daemon.D) (err error) {
 	if !sc.Scan() {
@@ -99,6 +104,21 @@ func execAddLayer(sc *bufio.Scanner, d *daemon.D) (err error) {
 	if err != nil {
 		return err
 	}
+	d.AddLayer(name, source, program, float32(depthI))
+	return
+}
 
-	return d.AddLayer(name, source, program, float32(depthI))
+func execReload(sc *bufio.Scanner, d *daemon.D) (err error) {
+	if !sc.Scan() {
+		return io.ErrUnexpectedEOF
+	}
+	name := sc.Text()
+
+	switch name {
+	case "programs":
+		d.ReloadPrograms()
+		return
+	}
+
+	return fmt.Errorf("unrecognized reload subcommand '%s'", name)
 }

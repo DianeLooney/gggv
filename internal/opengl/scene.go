@@ -35,7 +35,7 @@ func NewScene() *Scene {
 
 	s := &Scene{
 		layers:   make(map[string]Layer),
-		programs: make(map[string]uint32),
+		programs: make(map[string]Program),
 		textures: make(map[string]uint32),
 	}
 
@@ -91,10 +91,14 @@ type Scene struct {
 	DepthUniform int32
 
 	layers   map[string]Layer
-	programs map[string]uint32
+	programs map[string]Program
 	textures map[string]uint32
 }
-
+type Program struct {
+	FShaderLocation string
+	VShaderLocation string
+	GLProgram       uint32
+}
 type Layer struct {
 	Depth   float32
 	Texture string
@@ -119,7 +123,7 @@ func (s *Scene) SetLayer(name string, depth float32, source string) {
 	}
 }
 
-func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string) error {
+func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string) (err error) {
 	data, err := ioutil.ReadFile(vertShaderLocation)
 	if err != nil {
 		return err
@@ -134,11 +138,17 @@ func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string
 	}
 	fragmentShader, err := compileShader(string(data)+"\x00", gl.FRAGMENT_SHADER)
 	if err != nil {
+		fmt.Println("Compile error:", err)
 		return err
 	}
 
 	program := gl.CreateProgram()
-	s.programs[name] = program
+	p := Program{
+		FShaderLocation: fragShaderFlocation,
+		VShaderLocation: vertShaderLocation,
+		GLProgram:       program,
+	}
+	s.programs[name] = p
 
 	gl.AttachShader(program, vertexShader)
 	gl.AttachShader(program, fragmentShader)
@@ -171,7 +181,6 @@ func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string
 	s.TimeUniform = gl.GetUniformLocation(program, gl.Str("time\x00"))
 	s.ModelUniform = gl.GetUniformLocation(program, gl.Str("model\x00"))
 	s.DepthUniform = gl.GetUniformLocation(program, gl.Str("depth\x00"))
-
 	return nil
 }
 
@@ -183,11 +192,11 @@ func (s *Scene) BindBuffers() {
 	gl.GenBuffers(1, &s.vbo)
 	gl.BindBuffer(gl.ARRAY_BUFFER, s.vbo)
 
-	vertAttrib := uint32(gl.GetAttribLocation(s.programs["default"], gl.Str("vert\x00")))
+	vertAttrib := uint32(gl.GetAttribLocation(s.programs["default"].GLProgram, gl.Str("vert\x00")))
 	gl.EnableVertexAttribArray(vertAttrib)
 	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, false, 5*4, gl.PtrOffset(0))
 
-	texCoordAttrib := uint32(gl.GetAttribLocation(s.programs["default"], gl.Str("vertTexCoord\x00")))
+	texCoordAttrib := uint32(gl.GetAttribLocation(s.programs["default"].GLProgram, gl.Str("vertTexCoord\x00")))
 	gl.EnableVertexAttribArray(texCoordAttrib)
 	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
 }
@@ -250,7 +259,8 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 func (s *Scene) Draw() {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-	gl.UseProgram(s.programs["default"])
+	//fmt.Println(s.programs["default"])
+	gl.UseProgram(s.programs["default"].GLProgram)
 
 	t := float32(time.Since(tStart)) / NANOSTOSEC
 	gl.Uniform1f(s.TimeUniform, t)
@@ -277,6 +287,12 @@ func (s *Scene) Draw() {
 	// Maintenance
 	s.Window.SwapBuffers()
 	glfw.PollEvents()
+}
+
+func (s *Scene) ReloadPrograms() {
+	for name, program := range s.programs {
+		s.LoadProgram(name, program.VShaderLocation, program.FShaderLocation)
+	}
 }
 
 var verts = []float32{

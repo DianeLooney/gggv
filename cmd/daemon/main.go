@@ -6,10 +6,8 @@ import (
 	"fmt"
 	_ "image/png"
 	"io"
-	"log"
-	"os"
+	"net"
 	"runtime"
-	"syscall"
 
 	"github.com/dianelooney/gvd/pkg/gvdl"
 
@@ -25,7 +23,7 @@ var dmn *daemon.D
 
 func main() {
 	flag.Parse()
-	pipeSetup()
+	netSetup()
 
 	dmn = daemon.New()
 
@@ -44,37 +42,35 @@ func main() {
 	dmn.DrawLoop()
 }
 
-var pipeFile = flag.String("pipe", "tmp/daemon.pipe", "Path to a named pipe to use for communication")
+var netAddr = flag.String("net", ":4200", "Network address to listen at.")
 
-func pipeSetup() {
-	os.Remove(*pipeFile)
-	err := syscall.Mkfifo(*pipeFile, 0666)
+func netSetup() {
+	srv, err := net.Listen("tcp", *netAddr)
 	if err != nil {
-		log.Fatal("Unable to create named pipe:", err)
+		panic(err)
 	}
 
 	go func() {
 		for {
-			file, err := os.OpenFile(*pipeFile, os.O_CREATE, 0600)
+			conn, err := srv.Accept()
 			if err != nil {
-				log.Fatal("Unable to open named pipe:", err)
+				panic(err)
 			}
-			handlePipe(bufio.NewReader(file), bufio.NewWriter(file))
+
+			go handleConnection(conn)
 		}
 	}()
 }
 
-func handlePipe(r *bufio.Reader, w *bufio.Writer) {
-	fmt.Println("Client connected")
-	defer fmt.Println("Client disconnected")
-
+func handleConnection(conn net.Conn) {
+	r := bufio.NewReader(conn)
 	for {
 		line, _, err := r.ReadLine()
 		if err == io.EOF {
 			return
 		}
 		if err != nil {
-			fmt.Println("Error reading from pipe:", err)
+			fmt.Println("Error reading from net:", err)
 			continue
 		}
 		err = gvdl.Exec(line, dmn)

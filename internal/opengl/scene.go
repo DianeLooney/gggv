@@ -20,6 +20,8 @@ var tStart = time.Now()
 
 var fullscreen = flag.Bool("fullscreen", true, "Start in fullscreen mode")
 
+var vsync = flag.Bool("vsync", true, "Enable/Disable vsync")
+
 func NewScene() *Scene {
 	if err := glfw.Init(); err != nil {
 		log.Fatalln("failed to initialize glfw:", err)
@@ -69,7 +71,11 @@ func NewScene() *Scene {
 	gl.DepthFunc(gl.LESS)
 	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	glfw.SwapInterval(0)
+	if *vsync {
+		glfw.SwapInterval(1)
+	} else {
+		glfw.SwapInterval(0)
+	}
 
 	return s
 }

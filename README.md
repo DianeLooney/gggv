@@ -8,4 +8,4 @@ How to build:
 
 * OSX: builds are similar to the Linux builds, but exact steps are not given.
 
-* Windows: Binaries are available through CircleCI as a build artifact. It is left to the user to install the various ffmpeg dlls. If you wish to build from source, follow along with the `win-build` entry in `.circleci/config.yml`.
+* Windows: Binaries are available through CircleCI as a build artifact. View build artifacts by appending `#artifacts/containers/0` to the CircleCI link of a `win-build` job. It is left to the user to install the various ffmpeg dlls. If you wish to build from source, follow along with the `win-build` entry in `.circleci/config.yml`.

@@ -202,6 +202,10 @@ func (s *Scene) BindBuffers() {
 }
 
 func (s *Scene) TextureInit(name string) {
+	if _, ok := s.textures[name]; ok {
+		return
+	}
+
 	var t uint32
 	gl.GenTextures(1, &t)
 	gl.ActiveTexture(gl.TEXTURE0)

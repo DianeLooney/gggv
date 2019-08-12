@@ -93,6 +93,7 @@ func (d *D) filterAndBind(name string, width, height int, img []uint8) {
 
 func (d *D) AddSource(name, path string) {
 	d.Schedule(func() {
+		d.Scene.TextureInit(name)
 		if _, ok := d.nextFrames[name]; !ok {
 			d.nextFrames[name] = time.Now()
 		}

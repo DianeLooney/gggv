@@ -35,9 +35,7 @@ func main() {
 	//dmn.Scene.SetLayer("sub", -1.0, "swap")
 
 	dmn.Scene.BindBuffers()
-	dmn.Scene.TextureInit("default")
 	dmn.AddSource("default", "sample.mp4")
-	//dmn.AddSource("swap", "sample2.mp4")
 
 	dmn.DrawLoop()
 }

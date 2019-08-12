@@ -69,7 +69,7 @@ func NewScene() *Scene {
 	gl.PixelStorei(gl.UNPACK_ALIGNMENT, 1)
 
 	gl.DepthFunc(gl.LESS)
-	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
+	gl.ClearColor(0, 0, 0, 1)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	if *vsync {
 		glfw.SwapInterval(1)
@@ -214,7 +214,7 @@ func (s *Scene) TextureInit(name string) {
 
 	var t uint32
 	gl.GenTextures(1, &t)
-	gl.ActiveTexture(gl.TEXTURE0)
+	gl.ActiveTexture(t)
 	gl.BindTexture(gl.TEXTURE_2D, t)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
 	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
@@ -229,7 +229,7 @@ func (s *Scene) RebindTexture(name string, width, height int, img []uint8) {
 		fmt.Printf("Unrecognized texture name %v\n", name)
 		return
 	}
-	gl.ActiveTexture(gl.TEXTURE0)
+	gl.ActiveTexture(t)
 	gl.BindTexture(gl.TEXTURE_2D, t)
 	gl.TexImage2D(
 		gl.TEXTURE_2D,
@@ -283,12 +283,11 @@ func (s *Scene) Draw() {
 	sort.Sort(layers(ls))
 
 	for _, l := range ls {
-		gl.BufferData(gl.ARRAY_BUFFER, len(verts)*4, gl.Ptr(verts), gl.STATIC_DRAW)
+		vs := verts(l.Depth)
+		gl.BufferData(gl.ARRAY_BUFFER, len(vs)*4, gl.Ptr(&vs[0]), gl.STATIC_DRAW)
 
 		gl.Uniform1f(s.DepthUniform, l.Depth)
-		depthVerts[11] = l.Depth
-		gl.UniformMatrix4fv(s.ModelUniform, 1, false, &depthVerts[0])
-		gl.ActiveTexture(gl.TEXTURE0)
+		//gl.Uniform4f(s.ModelUniform, 0, 0, l.Depth, 0)
 		gl.BindTexture(gl.TEXTURE_2D, s.textures[l.Texture])
 
 		gl.DrawArrays(gl.TRIANGLES, 0, 1*2*3)
@@ -305,17 +304,13 @@ func (s *Scene) ReloadPrograms() {
 	}
 }
 
-var verts = []float32{
-	-1.0, -1.0, 0.0, 0.0, 1.0,
-	1.0, -1.0, 0.0, 1.0, 1.0,
-	-1.0, 1.0, 0.0, 0.0, 0.0,
-	1.0, -1.0, 0.0, 1.0, 1.0,
-	1.0, 1.0, 0.0, 1.0, 0.0,
-	-1.0, 1.0, 0.0, 0.0, 0.0,
-}
-var depthVerts = [16]float32{
-	1, 0, 0, 0,
-	0, 1, 0, 0,
-	0, 0, 1, 1,
-	0, 0, 0, 1,
+func verts(d float32) []float32 {
+	return []float32{
+		-1.0, -1.0, d, 0.0, 1.0,
+		1.0, -1.0, d, 1.0, 1.0,
+		-1.0, 1.0, d, 0.0, 0.0,
+		1.0, -1.0, d, 1.0, 1.0,
+		1.0, 1.0, d, 1.0, 0.0,
+		-1.0, 1.0, d, 0.0, 0.0,
+	}
 }

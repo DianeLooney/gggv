@@ -47,9 +47,7 @@ func main() {
 var pipeFile = flag.String("pipe", "tmp/daemon.pipe", "Path to a named pipe to use for communication")
 
 func pipeSetup() {
-	fmt.Println("remove")
 	os.Remove(*pipeFile)
-	fmt.Println("mkfifo")
 	err := syscall.Mkfifo(*pipeFile, 0666)
 	if err != nil {
 		log.Fatal("Unable to create named pipe:", err)
@@ -68,10 +66,12 @@ func pipeSetup() {
 
 func handlePipe(r *bufio.Reader, w *bufio.Writer) {
 	fmt.Println("Client connected")
+	defer fmt.Println("Client disconnected")
+
 	for {
 		line, _, err := r.ReadLine()
 		if err == io.EOF {
-			fmt.Println("Client disconnected")
+			return
 		}
 		if err != nil {
 			fmt.Println("Error reading from pipe:", err)
@@ -79,7 +79,7 @@ func handlePipe(r *bufio.Reader, w *bufio.Writer) {
 		}
 		err = gvdl.Exec(line, dmn)
 		if err != nil {
-			fmt.Fprintln(w, "Error:", err)
+			fmt.Println("Error:", err)
 		}
 	}
 }

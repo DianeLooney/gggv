@@ -120,6 +120,7 @@ type Program struct {
 type Layer struct {
 	Depth   float32
 	Texture string
+	Program string
 }
 
 type layers []Layer
@@ -134,10 +135,11 @@ func (l layers) Len() int {
 	return len(l)
 }
 
-func (s *Scene) SetLayer(name string, depth float32, source string) {
+func (s *Scene) SetLayer(name string, depth float32, source string, program string) {
 	s.layers[name] = Layer{
 		Depth:   depth,
 		Texture: source,
+		Program: program,
 	}
 }
 
@@ -320,6 +322,7 @@ func (s *Scene) Draw() {
 
 	}
 	for _, l := range ls {
+		gl.UseProgram(s.programs[l.Program].GLProgram)
 		vs := verts(l.Depth)
 		gl.BufferData(gl.ARRAY_BUFFER, len(vs)*4, gl.Ptr(&vs[0]), gl.STATIC_DRAW)
 
@@ -332,10 +335,10 @@ func (s *Scene) Draw() {
 	}
 
 	{
-		//unbind framebuffer
 		gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
+		gl.UseProgram(s.programs["final"].GLProgram)
 		//bind framebuffer texture
 		gl.BufferData(gl.ARRAY_BUFFER, len(outputTris)*4, gl.Ptr(&outputTris[0]), gl.STATIC_DRAW)
 		gl.BindTexture(gl.TEXTURE_2D, s.fbTex)

@@ -103,7 +103,7 @@ func (d *D) AddSource(name, path string) {
 
 func (d *D) AddLayer(name, source, program string, depth float32) {
 	d.Schedule(func() {
-		d.Scene.SetLayer(name, depth, source)
+		d.Scene.SetLayer(name, depth, source, program)
 	})
 }
 

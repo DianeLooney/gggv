@@ -31,7 +31,11 @@ func main() {
 		panic(err)
 	}
 
-	dmn.Scene.SetLayer("default", 0.0, "default")
+	if err := dmn.Scene.LoadProgram("final", "shaders/vert/final.glsl", "shaders/frag/final.glsl"); err != nil {
+		panic(err)
+	}
+
+	dmn.Scene.SetLayer("default", 0.0, "default", "default")
 	//dmn.Scene.SetLayer("sub", -1.0, "swap")
 
 	dmn.Scene.BindBuffers()

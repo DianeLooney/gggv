@@ -350,23 +350,57 @@ func (s *Scene) Draw() {
 	}
 
 	for _, l := range ls {
-		gl.UseProgram(s.programs[l.Program].GLProgram)
+		program := s.programs[l.Program].GLProgram
+		gl.UseProgram(program)
 		vs := verts(l.Depth)
 		gl.BufferData(gl.ARRAY_BUFFER, len(vs)*4, gl.Ptr(&vs[0]), gl.STATIC_DRAW)
 
-		gl.Uniform1f(s.DepthUniform, l.Depth)
-		//gl.Uniform4f(s.ModelUniform, 0, 0, l.Depth, 0)
+		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, s.textures[l.Texture])
 
+		gl.ActiveTexture(gl.TEXTURE1)
+		gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
+		prevFrame := gl.GetUniformLocation(program, gl.Str("prevFrame"+"\x00"))
+		gl.Uniform1i(prevFrame, 1)
+
+		//texture 1, other texture
+		gl.ActiveTexture(gl.TEXTURE2)
+		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
+		prevPass := gl.GetUniformLocation(program, gl.Str("prevPass"+"\x00"))
+		gl.Uniform1i(prevPass, 2)
+
+		gl.Uniform1f(s.DepthUniform, l.Depth)
+
+		gl.ActiveTexture(gl.TEXTURE0)
 		gl.DrawArrays(gl.TRIANGLES, 0, 2*3)
-		// snapshot framebuffer output into lastPass
+
+		fmt.Println(s.prevPassFBTex, s.prevFrameFBTex, prevFrame, prevPass)
 	}
 
 	{
+
 		gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		gl.UseProgram(s.programs["final"].GLProgram)
+		program := s.programs["final"].GLProgram
+		gl.UseProgram(program)
+
+		gl.ActiveTexture(gl.TEXTURE0)
+		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
+
+		gl.ActiveTexture(gl.TEXTURE1)
+		gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
+		prevFrame := gl.GetUniformLocation(program, gl.Str("prevFrame"+"\x00"))
+		gl.Uniform1i(prevFrame, 1)
+
+		//texture 1, other texture
+		gl.ActiveTexture(gl.TEXTURE2)
+		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
+		prevPass := gl.GetUniformLocation(program, gl.Str("prevPass"+"\x00"))
+		gl.Uniform1i(prevPass, 2)
+
+		gl.ActiveTexture(gl.TEXTURE0)
+
 		//bind framebuffer texture
 		gl.BufferData(gl.ARRAY_BUFFER, len(outputTris)*4, gl.Ptr(&outputTris[0]), gl.STATIC_DRAW)
 		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)

@@ -1,6 +1,8 @@
 #version 330
 
 uniform sampler2D tex;
+uniform sampler2D prevPass;
+uniform sampler2D prevFrame;
 uniform float time;
 
 in vec2 fragTexCoord;
@@ -8,6 +10,5 @@ in vec2 fragTexCoord;
 out vec4 outputColor;
 
 void main() {
-	vec4 color = texture(tex, fragTexCoord);
-    outputColor = vec4(color.r, color.g, color.b, 1);
+    outputColor = 10*(texture(prevPass, fragTexCoord) - 0.95 * texture(prevPass, fragTexCoord));
 }

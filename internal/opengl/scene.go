@@ -77,6 +77,9 @@ func NewScene() *Scene {
 		glfw.SwapInterval(0)
 	}
 
+	w, h := s.Window.GetFramebufferSize()
+	s.Width, s.Height = int32(w), int32(h)
+
 	return s
 }
 
@@ -95,6 +98,15 @@ type Scene struct {
 	ModelUniform int32
 	TimeUniform  int32
 	DepthUniform int32
+
+	Width  int32
+	Height int32
+
+	fbObj     uint32
+	fbTex     uint32
+	rbObj     uint32
+	prevPass  []uint8
+	prevFrame []uint8
 
 	layers   map[string]Layer
 	programs map[string]Program
@@ -205,6 +217,22 @@ func (s *Scene) BindBuffers() {
 	texCoordAttrib := uint32(gl.GetAttribLocation(s.programs["default"].GLProgram, gl.Str("vertTexCoord\x00")))
 	gl.EnableVertexAttribArray(texCoordAttrib)
 	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
+
+	gl.GenFramebuffers(1, &s.fbObj)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, s.fbObj)
+	gl.GenTextures(1, &s.fbTex)
+	gl.BindTexture(gl.TEXTURE_2D, s.fbTex)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, s.fbTex, 0)
+
+	gl.GenRenderbuffers(1, &s.rbObj)
+	gl.BindRenderbuffer(gl.RENDERBUFFER, s.rbObj)
+	gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
+	gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
+	gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, s.rbObj)
+
 }
 
 func (s *Scene) TextureInit(name string) {
@@ -267,8 +295,6 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 }
 
 func (s *Scene) Draw() {
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
 	//fmt.Println(s.programs["default"])
 	gl.UseProgram(s.programs["default"].GLProgram)
 
@@ -282,6 +308,17 @@ func (s *Scene) Draw() {
 	}
 	sort.Sort(layers(ls))
 
+	{
+		//bind framebuffer
+		gl.BindFramebuffer(gl.FRAMEBUFFER, s.fbObj)
+
+		//snapshot framebuffer output into lastFrame
+		// TODO
+
+		//reset buffer bits
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+	}
 	for _, l := range ls {
 		vs := verts(l.Depth)
 		gl.BufferData(gl.ARRAY_BUFFER, len(vs)*4, gl.Ptr(&vs[0]), gl.STATIC_DRAW)
@@ -290,10 +327,23 @@ func (s *Scene) Draw() {
 		//gl.Uniform4f(s.ModelUniform, 0, 0, l.Depth, 0)
 		gl.BindTexture(gl.TEXTURE_2D, s.textures[l.Texture])
 
-		gl.DrawArrays(gl.TRIANGLES, 0, 1*2*3)
+		gl.DrawArrays(gl.TRIANGLES, 0, 2*3)
+		// snapshot framebuffer output into lastPass
 	}
 
-	// Maintenance
+	{
+		//unbind framebuffer
+		gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+
+		//bind framebuffer texture
+		gl.BufferData(gl.ARRAY_BUFFER, len(outputTris)*4, gl.Ptr(&outputTris[0]), gl.STATIC_DRAW)
+		gl.BindTexture(gl.TEXTURE_2D, s.fbTex)
+		gl.DrawArrays(gl.TRIANGLES, 0, 2*3)
+
+		//draw output wuad
+	}
+
 	s.Window.SwapBuffers()
 	glfw.PollEvents()
 }
@@ -313,4 +363,13 @@ func verts(d float32) []float32 {
 		1.0, 1.0, d, 1.0, 0.0,
 		-1.0, 1.0, d, 0.0, 0.0,
 	}
+}
+
+var outputTris = []float32{
+	-1.0, -1.0, 0, 0.0, 0.0,
+	1.0, -1.0, 0, 1.0, 0.0,
+	-1.0, 1.0, 0, 0.0, 1.0,
+	1.0, -1.0, 0, 1.0, 0.0,
+	1.0, 1.0, 0, 1.0, 1.0,
+	-1.0, 1.0, 0, 0.0, 1.0,
 }

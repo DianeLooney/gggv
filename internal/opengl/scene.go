@@ -210,14 +210,6 @@ func (s *Scene) BindBuffers() {
 	gl.GenBuffers(1, &s.vbo)
 	gl.BindBuffer(gl.ARRAY_BUFFER, s.vbo)
 
-	vertAttrib := uint32(gl.GetAttribLocation(s.programs["default"].GLProgram, gl.Str("vert\x00")))
-	gl.EnableVertexAttribArray(vertAttrib)
-	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, false, 5*4, gl.PtrOffset(0))
-
-	texCoordAttrib := uint32(gl.GetAttribLocation(s.programs["default"].GLProgram, gl.Str("vertTexCoord\x00")))
-	gl.EnableVertexAttribArray(texCoordAttrib)
-	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
-
 	{ // previousPass pipeline setup
 		gl.GenFramebuffers(1, &s.prevPassFBObj)
 		gl.BindFramebuffer(gl.FRAMEBUFFER, s.prevPassFBObj)
@@ -388,6 +380,14 @@ func (s *Scene) Draw() {
 }
 
 func (s *Scene) bindCommonUniforms(program uint32) {
+	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vert\x00")))
+	gl.EnableVertexAttribArray(vertAttrib)
+	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, false, 5*4, gl.PtrOffset(0))
+
+	texCoordAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vertTexCoord\x00")))
+	gl.EnableVertexAttribArray(texCoordAttrib)
+	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
+
 	// TODO: FIX and remove depth uniform
 	// model := gl.GetUniformLocation(program, gl.Str("model\x00"))
 	// gl.UniformMatrix4fv(model, 1, false, &)

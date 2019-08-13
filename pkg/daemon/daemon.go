@@ -7,7 +7,6 @@ import (
 
 	"github.com/dianelooney/gvd/filters"
 	"github.com/dianelooney/gvd/internal/ffmpeg"
-	"github.com/dianelooney/gvd/internal/fps"
 	"github.com/dianelooney/gvd/pkg/com"
 
 	"github.com/dianelooney/gvd/internal/opengl"
@@ -62,10 +61,6 @@ func (d *D) DrawLoop() {
 		d.Mtx.Unlock()
 
 		d.Scene.Draw()
-		fps.Next()
-		if *showFPS {
-			fmt.Printf("FPS: %v\t%v\n", fps.LastSec(), fps.FrameDuration())
-		}
 	}
 }
 

@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dianelooney/gvd/internal/fps"
+
 	"github.com/go-gl/gl/all-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
@@ -376,6 +378,7 @@ func (s *Scene) Draw() {
 	}
 
 	s.Window.SwapBuffers()
+	fps.Next()
 	glfw.PollEvents()
 }
 
@@ -415,6 +418,11 @@ func (s *Scene) bindCommonUniforms(program uint32) {
 	timeU := gl.GetUniformLocation(program, gl.Str("time\x00"))
 	gl.Uniform1f(timeU, s.time)
 
+	fpsU := gl.GetUniformLocation(program, gl.Str("fps\x00"))
+	gl.Uniform1i(fpsU, int32(fps.LastSec()))
+
+	renderTime := gl.GetUniformLocation(program, gl.Str("renderTime\x00"))
+	gl.Uniform1f(renderTime, float32(fps.FrameDuration())/NANOSTOSEC)
 }
 
 func (s *Scene) ReloadPrograms() {

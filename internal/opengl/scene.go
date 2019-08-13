@@ -169,7 +169,6 @@ func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string
 		VShaderLocation: vertShaderLocation,
 		GLProgram:       program,
 	}
-	s.programs[name] = p
 
 	gl.AttachShader(program, vertexShader)
 	gl.AttachShader(program, fragmentShader)
@@ -184,8 +183,14 @@ func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string
 		log := strings.Repeat("\x00", int(logLength+1))
 		gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
 
+		//gl.DeleteProgram(program)
 		return fmt.Errorf("failed to link program: %v", log)
 	}
+
+	if old, ok := s.programs[name]; ok {
+		gl.DeleteProgram(old.GLProgram)
+	}
+	s.programs[name] = p
 
 	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
 
@@ -398,7 +403,6 @@ func (s *Scene) bindCommonUniforms(program uint32) {
 	prevFrame := gl.GetUniformLocation(program, gl.Str("prevFrame"+"\x00"))
 	gl.Uniform1i(prevFrame, 1)
 
-	//texture 1, other texture
 	gl.ActiveTexture(gl.TEXTURE2)
 	gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
 	prevPass := gl.GetUniformLocation(program, gl.Str("prevPass"+"\x00"))

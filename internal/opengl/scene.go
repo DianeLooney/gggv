@@ -373,8 +373,6 @@ func (s *Scene) Draw() {
 
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.DrawArrays(gl.TRIANGLES, 0, 2*3)
-
-		fmt.Println(s.prevPassFBTex, s.prevFrameFBTex, prevFrame, prevPass)
 	}
 
 	{

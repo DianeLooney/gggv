@@ -10,5 +10,5 @@ in vec2 fragTexCoord;
 out vec4 outputColor;
 
 void main() {
-    outputColor = 10*(texture(prevPass, fragTexCoord) - 0.95 * texture(prevFrame, fragTexCoord));
+    outputColor = texture(tex, fragTexCoord);
 }

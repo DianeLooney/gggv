@@ -93,14 +93,13 @@ type Scene struct {
 	vao uint32
 	vbo uint32
 
-	Camera       mgl32.Mat4
-	Projection   mgl32.Mat4
-	ModelUniform int32
-	TimeUniform  int32
-	DepthUniform int32
+	Camera     mgl32.Mat4
+	Projection mgl32.Mat4
 
 	Width  int32
 	Height int32
+
+	time float32
 
 	prevPassFBObj uint32
 	prevPassFBTex uint32
@@ -188,21 +187,13 @@ func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string
 		return fmt.Errorf("failed to link program: %v", log)
 	}
 
+	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
+
 	gl.DeleteShader(vertexShader)
 	gl.DeleteShader(fragmentShader)
 
 	gl.UseProgram(program)
 
-	projectionUniform := gl.GetUniformLocation(program, gl.Str("projection\x00"))
-	gl.UniformMatrix4fv(projectionUniform, 1, false, &s.Projection[0])
-	cameraUniform := gl.GetUniformLocation(program, gl.Str("camera\x00"))
-	gl.UniformMatrix4fv(cameraUniform, 1, false, &s.Camera[0])
-	textureUniform := gl.GetUniformLocation(program, gl.Str("tex\x00"))
-	gl.Uniform1i(textureUniform, 0)
-	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
-	s.TimeUniform = gl.GetUniformLocation(program, gl.Str("time\x00"))
-	s.ModelUniform = gl.GetUniformLocation(program, gl.Str("model\x00"))
-	s.DepthUniform = gl.GetUniformLocation(program, gl.Str("depth\x00"))
 	return nil
 }
 
@@ -324,8 +315,7 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 func (s *Scene) Draw() {
 	gl.UseProgram(s.programs["default"].GLProgram)
 
-	t := float32(time.Since(tStart)) / NANOSTOSEC
-	gl.Uniform1f(s.TimeUniform, t)
+	s.time = float32(time.Since(tStart)) / NANOSTOSEC
 	gl.BindVertexArray(s.vao)
 
 	var ls []Layer
@@ -358,18 +348,10 @@ func (s *Scene) Draw() {
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, s.textures[l.Texture])
 
-		gl.ActiveTexture(gl.TEXTURE1)
-		gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
-		prevFrame := gl.GetUniformLocation(program, gl.Str("prevFrame"+"\x00"))
-		gl.Uniform1i(prevFrame, 1)
+		s.bindCommonUniforms(program)
 
-		//texture 1, other texture
-		gl.ActiveTexture(gl.TEXTURE2)
-		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
-		prevPass := gl.GetUniformLocation(program, gl.Str("prevPass"+"\x00"))
-		gl.Uniform1i(prevPass, 2)
-
-		gl.Uniform1f(s.DepthUniform, l.Depth)
+		depth := gl.GetUniformLocation(program, gl.Str("depth"+"\x00"))
+		gl.Uniform1f(depth, l.Depth)
 
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.DrawArrays(gl.TRIANGLES, 0, 2*3)
@@ -386,18 +368,7 @@ func (s *Scene) Draw() {
 		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
 
-		gl.ActiveTexture(gl.TEXTURE1)
-		gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
-		prevFrame := gl.GetUniformLocation(program, gl.Str("prevFrame"+"\x00"))
-		gl.Uniform1i(prevFrame, 1)
-
-		//texture 1, other texture
-		gl.ActiveTexture(gl.TEXTURE2)
-		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
-		prevPass := gl.GetUniformLocation(program, gl.Str("prevPass"+"\x00"))
-		gl.Uniform1i(prevPass, 2)
-
-		gl.ActiveTexture(gl.TEXTURE0)
+		s.bindCommonUniforms(program)
 
 		//bind framebuffer texture
 		gl.BufferData(gl.ARRAY_BUFFER, len(outputTris)*4, gl.Ptr(&outputTris[0]), gl.STATIC_DRAW)
@@ -409,6 +380,37 @@ func (s *Scene) Draw() {
 
 	s.Window.SwapBuffers()
 	glfw.PollEvents()
+}
+
+func (s *Scene) bindCommonUniforms(program uint32) {
+	// TODO: FIX and remove depth uniform
+	// model := gl.GetUniformLocation(program, gl.Str("model\x00"))
+	// gl.UniformMatrix4fv(model, 1, false, &)
+
+	projection := gl.GetUniformLocation(program, gl.Str("projection\x00"))
+	gl.UniformMatrix4fv(projection, 1, false, &s.Projection[0])
+
+	camera := gl.GetUniformLocation(program, gl.Str("camera\x00"))
+	gl.UniformMatrix4fv(camera, 1, false, &s.Camera[0])
+
+	gl.ActiveTexture(gl.TEXTURE1)
+	gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
+	prevFrame := gl.GetUniformLocation(program, gl.Str("prevFrame"+"\x00"))
+	gl.Uniform1i(prevFrame, 1)
+
+	//texture 1, other texture
+	gl.ActiveTexture(gl.TEXTURE2)
+	gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
+	prevPass := gl.GetUniformLocation(program, gl.Str("prevPass"+"\x00"))
+	gl.Uniform1i(prevPass, 2)
+
+	texture := gl.GetUniformLocation(program, gl.Str("tex\x00"))
+	gl.Uniform1i(texture, 0)
+	gl.ActiveTexture(gl.TEXTURE0)
+
+	timeU := gl.GetUniformLocation(program, gl.Str("time\x00"))
+	gl.Uniform1f(timeU, s.time)
+
 }
 
 func (s *Scene) ReloadPrograms() {

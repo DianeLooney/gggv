@@ -196,17 +196,6 @@ func (d *Decoder) Dealloc() {
 	d.pFormatContext.AvformatCloseInput()
 }
 
-func NewFileDecoder(fname string) (d *Decoder, err error) {
-	d = &Decoder{}
-	err = d.Begin(fname)
-	if err != nil {
-		return nil, err
-	}
-	d.width = d.pCodecCtx.Width()
-	d.height = d.pCodecCtx.Height()
-	return
-}
-
 type frame struct {
 	pix      []uint8
 	duration int

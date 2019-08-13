@@ -4,11 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"sync"
-	"time"
 
 	"github.com/dianelooney/gvd/filters"
 	"github.com/dianelooney/gvd/internal/ffmpeg"
 	"github.com/dianelooney/gvd/internal/fps"
+	"github.com/dianelooney/gvd/pkg/com"
 
 	"github.com/dianelooney/gvd/internal/opengl"
 )
@@ -18,17 +18,15 @@ var showFPS = flag.Bool("fps", false, "Log fps to the command line")
 func New() *D {
 	return &D{
 		Scene:           opengl.NewScene(),
-		decoders:        make(map[string]*ffmpeg.AsyncDecoder),
-		nextFrames:      make(map[string]time.Time),
+		samplers:        make(map[string]com.Sampler),
 		mainThreadTasks: make(chan func(), 20),
 	}
 }
 
 type D struct {
-	Mtx        sync.Mutex
-	Scene      *opengl.Scene
-	nextFrames map[string]time.Time
-	decoders   map[string]*ffmpeg.AsyncDecoder
+	Mtx      sync.Mutex
+	Scene    *opengl.Scene
+	samplers map[string]com.Sampler
 
 	mainThreadTasks chan func()
 }
@@ -53,16 +51,12 @@ func (d *D) DrawLoop() {
 		d.FlushTasks()
 
 		d.Mtx.Lock()
-		for name, decoder := range d.decoders {
-			nextFrame := d.nextFrames[name]
-			if !nextFrame.Before(time.Now()) {
+		for name, sampler := range d.samplers {
+			if !sampler.Ready() {
 				continue
 			}
-
-			img, duration := decoder.NextFrame()
-			d.nextFrames[name] = nextFrame.Add(duration)
-			w, h := decoder.Dimensions()
-			d.filterAndBind(name, w, h, img)
+			w, h, pix := sampler.Sample()
+			d.filterAndBind(name, w, h, pix)
 		}
 
 		d.Mtx.Unlock()
@@ -94,19 +88,16 @@ func (d *D) filterAndBind(name string, width, height int, img []uint8) {
 func (d *D) AddSource(name, path string) {
 	d.Schedule(func() {
 		d.Scene.TextureInit(name)
-		if _, ok := d.nextFrames[name]; !ok {
-			d.nextFrames[name] = time.Now()
+		if s, ok := d.samplers[name]; ok {
+			s.Done()
 		}
 
-		if dec, ok := d.decoders[name]; ok {
-			dec.Dealloc()
-		}
-		dec, err := ffmpeg.NewAsyncFileDecoder(path)
+		s, err := ffmpeg.NewFileSampler(path)
 		if err != nil {
 			fmt.Println("Error adding source:", err)
 			return
 		}
-		d.decoders[name] = dec
+		d.samplers[name] = s
 	})
 }
 

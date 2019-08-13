@@ -102,11 +102,13 @@ type Scene struct {
 	Width  int32
 	Height int32
 
-	fbObj     uint32
-	fbTex     uint32
-	rbObj     uint32
-	prevPass  []uint8
-	prevFrame []uint8
+	prevPassFBObj uint32
+	prevPassFBTex uint32
+	prevPassRBObj uint32
+
+	prevFrameFBObj uint32
+	prevFrameFBTex uint32
+	prevFrameRBObj uint32
 
 	layers   map[string]Layer
 	programs map[string]Program
@@ -220,20 +222,43 @@ func (s *Scene) BindBuffers() {
 	gl.EnableVertexAttribArray(texCoordAttrib)
 	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
 
-	gl.GenFramebuffers(1, &s.fbObj)
-	gl.BindFramebuffer(gl.FRAMEBUFFER, s.fbObj)
-	gl.GenTextures(1, &s.fbTex)
-	gl.BindTexture(gl.TEXTURE_2D, s.fbTex)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, s.fbTex, 0)
+	{ // previousPass pipeline setup
+		gl.GenFramebuffers(1, &s.prevPassFBObj)
+		gl.BindFramebuffer(gl.FRAMEBUFFER, s.prevPassFBObj)
+		gl.GenTextures(1, &s.prevPassFBTex)
+		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
+		gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+		gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, s.prevPassFBTex, 0)
 
-	gl.GenRenderbuffers(1, &s.rbObj)
-	gl.BindRenderbuffer(gl.RENDERBUFFER, s.rbObj)
-	gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
-	gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
-	gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, s.rbObj)
+		gl.GenRenderbuffers(1, &s.prevPassRBObj)
+
+		gl.BindRenderbuffer(gl.RENDERBUFFER, s.prevPassRBObj)
+
+		gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
+		gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
+		gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, s.prevPassRBObj)
+	}
+
+	{ // previousFrame pipeline setup
+		gl.GenFramebuffers(1, &s.prevFrameFBObj)
+		gl.BindFramebuffer(gl.FRAMEBUFFER, s.prevFrameFBObj)
+		gl.GenTextures(1, &s.prevFrameFBTex)
+		gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
+		gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+		gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, s.prevFrameFBTex, 0)
+
+		gl.GenRenderbuffers(1, &s.prevFrameRBObj)
+
+		gl.BindRenderbuffer(gl.RENDERBUFFER, s.prevFrameRBObj)
+
+		gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
+		gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
+		gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, s.prevFrameRBObj)
+	}
 
 }
 
@@ -297,7 +322,6 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 }
 
 func (s *Scene) Draw() {
-	//fmt.Println(s.programs["default"])
 	gl.UseProgram(s.programs["default"].GLProgram)
 
 	t := float32(time.Since(tStart)) / NANOSTOSEC
@@ -311,16 +335,20 @@ func (s *Scene) Draw() {
 	sort.Sort(layers(ls))
 
 	{
+		s.prevPassFBObj, s.prevFrameFBObj = s.prevFrameFBObj, s.prevPassFBObj
+		s.prevPassFBTex, s.prevFrameFBTex = s.prevFrameFBTex, s.prevPassFBTex
+		s.prevPassRBObj, s.prevFrameRBObj = s.prevFrameRBObj, s.prevPassRBObj
+
 		//bind framebuffer
-		gl.BindFramebuffer(gl.FRAMEBUFFER, s.fbObj)
+		gl.BindFramebuffer(gl.FRAMEBUFFER, s.prevPassFBObj)
 
 		//snapshot framebuffer output into lastFrame
 		// TODO
 
 		//reset buffer bits
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-
 	}
+
 	for _, l := range ls {
 		gl.UseProgram(s.programs[l.Program].GLProgram)
 		vs := verts(l.Depth)
@@ -341,7 +369,7 @@ func (s *Scene) Draw() {
 		gl.UseProgram(s.programs["final"].GLProgram)
 		//bind framebuffer texture
 		gl.BufferData(gl.ARRAY_BUFFER, len(outputTris)*4, gl.Ptr(&outputTris[0]), gl.STATIC_DRAW)
-		gl.BindTexture(gl.TEXTURE_2D, s.fbTex)
+		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
 		gl.DrawArrays(gl.TRIANGLES, 0, 2*3)
 
 		//draw output wuad

@@ -9,6 +9,8 @@ import (
 	"net"
 	"runtime"
 
+	"github.com/dianelooney/gvd/internal/opengl"
+
 	"github.com/dianelooney/gvd/pkg/gvdl"
 
 	"github.com/dianelooney/gvd/pkg/daemon"
@@ -35,11 +37,12 @@ func main() {
 		panic(err)
 	}
 
-	dmn.Scene.SetLayer("default", 0.0, "default", "default")
-	//dmn.Scene.SetLayer("sub", -1.0, "swap")
+	dmn.Scene.SetLayer("default", 0.0, "default", [opengl.LAYER_TEXTURE_COUNT]string{"default0", "default1", "default2"})
 
 	dmn.Scene.BindBuffers()
-	dmn.AddSource("default", "sample.mp4")
+	dmn.AddSource("default0", "sample0.mp4")
+	dmn.AddSource("default1", "sample1.mp4")
+	dmn.AddSource("default2", "sample2.mp4")
 
 	dmn.DrawLoop()
 }

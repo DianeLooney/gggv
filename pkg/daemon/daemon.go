@@ -96,9 +96,9 @@ func (d *D) AddSource(name, path string) {
 	})
 }
 
-func (d *D) AddLayer(name, source, program string, depth float32) {
+func (d *D) AddLayer(name string, depth float32, program string, sources [opengl.LAYER_TEXTURE_COUNT]string) {
 	d.Schedule(func() {
-		d.Scene.SetLayer(name, depth, source, program)
+		d.Scene.SetLayer(name, depth, program, sources)
 	})
 }
 

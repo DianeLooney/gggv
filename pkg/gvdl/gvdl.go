@@ -7,6 +7,8 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/dianelooney/gvd/internal/opengl"
+
 	"github.com/dianelooney/gvd/pkg/daemon"
 )
 
@@ -89,11 +91,6 @@ func execAddLayer(sc *bufio.Scanner, d *daemon.D) (err error) {
 	if !sc.Scan() {
 		return io.ErrUnexpectedEOF
 	}
-	source := sc.Text()
-
-	if !sc.Scan() {
-		return io.ErrUnexpectedEOF
-	}
 	program := sc.Text()
 
 	if !sc.Scan() {
@@ -104,7 +101,15 @@ func execAddLayer(sc *bufio.Scanner, d *daemon.D) (err error) {
 	if err != nil {
 		return err
 	}
-	d.AddLayer(name, source, program, float32(depthI))
+
+	var sources [opengl.LAYER_TEXTURE_COUNT]string
+	for i := 0; i < opengl.LAYER_TEXTURE_COUNT; i++ {
+		if sc.Scan() {
+			sources[i] = sc.Text()
+		}
+	}
+
+	d.AddLayer(name, float32(depthI), program, sources)
 	return
 }
 

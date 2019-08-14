@@ -120,10 +120,13 @@ type Program struct {
 	VShaderLocation string
 	GLProgram       uint32
 }
+
+const LAYER_TEXTURE_COUNT = 10
+
 type Layer struct {
-	Depth   float32
-	Texture string
-	Program string
+	Depth    float32
+	Textures [LAYER_TEXTURE_COUNT]string
+	Program  string
 }
 
 type layers []Layer
@@ -138,11 +141,11 @@ func (l layers) Len() int {
 	return len(l)
 }
 
-func (s *Scene) SetLayer(name string, depth float32, source string, program string) {
+func (s *Scene) SetLayer(name string, depth float32, program string, sources [LAYER_TEXTURE_COUNT]string) {
 	s.layers[name] = Layer{
-		Depth:   depth,
-		Texture: source,
-		Program: program,
+		Depth:    depth,
+		Textures: sources,
+		Program:  program,
 	}
 }
 
@@ -344,8 +347,10 @@ func (s *Scene) Draw() {
 		vs := verts(l.Depth)
 		gl.BufferData(gl.ARRAY_BUFFER, len(vs)*4, gl.Ptr(&vs[0]), gl.STATIC_DRAW)
 
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, s.textures[l.Texture])
+		for i := 0; i < LAYER_TEXTURE_COUNT; i++ {
+			gl.ActiveTexture(gl.TEXTURE0 + uint32(i))
+			gl.BindTexture(gl.TEXTURE_2D, s.textures[l.Textures[i]])
+		}
 
 		s.bindCommonUniforms(program)
 
@@ -401,19 +406,20 @@ func (s *Scene) bindCommonUniforms(program uint32) {
 	camera := gl.GetUniformLocation(program, gl.Str("camera\x00"))
 	gl.UniformMatrix4fv(camera, 1, false, &s.Camera[0])
 
-	gl.ActiveTexture(gl.TEXTURE1)
+	gl.ActiveTexture(gl.TEXTURE0 + LAYER_TEXTURE_COUNT)
 	gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
 	prevFrame := gl.GetUniformLocation(program, gl.Str("prevFrame"+"\x00"))
-	gl.Uniform1i(prevFrame, 1)
+	gl.Uniform1i(prevFrame, LAYER_TEXTURE_COUNT)
 
-	gl.ActiveTexture(gl.TEXTURE2)
+	gl.ActiveTexture(gl.TEXTURE0 + LAYER_TEXTURE_COUNT + 1)
 	gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
 	prevPass := gl.GetUniformLocation(program, gl.Str("prevPass"+"\x00"))
-	gl.Uniform1i(prevPass, 2)
+	gl.Uniform1i(prevPass, LAYER_TEXTURE_COUNT+1)
 
-	texture := gl.GetUniformLocation(program, gl.Str("tex\x00"))
-	gl.Uniform1i(texture, 0)
-	gl.ActiveTexture(gl.TEXTURE0)
+	for i := int32(0); i < LAYER_TEXTURE_COUNT; i++ {
+		tex := gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%v\x00", i)))
+		gl.Uniform1i(tex, i)
+	}
 
 	timeU := gl.GetUniformLocation(program, gl.Str("time\x00"))
 	gl.Uniform1f(timeU, s.time)

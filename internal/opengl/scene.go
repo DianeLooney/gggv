@@ -41,6 +41,7 @@ func NewScene() *Scene {
 		layers:   make(map[string]Layer),
 		programs: make(map[string]Program),
 		textures: make(map[string]uint32),
+		uniforms: make(map[string]map[string]Uniform),
 	}
 
 	var err error
@@ -114,6 +115,7 @@ type Scene struct {
 	layers   map[string]Layer
 	programs map[string]Program
 	textures map[string]uint32
+	uniforms map[string]map[string]Uniform
 }
 type Program struct {
 	FShaderLocation string
@@ -124,9 +126,32 @@ type Program struct {
 const LAYER_TEXTURE_COUNT = 10
 
 type Layer struct {
+	Name     string
 	Depth    float32
 	Textures [LAYER_TEXTURE_COUNT]string
 	Program  string
+}
+
+type Uniform struct {
+	Name  string
+	Type  string
+	Value interface{}
+}
+
+func (u Uniform) Bind(program uint32) {
+	uLoc := gl.GetUniformLocation(program, gl.Str(u.Name+"\x00"))
+	switch u.Type {
+	case "float":
+		fmt.Println("binding uniform", u.Name, u.Type, u.Value)
+		fmt.Printf("%T\n", u.Value)
+		if v, ok := u.Value.(float32); ok {
+			fmt.Println("bound")
+			gl.Uniform1f(uLoc, v)
+		}
+	case "vec2":
+	case "vec3":
+	case "vec4":
+	}
 }
 
 type layers []Layer
@@ -143,9 +168,23 @@ func (l layers) Len() int {
 
 func (s *Scene) SetLayer(name string, depth float32, program string, sources [LAYER_TEXTURE_COUNT]string) {
 	s.layers[name] = Layer{
+		Name:     name,
 		Depth:    depth,
 		Textures: sources,
 		Program:  program,
+	}
+}
+
+func (s *Scene) SetUniform(layer, name, typ string, value interface{}) {
+	m, ok := s.uniforms[layer]
+	if !ok {
+		m = make(map[string]Uniform)
+		s.uniforms[layer] = m
+	}
+	m[name] = Uniform{
+		Name:  name,
+		Type:  typ,
+		Value: value,
 	}
 }
 
@@ -353,6 +392,17 @@ func (s *Scene) Draw() {
 		}
 
 		s.bindCommonUniforms(program)
+
+		if uniforms, ok := s.uniforms[l.Name]; ok {
+			for _, uniform := range uniforms {
+				uniform.Bind(program)
+			}
+		}
+		if uniforms, ok := s.uniforms["*"]; ok {
+			for _, uniform := range uniforms {
+				uniform.Bind(program)
+			}
+		}
 
 		depth := gl.GetUniformLocation(program, gl.Str("depth"+"\x00"))
 		gl.Uniform1f(depth, l.Depth)

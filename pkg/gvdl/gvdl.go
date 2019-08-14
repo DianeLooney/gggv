@@ -25,6 +25,8 @@ func exec(sc *bufio.Scanner, d *daemon.D) (err error) {
 	switch sc.Text() {
 	case "add":
 		return execAdd(sc, d)
+	case "set":
+		return execSet(sc, d)
 	case "reload":
 		return execReload(sc, d)
 	}
@@ -111,6 +113,50 @@ func execAddLayer(sc *bufio.Scanner, d *daemon.D) (err error) {
 
 	d.AddLayer(name, float32(depthI), program, sources)
 	return
+}
+func execSet(sc *bufio.Scanner, d *daemon.D) (err error) {
+	if !sc.Scan() {
+		return io.ErrUnexpectedEOF
+	}
+	switch sc.Text() {
+	case "uniform":
+		return execSetUniform(sc, d)
+	}
+	return fmt.Errorf("unrecognized set subcommand '%s'", sc.Text())
+}
+func execSetUniform(sc *bufio.Scanner, d *daemon.D) (err error) {
+	if !sc.Scan() {
+		return io.ErrUnexpectedEOF
+	}
+	typ := sc.Text()
+
+	if !sc.Scan() {
+		return io.ErrUnexpectedEOF
+	}
+	name := sc.Text()
+
+	if !sc.Scan() {
+		return io.ErrUnexpectedEOF
+	}
+	vRaw := sc.Text()
+	var value interface{}
+	switch typ {
+	case "float":
+		floatV, err := strconv.ParseFloat(vRaw, 32)
+		if err != nil {
+			return err
+		}
+		value = float32(floatV)
+	}
+
+	var layers []string
+	for sc.Scan() {
+		layers = append(layers, sc.Text())
+	}
+
+	d.SetUniform(name, typ, value, layers)
+	fmt.Println(name, typ, value, layers)
+	return nil
 }
 
 func execReload(sc *bufio.Scanner, d *daemon.D) (err error) {

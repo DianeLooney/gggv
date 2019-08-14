@@ -108,6 +108,12 @@ func (d *D) AddProgram(name, pathV, pathF string) {
 	})
 }
 
+func (d *D) SetUniform(name string, typ string, value interface{}, layers []string) {
+	for _, l := range layers {
+		d.Scene.SetUniform(l, name, typ, value)
+	}
+}
+
 func (d *D) ReloadPrograms() {
 	d.Schedule(func() {
 		d.Scene.ReloadPrograms()

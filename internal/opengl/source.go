@@ -1,6 +1,9 @@
 package opengl
 
-import "errors"
+import (
+	"errors"
+	"fmt"
+)
 
 type SourceKind string
 
@@ -41,6 +44,11 @@ func (s *sorter) order(name SourceName, depth int) (err error) {
 		return nil
 	}
 
+	this := s.sources[name]
+	if this == nil {
+		fmt.Printf("Unable to find source definition for '%v'\n", name)
+		return nil
+	}
 	for _, child := range s.sources[name].Children() {
 		s.order(child, depth+1)
 	}

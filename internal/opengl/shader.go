@@ -33,9 +33,11 @@ func (s *ShaderSource) Name() SourceName {
 	return s.name
 }
 func (s *ShaderSource) Children() []SourceName {
-	out := make([]SourceName, SHADER_TEXTURE_COUNT)
+	out := []SourceName{}
 	for i := 0; i < SHADER_TEXTURE_COUNT; i++ {
-		out[i] = s.sources[i]
+		if s.sources[i] != "" {
+			out = append(out, s.sources[i])
+		}
 	}
 	return out
 }

@@ -371,18 +371,14 @@ func (s *Scene) Draw() {
 		*/
 	}
 
-	/*ord, err := Order("window", s.sources)
+	ord, err := Order("window", s.sources)
 	if err != nil {
 		fmt.Println("Error occurred while ordering sources for render:", err)
 		return
 	}
 	for _, source := range ord {
 		s.sources[source].Render(s)
-	}*/
-	for _, src := range s.sources {
-		src.Render(s)
 	}
-
 	{
 		gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)

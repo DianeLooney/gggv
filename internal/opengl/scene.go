@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"sort"
 	"strings"
 	"time"
+
+	"github.com/dianelooney/gvd/internal/ffmpeg"
 
 	"github.com/dianelooney/gvd/internal/fps"
 
@@ -38,10 +39,10 @@ func NewScene() *Scene {
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
 	s := &Scene{
-		layers:   make(map[string]Layer),
 		programs: make(map[string]Program),
 		textures: make(map[string]uint32),
 		uniforms: make(map[string]map[string]Uniform),
+		sources:  make(map[SourceName]Source),
 	}
 
 	var err error
@@ -104,32 +105,16 @@ type Scene struct {
 
 	time float32
 
-	prevPassFBObj uint32
-	prevPassFBTex uint32
-	prevPassRBObj uint32
-
-	prevFrameFBObj uint32
-	prevFrameFBTex uint32
-	prevFrameRBObj uint32
-
-	layers   map[string]Layer
 	programs map[string]Program
 	textures map[string]uint32
 	uniforms map[string]map[string]Uniform
+
+	sources map[SourceName]Source
 }
 type Program struct {
 	FShaderLocation string
 	VShaderLocation string
 	GLProgram       uint32
-}
-
-const LAYER_TEXTURE_COUNT = 10
-
-type Layer struct {
-	Name     string
-	Depth    float32
-	Textures [LAYER_TEXTURE_COUNT]string
-	Program  string
 }
 
 type Uniform struct {
@@ -154,25 +139,51 @@ func (u Uniform) Bind(program uint32) {
 	}
 }
 
-type layers []Layer
-
-func (l layers) Less(i, j int) bool {
-	return l[i].Depth < l[j].Depth
-}
-func (l layers) Swap(i, j int) {
-	l[i], l[j] = l[j], l[i]
-}
-func (l layers) Len() int {
-	return len(l)
-}
-
-func (s *Scene) SetLayer(name string, depth float32, program string, sources [LAYER_TEXTURE_COUNT]string) {
-	s.layers[name] = Layer{
-		Name:     name,
-		Depth:    depth,
-		Textures: sources,
-		Program:  program,
+func (s *Scene) AddSourceFFVideo(name, path string) {
+	dec, err := ffmpeg.NewFileSampler(path)
+	if err != nil {
+		fmt.Printf("Error adding new FFVideoSource: %v\n", err)
+		return
 	}
+	var t uint32
+	gl.GenTextures(1, &t)
+	gl.ActiveTexture(t)
+	gl.BindTexture(gl.TEXTURE_2D, t)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+	s.sources[SourceName(name)] = &FFVideoSource{
+		name:    SourceName(name),
+		decoder: dec,
+		texture: t,
+	}
+}
+
+func (s *Scene) AddSourceShader(name string) {
+	s.LoadProgram(name, "shaders/vert/default.glsl", "shaders/frag/default.glsl")
+	sh := ShaderSource{
+		name:    SourceName(name),
+		program: s.programs[name].GLProgram,
+		sources: [SHADER_TEXTURE_COUNT]SourceName{"default0", "default1", "default2"},
+	}
+	gl.GenFramebuffers(1, &sh.fbo)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, sh.fbo)
+	gl.GenTextures(1, &sh.texture)
+	gl.BindTexture(gl.TEXTURE_2D, sh.texture)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, sh.texture, 0)
+
+	gl.GenRenderbuffers(1, &sh.rbo)
+
+	gl.BindRenderbuffer(gl.RENDERBUFFER, sh.rbo)
+
+	gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
+	gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
+	gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, sh.rbo)
+	s.sources[SourceName(name)] = &sh
 }
 
 func (s *Scene) SetUniform(layer, name, typ string, value interface{}) {
@@ -254,44 +265,26 @@ func (s *Scene) BindBuffers() {
 	gl.GenBuffers(1, &s.vbo)
 	gl.BindBuffer(gl.ARRAY_BUFFER, s.vbo)
 
-	{ // previousPass pipeline setup
-		gl.GenFramebuffers(1, &s.prevPassFBObj)
-		gl.BindFramebuffer(gl.FRAMEBUFFER, s.prevPassFBObj)
-		gl.GenTextures(1, &s.prevPassFBTex)
-		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
-		gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
-		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-		gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, s.prevPassFBTex, 0)
+	/*
+		{ // previousFrame pipeline setup
+			gl.GenFramebuffers(1, &s.prevFrameFBObj)
+			gl.BindFramebuffer(gl.FRAMEBUFFER, s.prevFrameFBObj)
+			gl.GenTextures(1, &s.prevFrameFBTex)
+			gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
+			gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+			gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, s.prevFrameFBTex, 0)
 
-		gl.GenRenderbuffers(1, &s.prevPassRBObj)
+			gl.GenRenderbuffers(1, &s.prevFrameRBObj)
 
-		gl.BindRenderbuffer(gl.RENDERBUFFER, s.prevPassRBObj)
+			gl.BindRenderbuffer(gl.RENDERBUFFER, s.prevFrameRBObj)
 
-		gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
-		gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
-		gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, s.prevPassRBObj)
-	}
-
-	{ // previousFrame pipeline setup
-		gl.GenFramebuffers(1, &s.prevFrameFBObj)
-		gl.BindFramebuffer(gl.FRAMEBUFFER, s.prevFrameFBObj)
-		gl.GenTextures(1, &s.prevFrameFBTex)
-		gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
-		gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
-		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-		gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-		gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, s.prevFrameFBTex, 0)
-
-		gl.GenRenderbuffers(1, &s.prevFrameRBObj)
-
-		gl.BindRenderbuffer(gl.RENDERBUFFER, s.prevFrameRBObj)
-
-		gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
-		gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
-		gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, s.prevFrameRBObj)
-	}
-
+			gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
+			gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
+			gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, s.prevFrameRBObj)
+		}
+	*/
 }
 
 func (s *Scene) TextureInit(name string) {
@@ -359,74 +352,27 @@ func (s *Scene) Draw() {
 	s.time = float32(time.Since(tStart)) / NANOSTOSEC
 	gl.BindVertexArray(s.vao)
 
-	var ls []Layer
-	for _, l := range s.layers {
-		ls = append(ls, l)
+	ord, err := Order("window", s.sources)
+	if err != nil {
+		fmt.Println("Error occurred while ordering sources for render:", err)
+		return
 	}
-	sort.Sort(layers(ls))
-
+	for _, source := range ord {
+		s.sources[source].Render(s)
+	}
 	{
-		s.prevPassFBObj, s.prevFrameFBObj = s.prevFrameFBObj, s.prevPassFBObj
-		s.prevPassFBTex, s.prevFrameFBTex = s.prevFrameFBTex, s.prevPassFBTex
-		s.prevPassRBObj, s.prevFrameRBObj = s.prevFrameRBObj, s.prevPassRBObj
-
-		//bind framebuffer
-		gl.BindFramebuffer(gl.FRAMEBUFFER, s.prevPassFBObj)
-
-		//snapshot framebuffer output into lastFrame
-		// TODO
-
-		//reset buffer bits
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	}
-
-	for _, l := range ls {
-		program := s.programs[l.Program].GLProgram
-		gl.UseProgram(program)
-		vs := verts(l.Depth)
-		gl.BufferData(gl.ARRAY_BUFFER, len(vs)*4, gl.Ptr(&vs[0]), gl.STATIC_DRAW)
-
-		for i := 0; i < LAYER_TEXTURE_COUNT; i++ {
-			gl.ActiveTexture(gl.TEXTURE0 + uint32(i))
-			gl.BindTexture(gl.TEXTURE_2D, s.textures[l.Textures[i]])
-		}
-
-		s.bindCommonUniforms(program)
-
-		if uniforms, ok := s.uniforms[l.Name]; ok {
-			for _, uniform := range uniforms {
-				uniform.Bind(program)
-			}
-		}
-		if uniforms, ok := s.uniforms["*"]; ok {
-			for _, uniform := range uniforms {
-				uniform.Bind(program)
-			}
-		}
-
-		depth := gl.GetUniformLocation(program, gl.Str("depth"+"\x00"))
-		gl.Uniform1f(depth, l.Depth)
-
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.DrawArrays(gl.TRIANGLES, 0, 2*3)
-	}
-
-	{
-
 		gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		program := s.programs["final"].GLProgram
 		gl.UseProgram(program)
 
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
-
 		s.bindCommonUniforms(program)
+		gl.ActiveTexture(gl.TEXTURE0)
+		gl.BindTexture(gl.TEXTURE_2D, s.sources["window"].Texture())
 
 		//bind framebuffer texture
-		gl.BufferData(gl.ARRAY_BUFFER, len(outputTris)*4, gl.Ptr(&outputTris[0]), gl.STATIC_DRAW)
-		gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
+		gl.BufferData(gl.ARRAY_BUFFER, len(staticVerts)*4, gl.Ptr(&staticVerts[0]), gl.STATIC_DRAW)
 		gl.DrawArrays(gl.TRIANGLES, 0, 2*3)
 
 		//draw output wuad
@@ -446,27 +392,13 @@ func (s *Scene) bindCommonUniforms(program uint32) {
 	gl.EnableVertexAttribArray(texCoordAttrib)
 	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
 
-	// TODO: FIX and remove depth uniform
-	// model := gl.GetUniformLocation(program, gl.Str("model\x00"))
-	// gl.UniformMatrix4fv(model, 1, false, &)
-
 	projection := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projection, 1, false, &s.Projection[0])
 
 	camera := gl.GetUniformLocation(program, gl.Str("camera\x00"))
 	gl.UniformMatrix4fv(camera, 1, false, &s.Camera[0])
 
-	gl.ActiveTexture(gl.TEXTURE0 + LAYER_TEXTURE_COUNT)
-	gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
-	prevFrame := gl.GetUniformLocation(program, gl.Str("prevFrame"+"\x00"))
-	gl.Uniform1i(prevFrame, LAYER_TEXTURE_COUNT)
-
-	gl.ActiveTexture(gl.TEXTURE0 + LAYER_TEXTURE_COUNT + 1)
-	gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
-	prevPass := gl.GetUniformLocation(program, gl.Str("prevPass"+"\x00"))
-	gl.Uniform1i(prevPass, LAYER_TEXTURE_COUNT+1)
-
-	for i := int32(0); i < LAYER_TEXTURE_COUNT; i++ {
+	for i := int32(0); i < SHADER_TEXTURE_COUNT; i++ {
 		tex := gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%v\x00", i)))
 		gl.Uniform1i(tex, i)
 	}
@@ -496,13 +428,4 @@ func verts(d float32) []float32 {
 		1.0, 1.0, d, 1.0, 0.0,
 		-1.0, 1.0, d, 0.0, 0.0,
 	}
-}
-
-var outputTris = []float32{
-	-1.0, -1.0, 0, 0.0, 0.0,
-	1.0, -1.0, 0, 1.0, 0.0,
-	-1.0, 1.0, 0, 0.0, 1.0,
-	1.0, -1.0, 0, 1.0, 0.0,
-	1.0, 1.0, 0, 1.0, 1.0,
-	-1.0, 1.0, 0, 0.0, 1.0,
 }

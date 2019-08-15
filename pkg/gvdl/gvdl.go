@@ -7,8 +7,6 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/dianelooney/gvd/internal/opengl"
-
 	"github.com/dianelooney/gvd/pkg/daemon"
 )
 
@@ -39,16 +37,14 @@ func execAdd(sc *bufio.Scanner, d *daemon.D) (err error) {
 	}
 	switch sc.Text() {
 	case "source":
-		return execAddSource(sc, d)
-	case "layer":
-		return execAddLayer(sc, d)
+		return execAddSourceFFVideo(sc, d)
 	case "program":
 		return execAddProgram(sc, d)
 	}
 	return fmt.Errorf("unrecognized add subcommand '%s'", sc.Text())
 }
 
-func execAddSource(sc *bufio.Scanner, d *daemon.D) (err error) {
+func execAddSourceFFVideo(sc *bufio.Scanner, d *daemon.D) (err error) {
 	if !sc.Scan() {
 		return io.ErrUnexpectedEOF
 	}
@@ -59,7 +55,7 @@ func execAddSource(sc *bufio.Scanner, d *daemon.D) (err error) {
 	}
 	path := sc.Text()
 
-	d.AddSource(name, path)
+	d.AddSourceFFVideo(name, path)
 
 	return
 }
@@ -84,36 +80,6 @@ func execAddProgram(sc *bufio.Scanner, d *daemon.D) (err error) {
 	return
 }
 
-func execAddLayer(sc *bufio.Scanner, d *daemon.D) (err error) {
-	if !sc.Scan() {
-		return io.ErrUnexpectedEOF
-	}
-	name := sc.Text()
-
-	if !sc.Scan() {
-		return io.ErrUnexpectedEOF
-	}
-	program := sc.Text()
-
-	if !sc.Scan() {
-		return io.ErrUnexpectedEOF
-	}
-	depthA := sc.Text()
-	depthI, err := strconv.ParseFloat(depthA, 32)
-	if err != nil {
-		return err
-	}
-
-	var sources [opengl.LAYER_TEXTURE_COUNT]string
-	for i := 0; i < opengl.LAYER_TEXTURE_COUNT; i++ {
-		if sc.Scan() {
-			sources[i] = sc.Text()
-		}
-	}
-
-	d.AddLayer(name, float32(depthI), program, sources)
-	return
-}
 func execSet(sc *bufio.Scanner, d *daemon.D) (err error) {
 	if !sc.Scan() {
 		return io.ErrUnexpectedEOF

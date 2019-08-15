@@ -168,6 +168,32 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 	}
 }
 
+func (s *Scene) AddSourceShader(name string) {
+	s.LoadProgram(name, "shaders/vert/default.glsl", "shaders/frag/default.glsl")
+	sh := ShaderSource{
+		name:    SourceName(name),
+		program: s.programs[name].GLProgram,
+		sources: [SHADER_TEXTURE_COUNT]SourceName{"default0", "default1", "default2"},
+	}
+	gl.GenFramebuffers(1, &sh.fbo)
+	gl.BindFramebuffer(gl.FRAMEBUFFER, sh.fbo)
+	gl.GenTextures(1, &sh.texture)
+	gl.BindTexture(gl.TEXTURE_2D, sh.texture)
+	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, sh.texture, 0)
+
+	gl.GenRenderbuffers(1, &sh.rbo)
+
+	gl.BindRenderbuffer(gl.RENDERBUFFER, sh.rbo)
+
+	gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
+	gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
+	gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, sh.rbo)
+	s.sources[SourceName(name)] = &sh
+}
+
 func (s *Scene) SetUniform(layer, name, typ string, value interface{}) {
 	m, ok := s.uniforms[layer]
 	if !ok {
@@ -246,27 +272,6 @@ func (s *Scene) BindBuffers() {
 
 	gl.GenBuffers(1, &s.vbo)
 	gl.BindBuffer(gl.ARRAY_BUFFER, s.vbo)
-
-	/*
-		{ // previousPass pipeline setup
-			gl.GenFramebuffers(1, &s.prevPassFBObj)
-			gl.BindFramebuffer(gl.FRAMEBUFFER, s.prevPassFBObj)
-			gl.GenTextures(1, &s.prevPassFBTex)
-			gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
-			gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
-			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-			gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, s.prevPassFBTex, 0)
-
-			gl.GenRenderbuffers(1, &s.prevPassRBObj)
-
-			gl.BindRenderbuffer(gl.RENDERBUFFER, s.prevPassRBObj)
-
-			gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
-			gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
-			gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, s.prevPassRBObj)
-		}
-	*/
 
 	/*
 		{ // previousFrame pipeline setup
@@ -366,8 +371,16 @@ func (s *Scene) Draw() {
 		*/
 	}
 
-	for _, source := range s.sources {
-		source.Render(s)
+	/*ord, err := Order("window", s.sources)
+	if err != nil {
+		fmt.Println("Error occurred while ordering sources for render:", err)
+		return
+	}
+	for _, source := range ord {
+		s.sources[source].Render(s)
+	}*/
+	for _, src := range s.sources {
+		src.Render(s)
 	}
 
 	{
@@ -379,7 +392,7 @@ func (s *Scene) Draw() {
 
 		s.bindCommonUniforms(program)
 		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, s.sources["default0"].Texture())
+		gl.BindTexture(gl.TEXTURE_2D, s.sources["window"].Texture())
 
 		//bind framebuffer texture
 		gl.BufferData(gl.ARRAY_BUFFER, len(staticVerts)*4, gl.Ptr(&staticVerts[0]), gl.STATIC_DRAW)

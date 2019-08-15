@@ -51,6 +51,12 @@ func (d *D) AddSourceFFVideo(name, path string) {
 	})
 }
 
+func (d *D) AddSourceShader(name string) {
+	d.Schedule(func() {
+		d.Scene.AddSourceShader(name)
+	})
+}
+
 func (d *D) AddProgram(name, pathV, pathF string) {
 	d.Schedule(func() {
 		d.Scene.LoadProgram(name, pathV, pathF)

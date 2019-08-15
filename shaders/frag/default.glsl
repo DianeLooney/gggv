@@ -15,5 +15,5 @@ out vec4 outputColor;
 const float PI = 3.1415926535897932384626433832795;
 
 void main() {
-    outputColor = vec4(0.5, 0, 0, 1);
+    outputColor = texture(tex0, fragTexCoord);
 }

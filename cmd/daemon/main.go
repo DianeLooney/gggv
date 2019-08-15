@@ -39,6 +39,7 @@ func main() {
 	dmn.AddSourceFFVideo("default0", "sample0.mp4")
 	dmn.AddSourceFFVideo("default1", "sample1.mp4")
 	dmn.AddSourceFFVideo("default2", "sample2.mp4")
+	dmn.AddSourceShader("window")
 
 	dmn.SetUniform("ampl", "float", float32(0.0), []string{"default"})
 

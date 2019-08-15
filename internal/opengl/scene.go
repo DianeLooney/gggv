@@ -105,14 +105,6 @@ type Scene struct {
 
 	time float32
 
-	// prevPassFBObj uint32
-	// prevPassFBTex uint32
-	// prevPassRBObj uint32
-	//
-	// prevFrameFBObj uint32
-	// prevFrameFBTex uint32
-	// prevFrameRBObj uint32
-
 	programs map[string]Program
 	textures map[string]uint32
 	uniforms map[string]map[string]Uniform
@@ -360,17 +352,6 @@ func (s *Scene) Draw() {
 	s.time = float32(time.Since(tStart)) / NANOSTOSEC
 	gl.BindVertexArray(s.vao)
 
-	{
-		/*
-			s.prevPassFBObj, s.prevFrameFBObj = s.prevFrameFBObj, s.prevPassFBObj
-			s.prevPassFBTex, s.prevFrameFBTex = s.prevFrameFBTex, s.prevPassFBTex
-			s.prevPassRBObj, s.prevFrameRBObj = s.prevFrameRBObj, s.prevPassRBObj
-
-			//bind framebuffer
-			gl.BindFramebuffer(gl.FRAMEBUFFER, s.prevPassFBObj)
-		*/
-	}
-
 	ord, err := Order("window", s.sources)
 	if err != nil {
 		fmt.Println("Error occurred while ordering sources for render:", err)
@@ -411,25 +392,11 @@ func (s *Scene) bindCommonUniforms(program uint32) {
 	gl.EnableVertexAttribArray(texCoordAttrib)
 	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
 
-	// TODO: FIX and remove depth uniform
-	// model := gl.GetUniformLocation(program, gl.Str("model\x00"))
-	// gl.UniformMatrix4fv(model, 1, false, &)
-
 	projection := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projection, 1, false, &s.Projection[0])
 
 	camera := gl.GetUniformLocation(program, gl.Str("camera\x00"))
 	gl.UniformMatrix4fv(camera, 1, false, &s.Camera[0])
-
-	//gl.ActiveTexture(gl.TEXTURE0 + SHADER_TEXTURE_COUNT)
-	//gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
-	//prevFrame := gl.GetUniformLocation(program, gl.Str("prevFrame"+"\x00"))
-	//gl.Uniform1i(prevFrame, SHADER_TEXTURE_COUNT)
-
-	//gl.ActiveTexture(gl.TEXTURE0 + SHADER_TEXTURE_COUNT + 1)
-	//gl.BindTexture(gl.TEXTURE_2D, s.prevPassFBTex)
-	//prevPass := gl.GetUniformLocation(program, gl.Str("prevPass"+"\x00"))
-	//gl.Uniform1i(prevPass, SHADER_TEXTURE_COUNT+1)
 
 	for i := int32(0); i < SHADER_TEXTURE_COUNT; i++ {
 		tex := gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%v\x00", i)))

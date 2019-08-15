@@ -2,6 +2,7 @@ package ffmpeg
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"time"
 	"unsafe"
@@ -100,11 +101,9 @@ func (d *Decoder) Begin(fname string) (err error) {
 			d.packet = avcodec.AvPacketAlloc()
 
 			return nil
-		default:
-			fmt.Println("Didn't find a video stream")
-			os.Exit(1)
 		}
 	}
+	log.Fatalln("Didn't find a video stream")
 	return nil
 }
 

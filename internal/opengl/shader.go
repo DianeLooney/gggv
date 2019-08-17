@@ -1,6 +1,8 @@
 package opengl
 
 import (
+	"fmt"
+
 	"github.com/go-gl/gl/all-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 )
@@ -51,8 +53,18 @@ func (s *ShaderSource) Render(scene *Scene) {
 		if name == "" {
 			continue
 		}
+		source := scene.sources[name]
 		gl.ActiveTexture(gl.TEXTURE0 + uint32(i))
-		gl.BindTexture(gl.TEXTURE_2D, scene.sources[name].Texture())
+		gl.BindTexture(gl.TEXTURE_2D, source.Texture())
+
+		switch src := source.(type) {
+		case *FFVideoSource:
+			x := gl.GetUniformLocation(s.program, gl.Str(fmt.Sprintf("tex%vwidth\x00", i)))
+			gl.Uniform1f(x, float32(src.width))
+
+			x = gl.GetUniformLocation(s.program, gl.Str(fmt.Sprintf("tex%vheight\x00", i)))
+			gl.Uniform1f(x, float32(src.width))
+		}
 	}
 
 	scene.bindCommonUniforms(s.program)

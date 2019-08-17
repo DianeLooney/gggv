@@ -361,7 +361,6 @@ func (s *Scene) Draw() {
 		s.sources[source].Render(s)
 	}
 	{
-		gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
 		program := s.programs["final"].GLProgram
@@ -407,10 +406,24 @@ func (s *Scene) bindCommonUniforms(program uint32) {
 	gl.Uniform1f(timeU, s.time)
 
 	fpsU := gl.GetUniformLocation(program, gl.Str("fps\x00"))
-	gl.Uniform1i(fpsU, int32(fps.LastSec()))
+	gl.Uniform1f(fpsU, float32(fps.LastSec()))
 
 	renderTime := gl.GetUniformLocation(program, gl.Str("renderTime\x00"))
 	gl.Uniform1f(renderTime, float32(fps.FrameDuration())/NANOSTOSEC)
+
+	x, y := s.Window.GetCursorPos()
+	cursorXU := gl.GetUniformLocation(program, gl.Str("cursorX\x00"))
+	gl.Uniform1f(cursorXU, float32(x))
+
+	cursorYU := gl.GetUniformLocation(program, gl.Str("cursorY\x00"))
+	gl.Uniform1f(cursorYU, float32(y))
+
+	windowWidth, windowHeight := s.Window.GetSize()
+	windowWidthU := gl.GetUniformLocation(program, gl.Str("windowWidth\x00"))
+	gl.Uniform1f(windowWidthU, float32(windowWidth))
+
+	windowHeightU := gl.GetUniformLocation(program, gl.Str("windowHeight\x00"))
+	gl.Uniform1f(windowHeightU, float32(windowHeight))
 }
 
 func (s *Scene) ReloadPrograms() {

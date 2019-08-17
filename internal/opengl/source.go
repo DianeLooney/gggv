@@ -14,7 +14,6 @@ type Source interface {
 	Name() SourceName
 	Children() []SourceName
 	Render(scene *Scene)
-	Dimensions() (w, h int32)
 	Texture() uint32
 }
 

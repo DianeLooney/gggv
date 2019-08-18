@@ -164,7 +164,7 @@ func (s *Scene) AddSourceShader(name string) {
 	s.LoadProgram(name, "shaders/vert/default.glsl", "shaders/frag/default.glsl")
 	sh := ShaderSource{
 		name:    SourceName(name),
-		program: s.programs[name].GLProgram,
+		p:       name,
 		sources: [SHADER_TEXTURE_COUNT]SourceName{"default0", "default1", "default2"},
 	}
 	gl.GenFramebuffers(1, &sh.fbo)
@@ -243,6 +243,7 @@ func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string
 	}
 
 	if old, ok := s.programs[name]; ok {
+		fmt.Printf("Deleting %v: old '%v', new '%v'\n", name, old.GLProgram, p.GLProgram)
 		gl.DeleteProgram(old.GLProgram)
 	}
 	s.programs[name] = p
@@ -427,18 +428,15 @@ func (s *Scene) bindCommonUniforms(program uint32) {
 }
 
 func (s *Scene) ReloadPrograms() {
+	work := make([]Program, len(s.programs))
+	names := make([]string, len(s.programs))
+	i := 0
 	for name, program := range s.programs {
-		s.LoadProgram(name, program.VShaderLocation, program.FShaderLocation)
+		work[i] = program
+		names[i] = name
+		i++
 	}
-}
-
-func verts(d float32) []float32 {
-	return []float32{
-		-1.0, -1.0, d, 0.0, 1.0,
-		1.0, -1.0, d, 1.0, 1.0,
-		-1.0, 1.0, d, 0.0, 0.0,
-		1.0, -1.0, d, 1.0, 1.0,
-		1.0, 1.0, d, 1.0, 0.0,
-		-1.0, 1.0, d, 0.0, 0.0,
+	for i, program := range work {
+		s.LoadProgram(names[i], program.VShaderLocation, program.FShaderLocation)
 	}
 }

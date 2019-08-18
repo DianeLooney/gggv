@@ -20,7 +20,7 @@ const SHADER_TEXTURE_COUNT = 10
 type ShaderSource struct {
 	name SourceName
 
-	program uint32
+	p       string
 	sources [SHADER_TEXTURE_COUNT]SourceName
 
 	fbo     uint32
@@ -44,9 +44,10 @@ func (s *ShaderSource) Children() []SourceName {
 	return out
 }
 func (s *ShaderSource) Render(scene *Scene) {
+	program := scene.programs[s.p].GLProgram
 	gl.BindFramebuffer(gl.FRAMEBUFFER, s.fbo)
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	gl.UseProgram(s.program)
+	gl.UseProgram(program)
 	gl.BufferData(gl.ARRAY_BUFFER, len(staticVerts)*4, gl.Ptr(&staticVerts[0]), gl.STATIC_DRAW)
 
 	for i, name := range s.sources {
@@ -59,18 +60,18 @@ func (s *ShaderSource) Render(scene *Scene) {
 
 		switch src := source.(type) {
 		case *FFVideoSource:
-			x := gl.GetUniformLocation(s.program, gl.Str(fmt.Sprintf("tex%vwidth\x00", i)))
+			x := gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%vwidth\x00", i)))
 			gl.Uniform1f(x, float32(src.width))
 
-			x = gl.GetUniformLocation(s.program, gl.Str(fmt.Sprintf("tex%vheight\x00", i)))
+			x = gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%vheight\x00", i)))
 			gl.Uniform1f(x, float32(src.width))
 		}
 	}
 
-	scene.bindCommonUniforms(s.program)
+	scene.bindCommonUniforms(program)
 
 	projectionMat := mgl32.Ortho(-1, 1, 1, -1, 0.1, 10)
-	projection := gl.GetUniformLocation(s.program, gl.Str("projection\x00"))
+	projection := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 	gl.UniformMatrix4fv(projection, 1, false, &projectionMat[0])
 
 	gl.ActiveTexture(gl.TEXTURE0)

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dianelooney/gvd/internal/ffmpeg"
+	"github.com/dianelooney/gggv/internal/ffmpeg"
 
-	"github.com/dianelooney/gvd/internal/fps"
+	"github.com/dianelooney/gggv/internal/fps"
 
 	"github.com/go-gl/gl/all-core/gl"
 	"github.com/go-gl/glfw/v3.1/glfw"

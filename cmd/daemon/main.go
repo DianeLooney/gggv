@@ -9,9 +9,9 @@ import (
 	"net"
 	"runtime"
 
-	"github.com/dianelooney/gvd/pkg/gvdl"
+	"github.com/dianelooney/gggv/pkg/gvdl"
 
-	"github.com/dianelooney/gvd/pkg/daemon"
+	"github.com/dianelooney/gggv/pkg/daemon"
 )
 
 func init() {

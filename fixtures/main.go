@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/dianelooney/gvd/internal/ffmpeg"
+	"github.com/dianelooney/gggv/internal/ffmpeg"
 )
 
 var fixtures = []string{

@@ -1,10 +1,10 @@
-# GO GO GADGET: VIDEO [![CircleCI](https://circleci.com/gh/DianeLooney/gvd/tree/master.svg?style=svg)](https://circleci.com/gh/DianeLooney/gvd/tree/master)
+# GO GO GADGET: VIDEO [![CircleCI](https://circleci.com/gh/DianeLooney/gggv/tree/master.svg?style=svg)](https://circleci.com/gh/DianeLooney/gggv/tree/master)
 
 Command-line video editing environment. Not intended for use as a package.
 
 How to build:
 
-* Linux: follow along in the dockerfile at `build/gvd-base` to install the dependencies from source, and `build/gvd` to install gvd.
+* Linux: follow along in the dockerfile at `build/gggv-base` to install the dependencies from source, and `build/gggv` to install gvd.
 
 * OSX: builds are similar to the Linux builds, but exact steps are not given.
 

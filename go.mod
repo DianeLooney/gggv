@@ -1,4 +1,4 @@
-module github.com/dianelooney/gvd
+module github.com/dianelooney/gggv
 
 require (
 	github.com/fsnotify/fsnotify v1.4.7

@@ -7,7 +7,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/dianelooney/gvd/pkg/daemon"
+	"github.com/dianelooney/gggv/pkg/daemon"
 )
 
 func Exec(data []byte, d *daemon.D) (err error) {

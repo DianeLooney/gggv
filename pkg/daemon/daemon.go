@@ -4,7 +4,7 @@ import (
 	"flag"
 	"sync"
 
-	"github.com/dianelooney/gvd/internal/opengl"
+	"github.com/dianelooney/gggv/internal/opengl"
 )
 
 var showFPS = flag.Bool("fps", false, "Log fps to the command line")

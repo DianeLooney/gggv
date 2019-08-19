@@ -1,4 +1,4 @@
-FROM diane/gvd-base:latest
+FROM diane/gggv-base:latest
 
 WORKDIR /go/src/app
 COPY . .

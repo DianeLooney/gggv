@@ -1,7 +1,7 @@
 package opengl
 
 import (
-	"github.com/dianelooney/gvd/internal/ffmpeg"
+	"github.com/dianelooney/gggv/internal/ffmpeg"
 	"github.com/go-gl/gl/all-core/gl"
 )
 

@@ -18,5 +18,5 @@ out vec4 outputColor;
 const float PI = 3.1415926535897932384626433832795;
 
 void main() {
-    outputColor = texture(tex0, fragTexCoord) * cursorX / windowWidth;
+    outputColor = texture(tex0, fragTexCoord) * (1.0 - cursorX / windowWidth);
 }

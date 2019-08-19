@@ -1,15 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"flag"
-	"fmt"
 	_ "image/png"
-	"io"
-	"net"
 	"runtime"
 
-	"github.com/dianelooney/gggv/pkg/gvdl"
+	"github.com/hypebeast/go-osc/osc"
 
 	"github.com/dianelooney/gggv/pkg/daemon"
 )
@@ -23,7 +19,7 @@ var dmn *daemon.D
 
 func main() {
 	flag.Parse()
-	netSetup()
+	go netSetup()
 
 	dmn = daemon.New()
 
@@ -49,37 +45,17 @@ func main() {
 var netAddr = flag.String("net", ":4200", "Network address to listen at.")
 
 func netSetup() {
-	srv, err := net.Listen("tcp", *netAddr)
-	if err != nil {
-		panic(err)
-	}
+	server := &osc.Server{Addr: *netAddr}
 
-	go func() {
-		for {
-			conn, err := srv.Accept()
-			if err != nil {
-				panic(err)
-			}
+	server.Handle("/source/add/ffvideo", func(msg *osc.Message) {
+		dmn.AddSourceFFVideo(msg.Arguments[0].(string), msg.Arguments[1].(string))
+	})
+	server.Handle("/source/add/shader", func(msg *osc.Message) {
+		dmn.AddSourceShader(msg.Arguments[0].(string))
+	})
+	server.Handle("/programs/reload", func(msg *osc.Message) {
+		dmn.ReloadPrograms()
+	})
 
-			go handleConnection(conn)
-		}
-	}()
-}
-
-func handleConnection(conn net.Conn) {
-	r := bufio.NewReader(conn)
-	for {
-		line, _, err := r.ReadLine()
-		if err == io.EOF {
-			return
-		}
-		if err != nil {
-			fmt.Println("Error reading from net:", err)
-			continue
-		}
-		err = gvdl.Exec(line, dmn)
-		if err != nil {
-			fmt.Println("Error:", err)
-		}
-	}
+	server.ListenAndServe()
 }

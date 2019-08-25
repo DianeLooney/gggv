@@ -20,8 +20,9 @@ const SHADER_TEXTURE_COUNT = 10
 type ShaderSource struct {
 	name SourceName
 
-	p       string
-	sources [SHADER_TEXTURE_COUNT]SourceName
+	p        string
+	sources  [SHADER_TEXTURE_COUNT]SourceName
+	uniforms map[string]Uniform
 
 	fbo     uint32
 	rbo     uint32
@@ -50,13 +51,11 @@ func (s *ShaderSource) Render(scene *Scene) {
 	gl.UseProgram(program)
 	gl.BufferData(gl.ARRAY_BUFFER, len(staticVerts)*4, gl.Ptr(&staticVerts[0]), gl.STATIC_DRAW)
 
-	fmt.Println(s.sources)
 	for i, name := range s.sources {
 		if name == "" {
 			continue
 		}
 
-		fmt.Printf("Bound source %v\n", name)
 		source := scene.sources[name]
 		gl.ActiveTexture(gl.TEXTURE0 + uint32(i))
 		gl.BindTexture(gl.TEXTURE_2D, source.Texture())
@@ -69,6 +68,10 @@ func (s *ShaderSource) Render(scene *Scene) {
 			x = gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%vheight\x00", i)))
 			gl.Uniform1f(x, float32(src.width))
 		}
+	}
+
+	for _, u := range s.uniforms {
+		u.Bind(program)
 	}
 
 	scene.bindCommonUniforms(program)

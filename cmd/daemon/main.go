@@ -40,7 +40,7 @@ func main() {
 	dmn.SetShaderInput("default", 2, "default2")
 	dmn.AddSourceShader("window")
 	dmn.SetShaderInput("window", 0, "default")
-	dmn.SetUniform("ampl", float32(0.0), []string{"default"})
+	dmn.SetUniform("default", "ampl", float32(0.0))
 
 	go netSetup()
 	dmn.DrawLoop()
@@ -68,9 +68,10 @@ func netSetup() {
 	server.Handle("/source.shader/set/uniform1f", func(msg *osc.Message) {
 		layer := msg.Arguments[0].(string)
 		name := msg.Arguments[1].(string)
-		target := msg.Arguments[2].(float32)
+		value := msg.Arguments[2].(float32)
 
-		dmn.Scene.SetUniform(layer, name, target)
+		fmt.Println("/source.shader/set/uniform1f", layer, name, value)
+		dmn.SetUniform(layer, name, value)
 	})
 	server.Handle("/programs/reload", func(msg *osc.Message) {
 		dmn.ReloadPrograms()

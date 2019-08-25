@@ -12,7 +12,7 @@ var showFPS = flag.Bool("fps", false, "Log fps to the command line")
 func New() *D {
 	return &D{
 		Scene:           opengl.NewScene(),
-		mainThreadTasks: make(chan func(), 20),
+		mainThreadTasks: make(chan func(), 10000),
 	}
 }
 
@@ -69,10 +69,10 @@ func (d *D) AddProgram(name, pathV, pathF string) {
 	})
 }
 
-func (d *D) SetUniform(name string, value interface{}, layers []string) {
-	for _, l := range layers {
-		d.Scene.SetUniform(l, name, value)
-	}
+func (d *D) SetUniform(layer string, name string, value interface{}) {
+	d.Schedule(func() {
+		d.Scene.SetUniform(layer, name, value)
+	})
 }
 
 func (d *D) ReloadPrograms() {

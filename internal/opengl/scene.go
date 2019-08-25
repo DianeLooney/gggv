@@ -41,7 +41,6 @@ func NewScene() *Scene {
 	s := &Scene{
 		programs: make(map[string]Program),
 		textures: make(map[string]uint32),
-		uniforms: make(map[string]map[string]Uniform),
 		sources:  make(map[SourceName]Source),
 	}
 
@@ -107,7 +106,6 @@ type Scene struct {
 
 	programs map[string]Program
 	textures map[string]uint32
-	uniforms map[string]map[string]Uniform
 
 	sources map[SourceName]Source
 }
@@ -154,8 +152,9 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 func (s *Scene) AddSourceShader(name string) {
 	s.LoadProgram(name, "shaders/vert/default.glsl", "shaders/frag/default.glsl")
 	sh := ShaderSource{
-		name: SourceName(name),
-		p:    name,
+		name:     SourceName(name),
+		uniforms: make(map[string]Uniform),
+		p:        name,
 	}
 	gl.GenFramebuffers(1, &sh.fbo)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, sh.fbo)
@@ -177,14 +176,12 @@ func (s *Scene) AddSourceShader(name string) {
 }
 
 func (s *Scene) SetUniform(layer, name string, value interface{}) {
-	m, ok := s.uniforms[layer]
+	src, ok := s.sources[SourceName(layer)]
 	if !ok {
-		m = make(map[string]Uniform)
-		s.uniforms[layer] = m
+		return
 	}
-	m[name] = Uniform{
-		Name:  name,
-		Value: value,
+	if shader, ok := src.(*ShaderSource); ok {
+		shader.uniforms[name] = Uniform{name, value}
 	}
 }
 
@@ -374,7 +371,7 @@ func (s *Scene) Draw() {
 		program := s.programs["final"].GLProgram
 		gl.UseProgram(program)
 
-		src := s.sources["default"]
+		src := s.sources["window"]
 		//gl.BindTexture(gl.TEXTURE_2D, src.Texture())
 
 		if shader, ok := src.(*ShaderSource); ok {
@@ -398,7 +395,7 @@ func (s *Scene) Draw() {
 		}
 		s.bindCommonUniforms(program)
 
-		projectionMat := mgl32.Ortho(-1, 1, 1, -1, 0.1, 10)
+		projectionMat := mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
 		projection := gl.GetUniformLocation(program, gl.Str("projection\x00"))
 		gl.UniformMatrix4fv(projection, 1, false, &projectionMat[0])
 

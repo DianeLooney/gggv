@@ -119,23 +119,14 @@ type Program struct {
 
 type Uniform struct {
 	Name  string
-	Type  string
 	Value interface{}
 }
 
 func (u Uniform) Bind(program uint32) {
 	uLoc := gl.GetUniformLocation(program, gl.Str(u.Name+"\x00"))
-	switch u.Type {
-	case "float":
-		fmt.Println("binding uniform", u.Name, u.Type, u.Value)
-		fmt.Printf("%T\n", u.Value)
-		if v, ok := u.Value.(float32); ok {
-			fmt.Println("bound")
-			gl.Uniform1f(uLoc, v)
-		}
-	case "vec2":
-	case "vec3":
-	case "vec4":
+	switch v := u.Value.(type) {
+	case float32:
+		gl.Uniform1f(uLoc, v)
 	}
 }
 
@@ -163,9 +154,8 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 func (s *Scene) AddSourceShader(name string) {
 	s.LoadProgram(name, "shaders/vert/default.glsl", "shaders/frag/default.glsl")
 	sh := ShaderSource{
-		name:    SourceName(name),
-		p:       name,
-		sources: [SHADER_TEXTURE_COUNT]SourceName{"default0", "default1", "default2"},
+		name: SourceName(name),
+		p:    name,
 	}
 	gl.GenFramebuffers(1, &sh.fbo)
 	gl.BindFramebuffer(gl.FRAMEBUFFER, sh.fbo)
@@ -186,7 +176,7 @@ func (s *Scene) AddSourceShader(name string) {
 	s.sources[SourceName(name)] = &sh
 }
 
-func (s *Scene) SetUniform(layer, name, typ string, value interface{}) {
+func (s *Scene) SetUniform(layer, name string, value interface{}) {
 	m, ok := s.uniforms[layer]
 	if !ok {
 		m = make(map[string]Uniform)
@@ -194,9 +184,26 @@ func (s *Scene) SetUniform(layer, name, typ string, value interface{}) {
 	}
 	m[name] = Uniform{
 		Name:  name,
-		Type:  typ,
 		Value: value,
 	}
+}
+
+func (s *Scene) SetShaderInput(layer string, index int32, target string) {
+	l, ok := s.sources[SourceName(layer)]
+	if !ok {
+		fmt.Printf("Attempted to set input on %v, but %v was not found.\n", layer, layer)
+		fmt.Println(s.sources)
+		return
+	}
+	fmt.Println(s.sources[SourceName(layer)])
+	src, ok := l.(*ShaderSource)
+	if !ok {
+		fmt.Printf("Attempted to set input on %v, but %v was not a shader.\n", layer, layer)
+		return
+	}
+	src.sources[index] = SourceName(target)
+	s.sources[SourceName(layer)] = src
+	fmt.Println(s.sources[SourceName(layer)])
 }
 
 func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string) (err error) {
@@ -367,11 +374,36 @@ func (s *Scene) Draw() {
 		program := s.programs["final"].GLProgram
 		gl.UseProgram(program)
 
+		src := s.sources["default"]
+		//gl.BindTexture(gl.TEXTURE_2D, src.Texture())
+
+		if shader, ok := src.(*ShaderSource); ok {
+			for i, name := range shader.sources {
+				if name == "" {
+					continue
+				}
+				source := s.sources[name]
+				gl.ActiveTexture(gl.TEXTURE0 + uint32(i))
+				gl.BindTexture(gl.TEXTURE_2D, source.Texture())
+
+				switch src := source.(type) {
+				case *FFVideoSource:
+					x := gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%vwidth\x00", i)))
+					gl.Uniform1f(x, float32(src.width))
+
+					x = gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%vheight\x00", i)))
+					gl.Uniform1f(x, float32(src.width))
+				}
+			}
+		}
 		s.bindCommonUniforms(program)
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BindTexture(gl.TEXTURE_2D, s.sources["window"].Texture())
+
+		projectionMat := mgl32.Ortho(-1, 1, 1, -1, 0.1, 10)
+		projection := gl.GetUniformLocation(program, gl.Str("projection\x00"))
+		gl.UniformMatrix4fv(projection, 1, false, &projectionMat[0])
 
 		//bind framebuffer texture
+		gl.ActiveTexture(gl.TEXTURE0)
 		gl.BufferData(gl.ARRAY_BUFFER, len(staticVerts)*4, gl.Ptr(&staticVerts[0]), gl.STATIC_DRAW)
 		gl.DrawArrays(gl.TRIANGLES, 0, 2*3)
 

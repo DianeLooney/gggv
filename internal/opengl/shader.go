@@ -50,10 +50,13 @@ func (s *ShaderSource) Render(scene *Scene) {
 	gl.UseProgram(program)
 	gl.BufferData(gl.ARRAY_BUFFER, len(staticVerts)*4, gl.Ptr(&staticVerts[0]), gl.STATIC_DRAW)
 
+	fmt.Println(s.sources)
 	for i, name := range s.sources {
 		if name == "" {
 			continue
 		}
+
+		fmt.Printf("Bound source %v\n", name)
 		source := scene.sources[name]
 		gl.ActiveTexture(gl.TEXTURE0 + uint32(i))
 		gl.BindTexture(gl.TEXTURE_2D, source.Texture())

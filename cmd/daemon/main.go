@@ -74,11 +74,17 @@ var netAddr = flag.String("net", ":4200", "Network address to listen at.")
 func netSetup() {
 	server := &osc.Server{Addr: *netAddr}
 
-	server.Handle("/source.ffvideo/add/ffvideo", func(msg *osc.Message) {
-		dmn.AddSourceFFVideo(msg.Arguments[0].(string), msg.Arguments[1].(string))
+	server.Handle("/source.ffvideo/create", func(msg *osc.Message) {
+		sourceName := msg.Arguments[0].(string)
+		path := msg.Arguments[0].(string)
+
+		fmt.Println("/source.ffvideo/create", sourceName, path)
+		dmn.AddSourceFFVideo(sourceName, path)
 	})
 	server.Handle("/source.shader/create", func(msg *osc.Message) {
-		dmn.AddSourceShader(msg.Arguments[0].(string))
+		name := msg.Arguments[0].(string)
+		fmt.Println("/source.shader/create", name)
+		dmn.AddSourceShader(name)
 	})
 	server.Handle("/source.shader/set/input", func(msg *osc.Message) {
 		layer := msg.Arguments[0].(string)

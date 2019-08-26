@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	_ "image/png"
+	"io/ioutil"
 	"runtime"
 
 	"github.com/hypebeast/go-osc/osc"
@@ -22,12 +23,34 @@ func main() {
 	flag.Parse()
 	dmn = daemon.New()
 
-	if err := dmn.Scene.LoadProgram("default", "shaders/vert/default.glsl", "shaders/frag/default.glsl"); err != nil {
-		panic(err)
+	{
+		name := "default"
+		vShaderPath := "shaders/vert/default.glsl"
+		fShaderPath := "shaders/frag/default.glsl"
+		vShader, err := ioutil.ReadFile(vShaderPath)
+		if err != nil {
+			return
+		}
+		fShader, err := ioutil.ReadFile(fShaderPath)
+		if err != nil {
+			return
+		}
+		dmn.AddProgram(name, string(vShader), string(fShader))
 	}
 
-	if err := dmn.Scene.LoadProgram("final", "shaders/vert/final.glsl", "shaders/frag/final.glsl"); err != nil {
-		panic(err)
+	{
+		name := "window"
+		vShaderPath := "shaders/vert/window.glsl"
+		fShaderPath := "shaders/frag/window.glsl"
+		vShader, err := ioutil.ReadFile(vShaderPath)
+		if err != nil {
+			return
+		}
+		fShader, err := ioutil.ReadFile(fShaderPath)
+		if err != nil {
+			return
+		}
+		dmn.AddProgram(name, string(vShader), string(fShader))
 	}
 
 	dmn.Scene.BindBuffers()
@@ -54,15 +77,15 @@ func netSetup() {
 	server.Handle("/source.ffvideo/add/ffvideo", func(msg *osc.Message) {
 		dmn.AddSourceFFVideo(msg.Arguments[0].(string), msg.Arguments[1].(string))
 	})
-	server.Handle("/source.shader/add", func(msg *osc.Message) {
+	server.Handle("/source.shader/create", func(msg *osc.Message) {
 		dmn.AddSourceShader(msg.Arguments[0].(string))
 	})
-	server.Handle("/source.shader/set/source", func(msg *osc.Message) {
+	server.Handle("/source.shader/set/input", func(msg *osc.Message) {
 		layer := msg.Arguments[0].(string)
 		index := msg.Arguments[1].(int32)
 		value := msg.Arguments[2].(string)
 
-		fmt.Println("/source.shader/set/source", layer, index, value)
+		fmt.Println("/source.shader/set/input", layer, index, value)
 		dmn.SetShaderInput(layer, index, value)
 	})
 	server.Handle("/source.shader/set/uniform1f", func(msg *osc.Message) {
@@ -73,9 +96,22 @@ func netSetup() {
 		fmt.Println("/source.shader/set/uniform1f", layer, name, value)
 		dmn.SetUniform(layer, name, value)
 	})
-	server.Handle("/programs/reload", func(msg *osc.Message) {
-		dmn.ReloadPrograms()
-	})
+	server.Handle("/program/create", func(msg *osc.Message) {
+		name := msg.Arguments[0].(string)
+		vShaderPath := msg.Arguments[1].(string)
+		fShaderPath := msg.Arguments[2].(string)
 
+		vShader, err := ioutil.ReadFile(vShaderPath)
+		if err != nil {
+			return
+		}
+		fShader, err := ioutil.ReadFile(fShaderPath)
+		if err != nil {
+			return
+		}
+
+		fmt.Println("/program/create", name, string(vShader), string(fShader))
+		dmn.AddProgram(name, string(vShader), string(fShader))
+	})
 	server.ListenAndServe()
 }

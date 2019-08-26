@@ -56,7 +56,10 @@ func (s *ShaderSource) Render(scene *Scene) {
 			continue
 		}
 
-		source := scene.sources[name]
+		source, ok := scene.sources[name]
+		if !ok {
+			continue
+		}
 		gl.ActiveTexture(gl.TEXTURE0 + uint32(i))
 		gl.BindTexture(gl.TEXTURE_2D, source.Texture())
 

@@ -3,7 +3,6 @@ package opengl
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"strings"
 	"time"
@@ -110,9 +109,7 @@ type Scene struct {
 	sources map[SourceName]Source
 }
 type Program struct {
-	FShaderLocation string
-	VShaderLocation string
-	GLProgram       uint32
+	GLProgram uint32
 }
 
 type Uniform struct {
@@ -203,20 +200,12 @@ func (s *Scene) SetShaderInput(layer string, index int32, target string) {
 	fmt.Println(s.sources[SourceName(layer)])
 }
 
-func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string) (err error) {
-	data, err := ioutil.ReadFile(vertShaderLocation)
+func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
+	vertexShader, err := compileShader(vShader+"\x00", gl.VERTEX_SHADER)
 	if err != nil {
 		return err
 	}
-	vertexShader, err := compileShader(string(data)+"\x00", gl.VERTEX_SHADER)
-	if err != nil {
-		return err
-	}
-	data, err = ioutil.ReadFile(fragShaderFlocation)
-	if err != nil {
-		return err
-	}
-	fragmentShader, err := compileShader(string(data)+"\x00", gl.FRAGMENT_SHADER)
+	fragmentShader, err := compileShader(fShader+"\x00", gl.FRAGMENT_SHADER)
 	if err != nil {
 		fmt.Println("Compile error:", err)
 		return err
@@ -224,9 +213,7 @@ func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string
 
 	program := gl.CreateProgram()
 	p := Program{
-		FShaderLocation: fragShaderFlocation,
-		VShaderLocation: vertShaderLocation,
-		GLProgram:       program,
+		GLProgram: program,
 	}
 
 	gl.AttachShader(program, vertexShader)
@@ -247,7 +234,6 @@ func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string
 	}
 
 	if old, ok := s.programs[name]; ok {
-		fmt.Printf("Deleting %v: old '%v', new '%v'\n", name, old.GLProgram, p.GLProgram)
 		gl.DeleteProgram(old.GLProgram)
 	}
 	s.programs[name] = p
@@ -256,8 +242,6 @@ func (s *Scene) LoadProgram(name, vertShaderLocation, fragShaderFlocation string
 
 	gl.DeleteShader(vertexShader)
 	gl.DeleteShader(fragmentShader)
-
-	gl.UseProgram(program)
 
 	return nil
 }
@@ -368,7 +352,7 @@ func (s *Scene) Draw() {
 	{
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		program := s.programs["final"].GLProgram
+		program := s.programs["window"].GLProgram
 		gl.UseProgram(program)
 
 		src := s.sources["window"]
@@ -454,18 +438,4 @@ func (s *Scene) bindCommonUniforms(program uint32) {
 
 	windowHeightU := gl.GetUniformLocation(program, gl.Str("windowHeight\x00"))
 	gl.Uniform1f(windowHeightU, float32(windowHeight))
-}
-
-func (s *Scene) ReloadPrograms() {
-	work := make([]Program, len(s.programs))
-	names := make([]string, len(s.programs))
-	i := 0
-	for name, program := range s.programs {
-		work[i] = program
-		names[i] = name
-		i++
-	}
-	for i, program := range work {
-		s.LoadProgram(names[i], program.VShaderLocation, program.FShaderLocation)
-	}
 }

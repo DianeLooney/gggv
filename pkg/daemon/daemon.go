@@ -63,20 +63,14 @@ func (d *D) SetShaderInput(name string, idx int32, target string) {
 	})
 }
 
-func (d *D) AddProgram(name, pathV, pathF string) {
+func (d *D) AddProgram(name, vShader, fShader string) {
 	d.Schedule(func() {
-		d.Scene.LoadProgram(name, pathV, pathF)
+		d.Scene.LoadProgram(name, vShader, fShader)
 	})
 }
 
 func (d *D) SetUniform(layer string, name string, value interface{}) {
 	d.Schedule(func() {
 		d.Scene.SetUniform(layer, name, value)
-	})
-}
-
-func (d *D) ReloadPrograms() {
-	d.Schedule(func() {
-		d.Scene.ReloadPrograms()
 	})
 }

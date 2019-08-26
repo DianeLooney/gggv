@@ -37,7 +37,23 @@ jobs:
       - store_artifacts:
           path: daemon.exe
           destination: daemon.exe
-  docker-build:
+  docker-build-gggv-base:
+    environment:
+      IMAGE_NAME: diane/gggv-base
+    docker:
+      - image: circleci/buildpack-deps:stretch
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Build Docker image
+          command: docker build -t diane/gggv:latest -f build/gggv-base/Dockerfile .
+      - run:
+          name: Publish Docker Image to Docker Hub
+          command: |
+            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
+            docker push $IMAGE_NAME:latest
+  docker-build-gggv:
     environment:
       IMAGE_NAME: diane/gggv
     docker:
@@ -61,7 +77,7 @@ workflows:
           filters:
             branches:
               only: master
-      - docker-build:
+      - docker-build-gggv:
           filters:
             branches:
               only: master

@@ -20,6 +20,7 @@ const NANOSTOSEC = 1000000000
 
 var tStart = time.Now()
 
+var borderless = flag.Bool("borderless", true, "Hide borders")
 var fullscreen = flag.Bool("fullscreen", true, "Start in fullscreen mode")
 
 var vsync = flag.Bool("vsync", true, "Enable/Disable vsync")
@@ -43,9 +44,13 @@ func NewScene() *Scene {
 		sources:  make(map[SourceName]Source),
 	}
 
+	if *borderless {
+		glfw.WindowHint(glfw.Decorated, glfw.False)
+	}
+
 	var err error
 	if *fullscreen {
-		s.Window, err = glfw.CreateWindow(mode.Width, mode.Height, "gvd", monitor, nil)
+		s.Window, err = glfw.CreateWindow(mode.Width, mode.Height, "gvd", nil, nil)
 	} else {
 		s.Window, err = glfw.CreateWindow(mode.Width/2, mode.Height/2, "gvd", nil, nil)
 	}

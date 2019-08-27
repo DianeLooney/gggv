@@ -97,7 +97,32 @@ func netSetup() {
 	server.Handle("/source.shader/set/uniform1f", func(msg *osc.Message) {
 		layer := msg.Arguments[0].(string)
 		name := msg.Arguments[1].(string)
-		value := msg.Arguments[2].(float32)
+		var value float32
+		switch v := msg.Arguments[2].(type) {
+		case int:
+			value = float32(v)
+		case int16:
+			value = float32(v)
+		case int32:
+			value = float32(v)
+		case int64:
+			value = float32(v)
+		case uint:
+			value = float32(v)
+		case uint16:
+			value = float32(v)
+		case uint32:
+			value = float32(v)
+		case uint64:
+			value = float32(v)
+		case float64:
+			value = float32(v)
+		case float32:
+			value = v
+		default:
+			fmt.Printf("Expected to receive float32 uniform, but it was %T\n", value)
+			return
+		}
 
 		fmt.Println("/source.shader/set/uniform1f", layer, name, value)
 		dmn.SetUniform(layer, name, value)

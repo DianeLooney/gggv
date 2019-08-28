@@ -69,7 +69,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 			gl.Uniform1f(x, float32(src.width))
 
 			x = gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%vheight\x00", i)))
-			gl.Uniform1f(x, float32(src.width))
+			gl.Uniform1f(x, float32(src.height))
 		}
 	}
 

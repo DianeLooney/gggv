@@ -1,8 +1,8 @@
 package opengl
 
 import (
+	"github.com/dianelooney/gggv/internal/carbon"
 	"github.com/dianelooney/gggv/internal/ffmpeg"
-	"github.com/go-gl/gl/all-core/gl"
 )
 
 func init() {

@@ -46,10 +46,10 @@ func (s *ShaderSource) Children() []SourceName {
 }
 func (s *ShaderSource) Render(scene *Scene) {
 	program := scene.programs[s.p].GLProgram
-	gl.BindFramebuffer(gl.FRAMEBUFFER, s.fbo)
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-	gl.UseProgram(program)
-	gl.BufferData(gl.ARRAY_BUFFER, len(staticVerts)*4, gl.Ptr(&staticVerts[0]), gl.STATIC_DRAW)
+	carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.fbo)
+	carbon.Clear(carbon.COLOR_BUFFER_BIT | carbon.DEPTH_BUFFER_BIT)
+	carbon.UseProgram(program)
+	carbon.BufferData(carbon.ARRAY_BUFFER, len(staticVerts)*4, carbon.Ptr(&staticVerts[0]), carbon.STATIC_DRAW)
 
 	for i, name := range s.sources {
 		if name == "" {
@@ -60,16 +60,16 @@ func (s *ShaderSource) Render(scene *Scene) {
 		if !ok {
 			continue
 		}
-		gl.ActiveTexture(gl.TEXTURE0 + uint32(i))
-		gl.BindTexture(gl.TEXTURE_2D, source.Texture())
+		carbon.ActiveTexture(carbon.TEXTURE0 + uint32(i))
+		carbon.BindTexture(carbon.TEXTURE_2D, source.Texture())
 
 		switch src := source.(type) {
 		case *FFVideoSource:
-			x := gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%vwidth\x00", i)))
-			gl.Uniform1f(x, float32(src.width))
+			x := carbon.GetUniformLocation(program, carbon.Str(fmt.Sprintf("tex%vwidth\x00", i)))
+			carbon.Uniform1f(x, float32(src.width))
 
-			x = gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%vheight\x00", i)))
-			gl.Uniform1f(x, float32(src.height))
+			x = carbon.GetUniformLocation(program, carbon.Str(fmt.Sprintf("tex%vheight\x00", i)))
+			carbon.Uniform1f(x, float32(src.height))
 		}
 	}
 
@@ -80,12 +80,12 @@ func (s *ShaderSource) Render(scene *Scene) {
 	scene.bindCommonUniforms(program)
 
 	projectionMat := mgl32.Ortho(-1, 1, 1, -1, 0.1, 10)
-	projection := gl.GetUniformLocation(program, gl.Str("projection\x00"))
-	gl.UniformMatrix4fv(projection, 1, false, &projectionMat[0])
+	projection := carbon.GetUniformLocation(program, carbon.Str("projection\x00"))
+	carbon.UniformMatrix4fv(projection, 1, false, &projectionMat[0])
 
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.DrawArrays(gl.TRIANGLES, 0, 2*3)
-	gl.BindFramebuffer(gl.FRAMEBUFFER, 0)
+	carbon.ActiveTexture(carbon.TEXTURE0)
+	carbon.DrawArrays(carbon.TRIANGLES, 0, 2*3)
+	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }
 func (s *ShaderSource) Dimensions() (width, height int32) {
 	return 1, 1

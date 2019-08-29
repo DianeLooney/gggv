@@ -37,18 +37,18 @@ func (f *FFVideoSource) Render(scene *Scene) {
 
 	w, h, img := f.decoder.Sample()
 	f.width, f.height = int32(w), int32(h)
-	gl.ActiveTexture(f.texture)
-	gl.BindTexture(gl.TEXTURE_2D, f.texture)
-	gl.TexImage2D(
-		gl.TEXTURE_2D,
+	carbon.ActiveTexture(f.texture)
+	carbon.BindTexture(carbon.TEXTURE_2D, f.texture)
+	carbon.TexImage2D(
+		carbon.TEXTURE_2D,
 		0,
-		gl.RGBA,
+		carbon.RGBA,
 		int32(w),
 		int32(h),
 		0,
-		gl.RGB,
-		gl.UNSIGNED_BYTE,
-		gl.Ptr(&img[0]))
+		carbon.RGB,
+		carbon.UNSIGNED_BYTE,
+		carbon.Ptr(&img[0]))
 }
 func (f *FFVideoSource) Dimensions() (width, height int32) {
 	return f.width, f.height

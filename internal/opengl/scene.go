@@ -11,7 +11,7 @@ import (
 
 	"github.com/dianelooney/gggv/internal/fps"
 
-	"github.com/go-gl/gl/all-core/gl"
+	"github.com/dianelooney/gggv/internal/carbon"
 	"github.com/go-gl/glfw/v3.1/glfw"
 	"github.com/go-gl/mathgl/mgl32"
 )

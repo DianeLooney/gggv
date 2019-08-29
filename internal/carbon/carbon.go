@@ -1,6 +1,5 @@
 package carbon
 
-import "C"
 import (
 	"unsafe"
 )
@@ -4560,3 +4559,5 @@ var WindowPos3iv func(v *int32)
 var WindowPos3s func(x int16, y int16, z int16)
 var WindowPos3sv func(v *int16)
 var WindowRectanglesEXT func(mode uint32, count int32, box *int32)
+
+var Init func() error

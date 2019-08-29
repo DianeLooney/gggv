@@ -61,7 +61,7 @@ func NewScene() *Scene {
 	s.Window.MakeContextCurrent()
 
 	// Initialize Glow
-	if err := gl.Init(); err != nil {
+	if err := carbon.Init(); err != nil {
 		panic(err)
 	}
 
@@ -69,15 +69,15 @@ func NewScene() *Scene {
 	s.Camera = mgl32.LookAtV(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
 
 	// Configure global settings
-	gl.Enable(gl.DEPTH_TEST)
-	gl.Disable(gl.CULL_FACE)
-	gl.Enable(gl.BLEND)
-	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
-	gl.PixelStorei(gl.UNPACK_ALIGNMENT, 1)
+	carbon.Enable(carbon.DEPTH_TEST)
+	carbon.Disable(carbon.CULL_FACE)
+	carbon.Enable(carbon.BLEND)
+	carbon.BlendFunc(carbon.SRC_ALPHA, carbon.ONE_MINUS_SRC_ALPHA)
+	carbon.PixelStorei(carbon.UNPACK_ALIGNMENT, 1)
 
-	gl.DepthFunc(gl.LESS)
-	gl.ClearColor(0, 0, 0, 1)
-	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+	carbon.DepthFunc(carbon.LESS)
+	carbon.ClearColor(0, 0, 0, 1)
+	carbon.Clear(carbon.COLOR_BUFFER_BIT | carbon.DEPTH_BUFFER_BIT)
 	if *vsync {
 		glfw.SwapInterval(1)
 	} else {
@@ -123,10 +123,10 @@ type Uniform struct {
 }
 
 func (u Uniform) Bind(program uint32) {
-	uLoc := gl.GetUniformLocation(program, gl.Str(u.Name+"\x00"))
+	uLoc := carbon.GetUniformLocation(program, carbon.Str(u.Name+"\x00"))
 	switch v := u.Value.(type) {
 	case float32:
-		gl.Uniform1f(uLoc, v)
+		carbon.Uniform1f(uLoc, v)
 	}
 }
 
@@ -137,13 +137,13 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 		return
 	}
 	var t uint32
-	gl.GenTextures(1, &t)
-	gl.ActiveTexture(t)
-	gl.BindTexture(gl.TEXTURE_2D, t)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+	carbon.GenTextures(1, &t)
+	carbon.ActiveTexture(t)
+	carbon.BindTexture(carbon.TEXTURE_2D, t)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_WRAP_S, carbon.CLAMP_TO_EDGE)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_WRAP_T, carbon.CLAMP_TO_EDGE)
 	s.sources[SourceName(name)] = &FFVideoSource{
 		name:    SourceName(name),
 		decoder: dec,
@@ -158,22 +158,22 @@ func (s *Scene) AddSourceShader(name string) {
 		uniforms: make(map[string]Uniform),
 		p:        name,
 	}
-	gl.GenFramebuffers(1, &sh.fbo)
-	gl.BindFramebuffer(gl.FRAMEBUFFER, sh.fbo)
-	gl.GenTextures(1, &sh.texture)
-	gl.BindTexture(gl.TEXTURE_2D, sh.texture)
-	gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-	gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, sh.texture, 0)
+	carbon.GenFramebuffers(1, &sh.fbo)
+	carbon.BindFramebuffer(carbon.FRAMEBUFFER, sh.fbo)
+	carbon.GenTextures(1, &sh.texture)
+	carbon.BindTexture(carbon.TEXTURE_2D, sh.texture)
+	carbon.TexImage2D(carbon.TEXTURE_2D, 0, carbon.RGB, s.Width, s.Height, 0, carbon.RGB, carbon.UNSIGNED_BYTE, nil)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
+	carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT0, carbon.TEXTURE_2D, sh.texture, 0)
 
-	gl.GenRenderbuffers(1, &sh.rbo)
+	carbon.GenRenderbuffers(1, &sh.rbo)
 
-	gl.BindRenderbuffer(gl.RENDERBUFFER, sh.rbo)
+	carbon.BindRenderbuffer(carbon.RENDERBUFFER, sh.rbo)
 
-	gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
-	gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
-	gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, sh.rbo)
+	carbon.RenderbufferStorage(carbon.RENDERBUFFER, carbon.DEPTH24_STENCIL8, s.Width, s.Height)
+	carbon.BindRenderbuffer(carbon.RENDERBUFFER, 0)
+	carbon.FramebufferRenderbuffer(carbon.FRAMEBUFFER, carbon.DEPTH_STENCIL_ATTACHMENT, carbon.RENDERBUFFER, sh.rbo)
 	s.sources[SourceName(name)] = &sh
 }
 
@@ -206,77 +206,77 @@ func (s *Scene) SetShaderInput(layer string, index int32, target string) {
 }
 
 func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
-	vertexShader, err := compileShader(vShader+"\x00", gl.VERTEX_SHADER)
+	vertexShader, err := compileShader(vShader+"\x00", carbon.VERTEX_SHADER)
 	if err != nil {
 		return err
 	}
-	fragmentShader, err := compileShader(fShader+"\x00", gl.FRAGMENT_SHADER)
+	fragmentShader, err := compileShader(fShader+"\x00", carbon.FRAGMENT_SHADER)
 	if err != nil {
 		fmt.Println("Compile error:", err)
 		return err
 	}
 
-	program := gl.CreateProgram()
+	program := carbon.CreateProgram()
 	p := Program{
 		GLProgram: program,
 	}
 
-	gl.AttachShader(program, vertexShader)
-	gl.AttachShader(program, fragmentShader)
-	gl.LinkProgram(program)
+	carbon.AttachShader(program, vertexShader)
+	carbon.AttachShader(program, fragmentShader)
+	carbon.LinkProgram(program)
 
 	var status int32
-	gl.GetProgramiv(program, gl.LINK_STATUS, &status)
-	if status == gl.FALSE {
+	carbon.GetProgramiv(program, carbon.LINK_STATUS, &status)
+	if status == carbon.FALSE {
 		var logLength int32
-		gl.GetProgramiv(program, gl.INFO_LOG_LENGTH, &logLength)
+		carbon.GetProgramiv(program, carbon.INFO_LOG_LENGTH, &logLength)
 
 		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
+		carbon.GetProgramInfoLog(program, logLength, nil, carbon.Str(log))
 
-		//gl.DeleteProgram(program)
+		//carbon.DeleteProgram(program)
 		return fmt.Errorf("failed to link program: %v", log)
 	}
 
 	if old, ok := s.programs[name]; ok {
-		gl.DeleteProgram(old.GLProgram)
+		carbon.DeleteProgram(old.GLProgram)
 	}
 	s.programs[name] = p
 
-	gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
+	carbon.BindFragDataLocation(program, 0, carbon.Str("outputColor\x00"))
 
-	gl.DeleteShader(vertexShader)
-	gl.DeleteShader(fragmentShader)
+	carbon.DeleteShader(vertexShader)
+	carbon.DeleteShader(fragmentShader)
 
 	return nil
 }
 
 func (s *Scene) BindBuffers() {
 	// Configure the vertex data
-	gl.GenVertexArrays(1, &s.vao)
-	gl.BindVertexArray(s.vao)
+	carbon.GenVertexArrays(1, &s.vao)
+	carbon.BindVertexArray(s.vao)
 
-	gl.GenBuffers(1, &s.vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, s.vbo)
+	carbon.GenBuffers(1, &s.vbo)
+	carbon.BindBuffer(carbon.ARRAY_BUFFER, s.vbo)
 
 	/*
 		{ // previousFrame pipeline setup
-			gl.GenFramebuffers(1, &s.prevFrameFBObj)
-			gl.BindFramebuffer(gl.FRAMEBUFFER, s.prevFrameFBObj)
-			gl.GenTextures(1, &s.prevFrameFBTex)
-			gl.BindTexture(gl.TEXTURE_2D, s.prevFrameFBTex)
-			gl.TexImage2D(gl.TEXTURE_2D, 0, gl.RGB, s.Width, s.Height, 0, gl.RGB, gl.UNSIGNED_BYTE, nil)
-			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-			gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-			gl.FramebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, s.prevFrameFBTex, 0)
+			carbon.GenFramebuffers(1, &s.prevFrameFBObj)
+			carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.prevFrameFBObj)
+			carbon.GenTextures(1, &s.prevFrameFBTex)
+			carbon.BindTexture(carbon.TEXTURE_2D, s.prevFrameFBTex)
+			carbon.TexImage2D(carbon.TEXTURE_2D, 0, carbon.RGB, s.Width, s.Height, 0, carbon.RGB, carbon.UNSIGNED_BYTE, nil)
+			carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
+			carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
+			carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT0, carbon.TEXTURE_2D, s.prevFrameFBTex, 0)
 
-			gl.GenRenderbuffers(1, &s.prevFrameRBObj)
+			carbon.GenRenderbuffers(1, &s.prevFrameRBObj)
 
-			gl.BindRenderbuffer(gl.RENDERBUFFER, s.prevFrameRBObj)
+			carbon.BindRenderbuffer(carbon.RENDERBUFFER, s.prevFrameRBObj)
 
-			gl.RenderbufferStorage(gl.RENDERBUFFER, gl.DEPTH24_STENCIL8, s.Width, s.Height)
-			gl.BindRenderbuffer(gl.RENDERBUFFER, 0)
-			gl.FramebufferRenderbuffer(gl.FRAMEBUFFER, gl.DEPTH_STENCIL_ATTACHMENT, gl.RENDERBUFFER, s.prevFrameRBObj)
+			carbon.RenderbufferStorage(carbon.RENDERBUFFER, carbon.DEPTH24_STENCIL8, s.Width, s.Height)
+			carbon.BindRenderbuffer(carbon.RENDERBUFFER, 0)
+			carbon.FramebufferRenderbuffer(carbon.FRAMEBUFFER, carbon.DEPTH_STENCIL_ATTACHMENT, carbon.RENDERBUFFER, s.prevFrameRBObj)
 		}
 	*/
 }
@@ -287,13 +287,13 @@ func (s *Scene) TextureInit(name string) {
 	}
 
 	var t uint32
-	gl.GenTextures(1, &t)
-	gl.ActiveTexture(t)
-	gl.BindTexture(gl.TEXTURE_2D, t)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
+	carbon.GenTextures(1, &t)
+	carbon.ActiveTexture(t)
+	carbon.BindTexture(carbon.TEXTURE_2D, t)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_WRAP_S, carbon.CLAMP_TO_EDGE)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_WRAP_T, carbon.CLAMP_TO_EDGE)
 	s.textures[name] = t
 }
 
@@ -303,36 +303,36 @@ func (s *Scene) RebindTexture(name string, width, height int, img []uint8) {
 		fmt.Printf("Unrecognized texture name %v\n", name)
 		return
 	}
-	gl.ActiveTexture(t)
-	gl.BindTexture(gl.TEXTURE_2D, t)
-	gl.TexImage2D(
-		gl.TEXTURE_2D,
+	carbon.ActiveTexture(t)
+	carbon.BindTexture(carbon.TEXTURE_2D, t)
+	carbon.TexImage2D(
+		carbon.TEXTURE_2D,
 		0,
-		gl.RGBA,
+		carbon.RGBA,
 		int32(width),
 		int32(height),
 		0,
-		gl.RGB,
-		gl.UNSIGNED_BYTE,
-		gl.Ptr(&img[0]))
+		carbon.RGB,
+		carbon.UNSIGNED_BYTE,
+		carbon.Ptr(&img[0]))
 }
 
 func compileShader(source string, shaderType uint32) (uint32, error) {
-	shader := gl.CreateShader(shaderType)
+	shader := carbon.CreateShader(shaderType)
 
-	csources, free := gl.Strs(source)
-	gl.ShaderSource(shader, 1, csources, nil)
+	csources, free := carbon.Strs(source)
+	carbon.ShaderSource(shader, 1, csources, nil)
 	free()
-	gl.CompileShader(shader)
+	carbon.CompileShader(shader)
 
 	var status int32
-	gl.GetShaderiv(shader, gl.COMPILE_STATUS, &status)
-	if status == gl.FALSE {
+	carbon.GetShaderiv(shader, carbon.COMPILE_STATUS, &status)
+	if status == carbon.FALSE {
 		var logLength int32
-		gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
+		carbon.GetShaderiv(shader, carbon.INFO_LOG_LENGTH, &logLength)
 
 		log := strings.Repeat("\x00", int(logLength+1))
-		gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
+		carbon.GetShaderInfoLog(shader, logLength, nil, carbon.Str(log))
 
 		return 0, fmt.Errorf("failed to compile %v: %v", source, log)
 	}
@@ -341,10 +341,10 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 }
 
 func (s *Scene) Draw() {
-	gl.UseProgram(s.programs["default"].GLProgram)
+	carbon.UseProgram(s.programs["default"].GLProgram)
 
 	s.time = float32(time.Since(tStart)) / NANOSTOSEC
-	gl.BindVertexArray(s.vao)
+	carbon.BindVertexArray(s.vao)
 
 	ord, err := Order("window", s.sources)
 	if err != nil {
@@ -355,13 +355,13 @@ func (s *Scene) Draw() {
 		s.sources[source].Render(s)
 	}
 	{
-		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+		carbon.Clear(carbon.COLOR_BUFFER_BIT | carbon.DEPTH_BUFFER_BIT)
 
 		program := s.programs["window"].GLProgram
-		gl.UseProgram(program)
+		carbon.UseProgram(program)
 
 		src := s.sources["window"]
-		//gl.BindTexture(gl.TEXTURE_2D, src.Texture())
+		//carbon.BindTexture(carbon.TEXTURE_2D, src.Texture())
 
 		if shader, ok := src.(*ShaderSource); ok {
 			for i, name := range shader.sources {
@@ -369,29 +369,29 @@ func (s *Scene) Draw() {
 					continue
 				}
 				source := s.sources[name]
-				gl.ActiveTexture(gl.TEXTURE0 + uint32(i))
-				gl.BindTexture(gl.TEXTURE_2D, source.Texture())
+				carbon.ActiveTexture(carbon.TEXTURE0 + uint32(i))
+				carbon.BindTexture(carbon.TEXTURE_2D, source.Texture())
 
 				switch src := source.(type) {
 				case *FFVideoSource:
-					x := gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%vwidth\x00", i)))
-					gl.Uniform1f(x, float32(src.width))
+					x := carbon.GetUniformLocation(program, carbon.Str(fmt.Sprintf("tex%vwidth\x00", i)))
+					carbon.Uniform1f(x, float32(src.width))
 
-					x = gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%vheight\x00", i)))
-					gl.Uniform1f(x, float32(src.width))
+					x = carbon.GetUniformLocation(program, carbon.Str(fmt.Sprintf("tex%vheight\x00", i)))
+					carbon.Uniform1f(x, float32(src.width))
 				}
 			}
 		}
 		s.bindCommonUniforms(program)
 
 		projectionMat := mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
-		projection := gl.GetUniformLocation(program, gl.Str("projection\x00"))
-		gl.UniformMatrix4fv(projection, 1, false, &projectionMat[0])
+		projection := carbon.GetUniformLocation(program, carbon.Str("projection\x00"))
+		carbon.UniformMatrix4fv(projection, 1, false, &projectionMat[0])
 
 		//bind framebuffer texture
-		gl.ActiveTexture(gl.TEXTURE0)
-		gl.BufferData(gl.ARRAY_BUFFER, len(staticVerts)*4, gl.Ptr(&staticVerts[0]), gl.STATIC_DRAW)
-		gl.DrawArrays(gl.TRIANGLES, 0, 2*3)
+		carbon.ActiveTexture(carbon.TEXTURE0)
+		carbon.BufferData(carbon.ARRAY_BUFFER, len(staticVerts)*4, carbon.Ptr(&staticVerts[0]), carbon.STATIC_DRAW)
+		carbon.DrawArrays(carbon.TRIANGLES, 0, 2*3)
 
 		//draw output wuad
 	}
@@ -402,45 +402,45 @@ func (s *Scene) Draw() {
 }
 
 func (s *Scene) bindCommonUniforms(program uint32) {
-	vertAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vert\x00")))
-	gl.EnableVertexAttribArray(vertAttrib)
-	gl.VertexAttribPointer(vertAttrib, 3, gl.FLOAT, false, 5*4, gl.PtrOffset(0))
+	vertAttrib := uint32(carbon.GetAttribLocation(program, carbon.Str("vert\x00")))
+	carbon.EnableVertexAttribArray(vertAttrib)
+	carbon.VertexAttribPointer(vertAttrib, 3, carbon.FLOAT, false, 5*4, carbon.PtrOffset(0))
 
-	texCoordAttrib := uint32(gl.GetAttribLocation(program, gl.Str("vertTexCoord\x00")))
-	gl.EnableVertexAttribArray(texCoordAttrib)
-	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 5*4, gl.PtrOffset(3*4))
+	texCoordAttrib := uint32(carbon.GetAttribLocation(program, carbon.Str("vertTexCoord\x00")))
+	carbon.EnableVertexAttribArray(texCoordAttrib)
+	carbon.VertexAttribPointer(texCoordAttrib, 2, carbon.FLOAT, false, 5*4, carbon.PtrOffset(3*4))
 
-	projection := gl.GetUniformLocation(program, gl.Str("projection\x00"))
-	gl.UniformMatrix4fv(projection, 1, false, &s.Projection[0])
+	projection := carbon.GetUniformLocation(program, carbon.Str("projection\x00"))
+	carbon.UniformMatrix4fv(projection, 1, false, &s.Projection[0])
 
-	camera := gl.GetUniformLocation(program, gl.Str("camera\x00"))
-	gl.UniformMatrix4fv(camera, 1, false, &s.Camera[0])
+	camera := carbon.GetUniformLocation(program, carbon.Str("camera\x00"))
+	carbon.UniformMatrix4fv(camera, 1, false, &s.Camera[0])
 
 	for i := int32(0); i < SHADER_TEXTURE_COUNT; i++ {
-		tex := gl.GetUniformLocation(program, gl.Str(fmt.Sprintf("tex%v\x00", i)))
-		gl.Uniform1i(tex, i)
+		tex := carbon.GetUniformLocation(program, carbon.Str(fmt.Sprintf("tex%v\x00", i)))
+		carbon.Uniform1i(tex, i)
 	}
 
-	timeU := gl.GetUniformLocation(program, gl.Str("time\x00"))
-	gl.Uniform1f(timeU, s.time)
+	timeU := carbon.GetUniformLocation(program, carbon.Str("time\x00"))
+	carbon.Uniform1f(timeU, s.time)
 
-	fpsU := gl.GetUniformLocation(program, gl.Str("fps\x00"))
-	gl.Uniform1f(fpsU, float32(fps.LastSec()))
+	fpsU := carbon.GetUniformLocation(program, carbon.Str("fps\x00"))
+	carbon.Uniform1f(fpsU, float32(fps.LastSec()))
 
-	renderTime := gl.GetUniformLocation(program, gl.Str("renderTime\x00"))
-	gl.Uniform1f(renderTime, float32(fps.FrameDuration())/NANOSTOSEC)
+	renderTime := carbon.GetUniformLocation(program, carbon.Str("renderTime\x00"))
+	carbon.Uniform1f(renderTime, float32(fps.FrameDuration())/NANOSTOSEC)
 
 	x, y := s.Window.GetCursorPos()
-	cursorXU := gl.GetUniformLocation(program, gl.Str("cursorX\x00"))
-	gl.Uniform1f(cursorXU, float32(x))
+	cursorXU := carbon.GetUniformLocation(program, carbon.Str("cursorX\x00"))
+	carbon.Uniform1f(cursorXU, float32(x))
 
-	cursorYU := gl.GetUniformLocation(program, gl.Str("cursorY\x00"))
-	gl.Uniform1f(cursorYU, float32(y))
+	cursorYU := carbon.GetUniformLocation(program, carbon.Str("cursorY\x00"))
+	carbon.Uniform1f(cursorYU, float32(y))
 
 	windowWidth, windowHeight := s.Window.GetSize()
-	windowWidthU := gl.GetUniformLocation(program, gl.Str("windowWidth\x00"))
-	gl.Uniform1f(windowWidthU, float32(windowWidth))
+	windowWidthU := carbon.GetUniformLocation(program, carbon.Str("windowWidth\x00"))
+	carbon.Uniform1f(windowWidthU, float32(windowWidth))
 
-	windowHeightU := gl.GetUniformLocation(program, gl.Str("windowHeight\x00"))
-	gl.Uniform1f(windowHeightU, float32(windowHeight))
+	windowHeightU := carbon.GetUniformLocation(program, carbon.Str("windowHeight\x00"))
+	carbon.Uniform1f(windowHeightU, float32(windowHeight))
 }

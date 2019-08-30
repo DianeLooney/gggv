@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	_ "image/png"
 	"io/ioutil"
 	"runtime"
+
+	"github.com/dianelooney/gggv/internal/logs"
 
 	"github.com/hypebeast/go-osc/osc"
 
@@ -79,12 +80,12 @@ func netSetup() {
 		sourceName := msg.Arguments[0].(string)
 		path := msg.Arguments[0].(string)
 
-		fmt.Println("/source.ffvideo/create", sourceName, path)
+		logs.Log("/source.ffvideo/create", sourceName, path)
 		dmn.AddSourceFFVideo(sourceName, path)
 	})
 	server.Handle("/source.shader/create", func(msg *osc.Message) {
 		name := msg.Arguments[0].(string)
-		fmt.Println("/source.shader/create", name)
+		logs.Log("/source.shader/create", name)
 		dmn.AddSourceShader(name)
 	})
 	server.Handle("/source.shader/set/input", func(msg *osc.Message) {
@@ -92,7 +93,7 @@ func netSetup() {
 		index := msg.Arguments[1].(int32)
 		value := msg.Arguments[2].(string)
 
-		fmt.Println("/source.shader/set/input", layer, index, value)
+		logs.Log("/source.shader/set/input", layer, index, value)
 		dmn.SetShaderInput(layer, index, value)
 	})
 	server.Handle("/source.shader/set/uniform1f", func(msg *osc.Message) {
@@ -121,11 +122,11 @@ func netSetup() {
 		case float32:
 			value = v
 		default:
-			fmt.Printf("Expected to receive float32 uniform, but it was %T\n", value)
+			logs.Error("Expected to receive float32 uniform, but it was %T\n", value)
 			return
 		}
 
-		fmt.Println("/source.shader/set/uniform1f", layer, name, value)
+		logs.Log("/source.shader/set/uniform1f", layer, name, value)
 		dmn.SetUniform(layer, name, value)
 	})
 	server.Handle("/program/create", func(msg *osc.Message) {
@@ -142,7 +143,7 @@ func netSetup() {
 			return
 		}
 
-		fmt.Println("/program/create", name, string(vShader), string(fShader))
+		logs.Log("/program/create", name, string(vShader), string(fShader))
 		dmn.AddProgram(name, string(vShader), string(fShader))
 	})
 	server.ListenAndServe()

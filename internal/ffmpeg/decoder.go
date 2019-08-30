@@ -1,12 +1,11 @@
 package ffmpeg
 
 import (
-	"fmt"
-	"log"
-	"os"
 	"time"
 	"unsafe"
 
+	"github.com/dianelooney/gggv/internal/errors"
+	"github.com/dianelooney/gggv/internal/logs"
 	"github.com/giorgisio/goav/avcodec"
 	"github.com/giorgisio/goav/avformat"
 	"github.com/giorgisio/goav/avutil"
@@ -32,15 +31,14 @@ func (d *Decoder) Dimensions() (width, height int) {
 	return d.width, d.height
 }
 
-func (d *Decoder) Begin(fname string) (err error) {
+func (d *Decoder) Begin(fname string) error {
 	d.pFormatContext = avformat.AvformatAllocContext()
-	if avformat.AvformatOpenInput(&d.pFormatContext, fname, nil, nil) != 0 {
-		return fmt.Errorf("unable to open file %s", fname)
+	if code := avformat.AvformatOpenInput(&d.pFormatContext, fname, nil, nil); code != 0 {
+		return errors.FFDecoderOpenInput(fname, avutil.ErrorFromCode(code))
 	}
 
-	if d.pFormatContext.AvformatFindStreamInfo(nil) < 0 {
-		fmt.Println("Couldn't find stream information")
-		os.Exit(1)
+	if code := d.pFormatContext.AvformatFindStreamInfo(nil); code < 0 {
+		return errors.FFDecoderStreamInfo(fname, avutil.ErrorFromCode(code))
 	}
 
 	d.pFormatContext.AvDumpFormat(0, fname, 0)
@@ -50,28 +48,27 @@ func (d *Decoder) Begin(fname string) (err error) {
 		case avformat.AVMEDIA_TYPE_VIDEO:
 			d.pCodecCtxOrig = d.pFormatContext.Streams()[i].Codec()
 
-			pCodec := avcodec.AvcodecFindDecoder(avcodec.CodecId(d.pCodecCtxOrig.GetCodecId()))
+			codecID := d.pCodecCtxOrig.GetCodecId()
+			pCodec := avcodec.AvcodecFindDecoder(avcodec.CodecId(codecID))
 			if pCodec == nil {
-				fmt.Println("Unsupported codec!")
-				os.Exit(1)
+				return errors.FFDecoderUnsupportedCodec(fname, codecID)
 			}
 
 			d.pCodecCtx = pCodec.AvcodecAllocContext3()
-			if d.pCodecCtx.AvcodecCopyContext((*avcodec.Context)(unsafe.Pointer(d.pCodecCtxOrig))) != 0 {
-				fmt.Println("Couldn't copy codec context")
-				os.Exit(1)
+			if code := d.pCodecCtx.AvcodecCopyContext((*avcodec.Context)(unsafe.Pointer(d.pCodecCtxOrig))); code != 0 {
+				return errors.FFDecoderCopyCodecCtx(fname, avutil.ErrorFromCode(code))
 			}
 
-			if d.pCodecCtx.AvcodecOpen2(pCodec, nil) < 0 {
-				fmt.Println("Could not open codec")
-				os.Exit(1)
+			if code := d.pCodecCtx.AvcodecOpen2(pCodec, nil); code < 0 {
+				return errors.FFDecoderOpenCodec(fname, avutil.ErrorFromCode(code))
 			}
 
-			d.pFrame = avutil.AvFrameAlloc()
+			if d.pFrame = avutil.AvFrameAlloc(); d.pFrame == nil {
+				return errors.FFDecoderCopyCodecCtx(fname)
+			}
 
 			if d.pFrameRGB = avutil.AvFrameAlloc(); d.pFrameRGB == nil {
-				fmt.Println("Unable to allocate RGB Frame")
-				os.Exit(1)
+				return errors.FFDecoderCopyCodecCtx(fname)
 			}
 
 			numBytes := uintptr(avcodec.AvpictureGetSize(
@@ -103,8 +100,7 @@ func (d *Decoder) Begin(fname string) (err error) {
 			return nil
 		}
 	}
-	log.Fatalln("Didn't find a video stream")
-	return nil
+	return errors.FFDecoderMissingStream(fname)
 }
 
 func (d *Decoder) readFrame() (ok bool) {
@@ -115,14 +111,14 @@ func (d *Decoder) readFrame() (ok bool) {
 	// Decode video frame
 	response := d.pCodecCtx.AvcodecSendPacket(d.packet)
 	if response < 0 {
-		fmt.Printf("Error while sending a packet to the decoder: %s\n", avutil.ErrorFromCode(response))
+		logs.Error("Error while sending a packet to the decoder", avutil.ErrorFromCode(response))
 	}
 	for response >= 0 {
 		response = d.pCodecCtx.AvcodecReceiveFrame((*avcodec.Frame)(unsafe.Pointer(d.pFrame)))
 		if response == avutil.AvErrorEAGAIN || response == avutil.AvErrorEOF {
 			return false
 		} else if response < 0 {
-			fmt.Printf("Error while receiving a frame from the decoder: %s\n", avutil.ErrorFromCode(response))
+			logs.Error("Error while receiving a frame from the decoder", avutil.ErrorFromCode(response))
 			return false
 		}
 
@@ -178,7 +174,6 @@ func (d *Decoder) NextFrame() (rgb []uint8, duration int) {
 }
 
 func (d *Decoder) Dealloc() {
-	fmt.Println("Finalizing decoder")
 	d.packet.AvFreePacket()
 	// Free the RGB image
 	avutil.AvFree(d.buffer)

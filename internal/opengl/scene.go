@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/dianelooney/gggv/internal/carbon"
+	"github.com/dianelooney/gggv/internal/errors"
 	"github.com/dianelooney/gggv/internal/ffmpeg"
+	"github.com/dianelooney/gggv/internal/logs"
 
 	"github.com/dianelooney/gggv/internal/fps"
 
@@ -133,7 +135,7 @@ func (u Uniform) Bind(program uint32) {
 func (s *Scene) AddSourceFFVideo(name, path string) {
 	dec, err := ffmpeg.NewFileSampler(path)
 	if err != nil {
-		fmt.Printf("Error adding new FFVideoSource: %v\n", err)
+		logs.Error("Error adding new FFVideoSource", err)
 		return
 	}
 	var t uint32
@@ -190,30 +192,28 @@ func (s *Scene) SetUniform(layer, name string, value interface{}) {
 func (s *Scene) SetShaderInput(layer string, index int32, target string) {
 	l, ok := s.sources[SourceName(layer)]
 	if !ok {
-		fmt.Printf("Attempted to set input on %v, but %v was not found.\n", layer, layer)
-		fmt.Println(s.sources)
+		logs.Error("Attempted to set input on layer, but the layer was not found", layer)
 		return
 	}
 	fmt.Println(s.sources[SourceName(layer)])
 	src, ok := l.(*ShaderSource)
 	if !ok {
-		fmt.Printf("Attempted to set input on %v, but %v was not a shader.\n", layer, layer)
+		logs.Error("Attempted to set input on layer, but the layer was not a shader", layer)
 		return
 	}
 	src.sources[index] = SourceName(target)
 	s.sources[SourceName(layer)] = src
-	fmt.Println(s.sources[SourceName(layer)])
 }
 
 func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
 	vertexShader, err := compileShader(vShader+"\x00", carbon.VERTEX_SHADER)
 	if err != nil {
-		return err
+		return errors.GLVShaderCompile(name, err)
 	}
 	fragmentShader, err := compileShader(fShader+"\x00", carbon.FRAGMENT_SHADER)
 	if err != nil {
-		fmt.Println("Compile error:", err)
-		return err
+		logs.Error("Fragment shader compile error", err)
+		return errors.GLFShaderCompile(name, err)
 	}
 
 	program := carbon.CreateProgram()
@@ -234,8 +234,7 @@ func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
 		log := strings.Repeat("\x00", int(logLength+1))
 		carbon.GetProgramInfoLog(program, logLength, nil, carbon.Str(log))
 
-		//carbon.DeleteProgram(program)
-		return fmt.Errorf("failed to link program: %v", log)
+		return errors.GLLinkProgram(name, log)
 	}
 
 	if old, ok := s.programs[name]; ok {
@@ -252,33 +251,11 @@ func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
 }
 
 func (s *Scene) BindBuffers() {
-	// Configure the vertex data
 	carbon.GenVertexArrays(1, &s.vao)
 	carbon.BindVertexArray(s.vao)
 
 	carbon.GenBuffers(1, &s.vbo)
 	carbon.BindBuffer(carbon.ARRAY_BUFFER, s.vbo)
-
-	/*
-		{ // previousFrame pipeline setup
-			carbon.GenFramebuffers(1, &s.prevFrameFBObj)
-			carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.prevFrameFBObj)
-			carbon.GenTextures(1, &s.prevFrameFBTex)
-			carbon.BindTexture(carbon.TEXTURE_2D, s.prevFrameFBTex)
-			carbon.TexImage2D(carbon.TEXTURE_2D, 0, carbon.RGB, s.Width, s.Height, 0, carbon.RGB, carbon.UNSIGNED_BYTE, nil)
-			carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
-			carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
-			carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT0, carbon.TEXTURE_2D, s.prevFrameFBTex, 0)
-
-			carbon.GenRenderbuffers(1, &s.prevFrameRBObj)
-
-			carbon.BindRenderbuffer(carbon.RENDERBUFFER, s.prevFrameRBObj)
-
-			carbon.RenderbufferStorage(carbon.RENDERBUFFER, carbon.DEPTH24_STENCIL8, s.Width, s.Height)
-			carbon.BindRenderbuffer(carbon.RENDERBUFFER, 0)
-			carbon.FramebufferRenderbuffer(carbon.FRAMEBUFFER, carbon.DEPTH_STENCIL_ATTACHMENT, carbon.RENDERBUFFER, s.prevFrameRBObj)
-		}
-	*/
 }
 
 func (s *Scene) TextureInit(name string) {

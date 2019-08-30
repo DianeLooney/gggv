@@ -100,13 +100,15 @@ workflows:
       - test
       - win-build:
           requires:
-            - build
+            - vet
+            - test
           filters:
             branches:
               only: master
       - docker-build-gggv:
           requires:
-            - build
+            - vet
+            - test
           filters:
             branches:
               only: master

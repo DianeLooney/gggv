@@ -12,7 +12,7 @@ jobs:
     steps:
       - checkout
       - run: go get -v -t -d ./...
-      - run: go vet
+      - run: go vet ./...
   test:
     docker:
       - image: circleci/golang:1.12

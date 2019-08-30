@@ -137,14 +137,6 @@ type Uniform struct {
 	Value interface{}
 }
 
-func (u Uniform) Bind(program uint32) {
-	uLoc := carbon.GetUniformLocation(program, carbon.Str(u.Name+"\x00"))
-	switch v := u.Value.(type) {
-	case float32:
-		carbon.Uniform1f(uLoc, v)
-	}
-}
-
 func (s *Scene) AddSourceFFVideo(name, path string) {
 	dec, err := ffmpeg.NewFileSampler(path)
 	if err != nil {
@@ -368,19 +360,15 @@ func (s *Scene) Draw() {
 
 			switch src := source.(type) {
 			case *FFVideoSource:
-				x := carbon.GetUniformLocation(windowProgram.GLProgram, carbon.Str(fmt.Sprintf("tex%vwidth\x00", i)))
-				carbon.Uniform1f(x, float32(src.width))
-
-				x = carbon.GetUniformLocation(windowProgram.GLProgram, carbon.Str(fmt.Sprintf("tex%vheight\x00", i)))
-				carbon.Uniform1f(x, float32(src.width))
+				carbon.Uniform(windowProgram.GLProgram, fmt.Sprintf("tex%vwidth", i), src.width)
+				carbon.Uniform(windowProgram.GLProgram, fmt.Sprintf("tex%vheight", i), src.height)
 			}
 		}
 	}
 	s.bindCommonUniforms(windowProgram.GLProgram)
 
 	projectionMat := mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
-	projection := carbon.GetUniformLocation(windowProgram.GLProgram, carbon.Str("projection\x00"))
-	carbon.UniformMatrix4fv(projection, 1, false, &projectionMat[0])
+	carbon.Uniform(windowProgram.GLProgram, "projection", projectionMat)
 
 	carbon.ActiveTexture(carbon.TEXTURE0)
 	carbon.BufferData(carbon.ARRAY_BUFFER, len(staticVerts)*4, carbon.Ptr(&staticVerts[0]), carbon.STATIC_DRAW)
@@ -400,19 +388,14 @@ func (s *Scene) bindCommonUniforms(program uint32) {
 	carbon.EnableVertexAttribArray(texCoordAttrib)
 	carbon.VertexAttribPointer(texCoordAttrib, 2, carbon.FLOAT, false, 5*4, carbon.PtrOffset(3*4))
 
-	projection := carbon.GetUniformLocation(program, carbon.Str("projection\x00"))
-	carbon.UniformMatrix4fv(projection, 1, false, &s.Projection[0])
+	carbon.Uniform(program, "projection", s.Projection)
+	carbon.Uniform(program, "camera", s.Camera)
 
-	camera := carbon.GetUniformLocation(program, carbon.Str("camera\x00"))
-	carbon.UniformMatrix4fv(camera, 1, false, &s.Camera[0])
-
-	for i := int32(0); i < SHADER_TEXTURE_COUNT; i++ {
-		tex := carbon.GetUniformLocation(program, carbon.Str(fmt.Sprintf("tex%v\x00", i)))
-		carbon.Uniform1i(tex, i)
+	for i := 0; i < SHADER_TEXTURE_COUNT; i++ {
+		carbon.UniformTex(program, fmt.Sprintf("tex%v", i), int32(i))
 	}
 
-	timeU := carbon.GetUniformLocation(program, carbon.Str("time\x00"))
-	carbon.Uniform1f(timeU, s.time)
+	carbon.Uniform(program, "time", s.time)
 
 	fpsU := carbon.GetUniformLocation(program, carbon.Str("fps\x00"))
 	carbon.Uniform1f(fpsU, float32(fps.LastSec()))
@@ -421,16 +404,10 @@ func (s *Scene) bindCommonUniforms(program uint32) {
 	carbon.Uniform1f(renderTime, float32(fps.FrameDuration())/NANOSTOSEC)
 
 	x, y := s.Window.GetCursorPos()
-	cursorXU := carbon.GetUniformLocation(program, carbon.Str("cursorX\x00"))
-	carbon.Uniform1f(cursorXU, float32(x))
-
-	cursorYU := carbon.GetUniformLocation(program, carbon.Str("cursorY\x00"))
-	carbon.Uniform1f(cursorYU, float32(y))
+	carbon.Uniform(program, "cursorX", x)
+	carbon.Uniform(program, "cursorY", y)
 
 	windowWidth, windowHeight := s.Window.GetSize()
-	windowWidthU := carbon.GetUniformLocation(program, carbon.Str("windowWidth\x00"))
-	carbon.Uniform1f(windowWidthU, float32(windowWidth))
-
-	windowHeightU := carbon.GetUniformLocation(program, carbon.Str("windowHeight\x00"))
-	carbon.Uniform1f(windowHeightU, float32(windowHeight))
+	carbon.Uniform(program, "windowWidth", windowWidth)
+	carbon.Uniform(program, "windowHeight", windowHeight)
 }

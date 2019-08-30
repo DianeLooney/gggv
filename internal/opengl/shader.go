@@ -65,23 +65,19 @@ func (s *ShaderSource) Render(scene *Scene) {
 
 		switch src := source.(type) {
 		case *FFVideoSource:
-			x := carbon.GetUniformLocation(program, carbon.Str(fmt.Sprintf("tex%vwidth\x00", i)))
-			carbon.Uniform1f(x, float32(src.width))
-
-			x = carbon.GetUniformLocation(program, carbon.Str(fmt.Sprintf("tex%vheight\x00", i)))
-			carbon.Uniform1f(x, float32(src.height))
+			carbon.Uniform(program, fmt.Sprintf("tex%vwidth", i), src.width)
+			carbon.Uniform(program, fmt.Sprintf("tex%vheight", i), src.height)
 		}
 	}
 
 	for _, u := range s.uniforms {
-		u.Bind(program)
+		carbon.Uniform(program, u.Name, u.Value)
 	}
 
 	scene.bindCommonUniforms(program)
 
 	projectionMat := mgl32.Ortho(-1, 1, 1, -1, 0.1, 10)
-	projection := carbon.GetUniformLocation(program, carbon.Str("projection\x00"))
-	carbon.UniformMatrix4fv(projection, 1, false, &projectionMat[0])
+	carbon.Uniform(program, "projection", projectionMat)
 
 	carbon.ActiveTexture(carbon.TEXTURE0)
 	carbon.DrawArrays(carbon.TRIANGLES, 0, 2*3)

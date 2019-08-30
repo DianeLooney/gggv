@@ -10,8 +10,8 @@ import (
 
 	"github.com/hypebeast/go-osc/osc"
 
-	_ "github.com/dianelooney/gggv/internal/carbon/opengl" // necessary to fill carbon stubs
 	"github.com/dianelooney/gggv/pkg/daemon"
+	_ "github.com/dianelooney/gggv/wrappers/opengl" // necessary to fill carbon stubs
 )
 
 func init() {

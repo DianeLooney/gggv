@@ -14,7 +14,7 @@ jobs:
     steps:
       - checkout
       - run: go get -v -t -d ./...
-      - run: go vet $(go list ./... | grep -v /wrappers/) 
+      - run: go vet -unsafeptr=false $(go list ./... | grep -v /wrappers/) 
   test:
     docker:
       - image: diane/gggv-base:latest

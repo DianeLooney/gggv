@@ -96,8 +96,19 @@ jobs:
           command: |
             echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
             docker push $IMAGE_NAME:latest
+
 workflows:
   version: 2
+  base-image-update:
+    triggers:
+      - schedule:
+          cron: "0 0 * * 1"
+          filters:
+            branches:
+              only:
+                - master
+    jobs:
+      - docker-build-gggv-base
   release:
     jobs:
       - vet

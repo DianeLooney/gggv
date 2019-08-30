@@ -208,12 +208,11 @@ func (s *Scene) SetShaderInput(layer string, index int32, target string) {
 func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
 	vertexShader, err := compileShader(vShader+"\x00", carbon.VERTEX_SHADER)
 	if err != nil {
-		return errors.GLVShaderCompile(name, err)
+		return err
 	}
 	fragmentShader, err := compileShader(fShader+"\x00", carbon.FRAGMENT_SHADER)
 	if err != nil {
-		logs.Error("Fragment shader compile error", err)
-		return errors.GLFShaderCompile(name, err)
+		return err
 	}
 
 	program := carbon.CreateProgram()
@@ -311,67 +310,68 @@ func compileShader(source string, shaderType uint32) (uint32, error) {
 		log := strings.Repeat("\x00", int(logLength+1))
 		carbon.GetShaderInfoLog(shader, logLength, nil, carbon.Str(log))
 
-		return 0, fmt.Errorf("failed to compile %v: %v", source, log)
+		return 0, errors.GLShaderCompile(log, source)
 	}
 
 	return shader, nil
 }
 
 func (s *Scene) Draw() {
-	carbon.UseProgram(s.programs["default"].GLProgram)
+	windowSrc, ok := s.sources["window"]
+	if !ok {
+		logs.Error(errors.SceneMissingWindowSource())
+		return
+	}
+	windowProgram, ok := s.programs["window"]
+	if !ok {
+		logs.Error(errors.SceneMissingWindowProgram())
+		return
+	}
 
 	s.time = float32(time.Since(tStart)) / NANOSTOSEC
 	carbon.BindVertexArray(s.vao)
 
 	ord, err := Order("window", s.sources)
 	if err != nil {
-		fmt.Println("Error occurred while ordering sources for render:", err)
+		logs.Error(errors.SceneRenderOrder(err))
 		return
 	}
+
 	for _, source := range ord {
 		s.sources[source].Render(s)
 	}
-	{
-		carbon.Clear(carbon.COLOR_BUFFER_BIT | carbon.DEPTH_BUFFER_BIT)
 
-		program := s.programs["window"].GLProgram
-		carbon.UseProgram(program)
+	carbon.Clear(carbon.COLOR_BUFFER_BIT | carbon.DEPTH_BUFFER_BIT)
+	carbon.UseProgram(windowProgram.GLProgram)
 
-		src := s.sources["window"]
-		//carbon.BindTexture(carbon.TEXTURE_2D, src.Texture())
+	if shader, ok := windowSrc.(*ShaderSource); ok {
+		for i, name := range shader.sources {
+			if name == "" {
+				continue
+			}
+			source := s.sources[name]
+			carbon.ActiveTexture(carbon.TEXTURE0 + uint32(i))
+			carbon.BindTexture(carbon.TEXTURE_2D, source.Texture())
 
-		if shader, ok := src.(*ShaderSource); ok {
-			for i, name := range shader.sources {
-				if name == "" {
-					continue
-				}
-				source := s.sources[name]
-				carbon.ActiveTexture(carbon.TEXTURE0 + uint32(i))
-				carbon.BindTexture(carbon.TEXTURE_2D, source.Texture())
+			switch src := source.(type) {
+			case *FFVideoSource:
+				x := carbon.GetUniformLocation(windowProgram.GLProgram, carbon.Str(fmt.Sprintf("tex%vwidth\x00", i)))
+				carbon.Uniform1f(x, float32(src.width))
 
-				switch src := source.(type) {
-				case *FFVideoSource:
-					x := carbon.GetUniformLocation(program, carbon.Str(fmt.Sprintf("tex%vwidth\x00", i)))
-					carbon.Uniform1f(x, float32(src.width))
-
-					x = carbon.GetUniformLocation(program, carbon.Str(fmt.Sprintf("tex%vheight\x00", i)))
-					carbon.Uniform1f(x, float32(src.width))
-				}
+				x = carbon.GetUniformLocation(windowProgram.GLProgram, carbon.Str(fmt.Sprintf("tex%vheight\x00", i)))
+				carbon.Uniform1f(x, float32(src.width))
 			}
 		}
-		s.bindCommonUniforms(program)
-
-		projectionMat := mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
-		projection := carbon.GetUniformLocation(program, carbon.Str("projection\x00"))
-		carbon.UniformMatrix4fv(projection, 1, false, &projectionMat[0])
-
-		//bind framebuffer texture
-		carbon.ActiveTexture(carbon.TEXTURE0)
-		carbon.BufferData(carbon.ARRAY_BUFFER, len(staticVerts)*4, carbon.Ptr(&staticVerts[0]), carbon.STATIC_DRAW)
-		carbon.DrawArrays(carbon.TRIANGLES, 0, 2*3)
-
-		//draw output wuad
 	}
+	s.bindCommonUniforms(windowProgram.GLProgram)
+
+	projectionMat := mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
+	projection := carbon.GetUniformLocation(windowProgram.GLProgram, carbon.Str("projection\x00"))
+	carbon.UniformMatrix4fv(projection, 1, false, &projectionMat[0])
+
+	carbon.ActiveTexture(carbon.TEXTURE0)
+	carbon.BufferData(carbon.ARRAY_BUFFER, len(staticVerts)*4, carbon.Ptr(&staticVerts[0]), carbon.STATIC_DRAW)
+	carbon.DrawArrays(carbon.TRIANGLES, 0, 2*3)
 
 	s.Window.SwapBuffers()
 	fps.Next()

@@ -26,15 +26,18 @@ func (e err) Error() string {
 
 // Well-known errors
 var (
-	GLFShaderCompile = newErr("GLFShaderCompile", "fragment shader compilation failed: %v")
-	GLVShaderCompile = newErr("GLVShaderCompile", "vertex shader compilation failed: %v")
-	GLLinkProgram    = newErr("GLLinkProgram", "linking program %s failed: %v")
-
+	FFDecoderCopyCodecCtx     = newErr("FFDecoderCopyCodecCtx", "unable to copy codec context for file %s: %v")
+	FFDecoderFrameAlloc       = newErr("FFDecoderFrameAlloc", "call to AvFrameAlloc returned nil for file %s")
+	FFDecoderMissingStream    = newErr("FFDecoderMissingStream", "failed to find a video stream for file %s")
+	FFDecoderOpenCodec        = newErr("FFDecoderOpenCodec", "unable to open codec for file %s: %v")
 	FFDecoderOpenInput        = newErr("FFDecodeOpenInput", "unable to open input for file %s: %v")
 	FFDecoderStreamInfo       = newErr("FFDecoderStreamInfo", "unable to find stream info for file %s: %v")
 	FFDecoderUnsupportedCodec = newErr("FFDecoderUnsupportedCodec", "unsupported codec in file %s: %v")
-	FFDecoderCopyCodecCtx     = newErr("FFDecoderCopyCodecCtx", "unable to copy codec context for file %s: %v")
-	FFDecoderOpenCodec        = newErr("FFDecoderOpenCodec", "unable to open codec for file %s: %v")
-	FFDecoderFrameAlloc       = newErr("FFDecoderFrameAlloc", "call to AvFrameAlloc returned nil for file %s")
-	FFDecoderMissingStream    = newErr("FFDecoderMissingStream", "failed to find a video stream for file %s")
+
+	GLShaderCompile = newErr("GLFShaderCompile", "shader compilation failed: %v\n===== SOURCE =====\n%v")
+	GLLinkProgram   = newErr("GLLinkProgram", "linking program %s failed: %v")
+
+	SceneMissingWindowSource  = newErr("SceneMissingWindowSource", "unable to render scene, window source is missing")
+	SceneMissingWindowProgram = newErr("SceneMissingWindowProgram", "unable to render scene, window program is missing")
+	SceneRenderOrder          = newErr("SceneRenderOrder", "unable to determine source render order: %v")
 )

@@ -1,9 +1,32 @@
 version: 2.1
 
 orbs:
+  codecov: codecov/codecov@1.0.5
   win: circleci/windows@1.0.0
 
 jobs:
+  vet:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/dianelooney/ferry
+    steps:
+      - checkout
+      - run: go get -v -t -d ./...
+      - run: go vet
+  test:
+    docker:
+      - image: circleci/golang:1.12
+    working_directory: /go/src/github.com/dianelooney/ferry
+    steps:
+      - checkout
+      - run: go get -v -t -d ./...
+      - run: mkdir /tmp/coverage
+      - run: go test -v ./... -coverprofile=/tmp/coverage/c.out
+      - run: go tool cover -html=/tmp/coverage/c.out -o /tmp/coverage/c.html
+      - store_artifacts:
+          path: /tmp/coverage
+      - codecov/upload:
+          file: /tmp/coverage/c.out
   win-build:
     environment:
       PKG_CONFIG_PATH: /tmp/pkg-config
@@ -73,11 +96,17 @@ workflows:
   version: 2
   release:
     jobs:
+      - vet
+      - test
       - win-build:
+          requires:
+            - build
           filters:
             branches:
               only: master
       - docker-build-gggv:
+          requires:
+            - build
           filters:
             branches:
               only: master

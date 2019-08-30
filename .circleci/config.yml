@@ -8,6 +8,8 @@ jobs:
   vet:
     docker:
       - image: diane/gggv-base:latest
+    environment:
+      CGO_CFLAGS: -w
     working_directory: /go/src/github.com/dianelooney/gggv
     steps:
       - checkout
@@ -16,6 +18,8 @@ jobs:
   test:
     docker:
       - image: diane/gggv-base:latest
+    environment:
+      CGO_CFLAGS: -w
     working_directory: /go/src/github.com/dianelooney/gggv
     steps:
       - checkout

@@ -37,7 +37,6 @@ jobs:
       CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
       CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
       LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
-
     executor:
       name: win/vs2019
       shell: bash.exe
@@ -64,6 +63,16 @@ jobs:
       - store_artifacts:
           path: daemon.exe
           destination: daemon.exe
+
+  osx-build:
+    macos:
+      xcode:
+    steps:
+      - checkout
+      - run:
+          name: Hello World
+          command: echo 'Hello World'
+
   docker-build-gggv-base:
     environment:
       IMAGE_NAME: diane/gggv-base

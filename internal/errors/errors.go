@@ -33,10 +33,8 @@ var (
 	FFDecoderOpenInput        = newErr("FFDecodeOpenInput", "unable to open input for file %s: %v")
 	FFDecoderStreamInfo       = newErr("FFDecoderStreamInfo", "unable to find stream info for file %s: %v")
 	FFDecoderUnsupportedCodec = newErr("FFDecoderUnsupportedCodec", "unsupported codec in file %s: %v")
-
-	GLShaderCompile = newErr("GLFShaderCompile", "shader compilation failed: %v\n===== SOURCE =====\n%v")
-	GLLinkProgram   = newErr("GLLinkProgram", "linking program %s failed: %v")
-
+	GLShaderCompile           = newErr("GLFShaderCompile", "shader compilation failed: %v\n===== SOURCE =====\n%v")
+	GLLinkProgram             = newErr("GLLinkProgram", "linking program %s failed: %v")
 	SceneMissingWindowSource  = newErr("SceneMissingWindowSource", "unable to render scene, window source is missing")
 	SceneMissingWindowProgram = newErr("SceneMissingWindowProgram", "unable to render scene, window program is missing")
 	SceneRenderOrder          = newErr("SceneRenderOrder", "unable to determine source render order: %v")

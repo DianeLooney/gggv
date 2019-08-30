@@ -1,8 +1,7 @@
 package opengl
 
 import (
-	"errors"
-	"fmt"
+	"github.com/dianelooney/gggv/internal/errors"
 )
 
 type SourceKind string
@@ -36,7 +35,7 @@ type sorter struct {
 
 func (s *sorter) order(name SourceName, depth int) (err error) {
 	if depth > len(s.sources) {
-		return errors.New("Recursion detected")
+		return errors.SourceDependencyLoop()
 	}
 
 	if s.ordered[name] {
@@ -45,8 +44,7 @@ func (s *sorter) order(name SourceName, depth int) (err error) {
 
 	this := s.sources[name]
 	if this == nil {
-		fmt.Printf("Unable to find source definition for '%v'\n", name)
-		return nil
+		return errors.SourceMissing(name)
 	}
 	for _, child := range s.sources[name].Children() {
 		s.order(child, depth+1)

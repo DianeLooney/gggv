@@ -1,4 +1,4 @@
-package carbonmonk
+package mock
 
 import (
 	"unsafe"
@@ -7,6 +7,12 @@ import (
 )
 
 func init() {
+	Init()
+}
+
+func Init() {
+	initHelpers()
+
 	carbon.Accum = func(op uint32, value float32) {}
 	carbon.ActiveProgramEXT = func(program uint32) {}
 	carbon.ActiveShaderProgram = func(pipeline uint32, program uint32) {}

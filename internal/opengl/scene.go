@@ -3,6 +3,7 @@ package opengl
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"strings"
 	"time"
@@ -161,9 +162,10 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 func (s *Scene) AddSourceShader(name string) {
 	s.LoadProgram(name, "shaders/vert/default.glsl", "shaders/frag/default.glsl")
 	sh := ShaderSource{
-		name:     SourceName(name),
-		uniforms: make(map[string]Uniform),
-		p:        name,
+		name:       SourceName(name),
+		uniforms:   make(map[string]Uniform),
+		p:          name,
+		flipOutput: true,
 	}
 	carbon.GenFramebuffers(1, &sh.fbo)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, sh.fbo)
@@ -184,6 +186,27 @@ func (s *Scene) AddSourceShader(name string) {
 	s.sources[SourceName(name)] = &sh
 }
 
+func (s *Scene) AddWindow() {
+	vShader, err := ioutil.ReadFile("shaders/vert/window.glsl")
+	if err != nil {
+		panic(err)
+	}
+	fShader, err := ioutil.ReadFile("shaders/frag/window.glsl")
+	if err != nil {
+		panic(err)
+	}
+
+	if err := s.LoadProgram("window", string(vShader), string(fShader)); err != nil {
+		panic(err)
+	}
+	s.sources[SourceName("window")] = &ShaderSource{
+		name:       SourceName("window"),
+		uniforms:   make(map[string]Uniform),
+		p:          "window",
+		flipOutput: false,
+	}
+}
+
 func (s *Scene) SetUniform(layer, name string, value interface{}) {
 	src, ok := s.sources[SourceName(layer)]
 	if !ok {
@@ -200,7 +223,6 @@ func (s *Scene) SetShaderInput(layer string, index int32, target string) {
 		logs.Error("Attempted to set input on layer, but the layer was not found", layer)
 		return
 	}
-	fmt.Println(s.sources[SourceName(layer)])
 	src, ok := l.(*ShaderSource)
 	if !ok {
 		logs.Error("Attempted to set input on layer, but the layer was not a shader", layer)
@@ -281,7 +303,7 @@ func (s *Scene) TextureInit(name string) {
 func (s *Scene) RebindTexture(name string, width, height int, img []uint8) {
 	t, ok := s.textures[name]
 	if !ok {
-		fmt.Printf("Unrecognized texture name %v\n", name)
+		logs.Error("Unrecognized texture name", name) // TODO: named error
 		return
 	}
 	carbon.ActiveTexture(t)
@@ -327,11 +349,6 @@ func (s *Scene) Draw() {
 		logs.Error(errors.SceneMissingWindowSource())
 		return
 	}
-	windowProgram, ok := s.programs["window"]
-	if !ok {
-		logs.Error(errors.SceneMissingWindowProgram())
-		return
-	}
 
 	s.time = float32(time.Since(tStart)) / NANOSTOSEC
 	carbon.BindVertexArray(s.vao)
@@ -345,34 +362,7 @@ func (s *Scene) Draw() {
 	for _, source := range ord {
 		s.sources[source].Render(s)
 	}
-
-	carbon.Clear(carbon.COLOR_BUFFER_BIT | carbon.DEPTH_BUFFER_BIT)
-	carbon.UseProgram(windowProgram.GLProgram)
-
-	if shader, ok := windowSrc.(*ShaderSource); ok {
-		for i, name := range shader.sources {
-			if name == "" {
-				continue
-			}
-			source := s.sources[name]
-			carbon.ActiveTexture(carbon.TEXTURE0 + uint32(i))
-			carbon.BindTexture(carbon.TEXTURE_2D, source.Texture())
-
-			switch src := source.(type) {
-			case *FFVideoSource:
-				carbon.Uniform(windowProgram.GLProgram, fmt.Sprintf("tex%vwidth", i), src.width)
-				carbon.Uniform(windowProgram.GLProgram, fmt.Sprintf("tex%vheight", i), src.height)
-			}
-		}
-	}
-	s.bindCommonUniforms(windowProgram.GLProgram)
-
-	projectionMat := mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
-	carbon.Uniform(windowProgram.GLProgram, "projection", projectionMat)
-
-	carbon.ActiveTexture(carbon.TEXTURE0)
-	carbon.BufferData(carbon.ARRAY_BUFFER, len(staticVerts)*4, carbon.Ptr(&staticVerts[0]), carbon.STATIC_DRAW)
-	carbon.DrawArrays(carbon.TRIANGLES, 0, 2*3)
+	windowSrc.Render(s)
 
 	s.Window.SwapBuffers()
 	fps.Next()

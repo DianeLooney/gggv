@@ -115,6 +115,19 @@ type Scene struct {
 
 	sources map[SourceName]Source
 }
+
+type SourceKind string
+
+type SourceName string
+
+type Source interface {
+	Kind() SourceKind
+	Name() SourceName
+	Children() []SourceName
+	Render(scene *Scene)
+	Texture() uint32
+}
+
 type Program struct {
 	GLProgram uint32
 }

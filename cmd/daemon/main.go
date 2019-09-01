@@ -5,8 +5,9 @@ import (
 	_ "image/png"
 	"io/ioutil"
 	"runtime"
+	"time"
 
-	"github.com/fsnotify/fsnotify"
+	"github.com/radovskyb/watcher"
 
 	"github.com/dianelooney/gggv/internal/logs"
 
@@ -174,19 +175,21 @@ func netSetup() {
 
 		done := make(chan bool)
 		watchers[name] = done
-		w, err := fsnotify.NewWatcher()
-		if err != nil {
+
+		w := watcher.New()
+		if err := w.Add("./" + vShaderPath); err != nil {
+			logs.Log("Unable to watch shader", name, vShaderPath, err)
 			return
 		}
-		w.Add(vShaderPath)
-		w.Add(fShaderPath)
-
+		if err := w.Add("./" + fShaderPath); err != nil {
+			logs.Log("Unable to watch shader", name, fShaderPath, err)
+			return
+		}
 		go func() {
-			defer logs.Log("watcher killed", name, vShaderPath, fShaderPath)
 			for {
 				select {
-				case e := <-w.Events:
-					logs.Log("reloading", name, vShaderPath, fShaderPath, e)
+				case e := <-w.Event:
+					logs.Log("Reloading shader", name, vShaderPath, fShaderPath, e)
 					loadProgram(name, vShaderPath, fShaderPath)
 				case <-done:
 					w.Close()
@@ -194,6 +197,8 @@ func netSetup() {
 				}
 			}
 		}()
+		go w.Start(time.Second / 3)
+
 		logs.Log("/program/watch", name, vShaderPath, fShaderPath)
 	})
 	server.ListenAndServe()

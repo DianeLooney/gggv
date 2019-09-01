@@ -1,6 +1,8 @@
 package ffmpeg
 
-import "time"
+import (
+	"time"
+)
 
 func NewFileSampler(fname string) (a *Sampler, err error) {
 	a = &Sampler{
@@ -54,6 +56,10 @@ func (a *Sampler) Done() {
 
 func (a *Sampler) Ready() bool {
 	return a.t.Before(time.Now())
+}
+
+func (a *Sampler) SkipSample() {
+	a.t = time.Now()
 }
 
 func (a *Sampler) Sample() (width, height int, pix []uint8) {

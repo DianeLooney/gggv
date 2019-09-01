@@ -50,6 +50,9 @@ func (f *FFVideoSource) Render(scene *Scene) {
 		carbon.UNSIGNED_BYTE,
 		carbon.Ptr(&img[0]))
 }
+func (f *FFVideoSource) SkipRender(scene *Scene) {
+	f.decoder.SkipSample()
+}
 func (f *FFVideoSource) Dimensions() (width, height int32) {
 	return f.width, f.height
 }

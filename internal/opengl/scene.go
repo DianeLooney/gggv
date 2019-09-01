@@ -126,6 +126,7 @@ type Source interface {
 	Name() SourceName
 	Children() []SourceName
 	Render(scene *Scene)
+	SkipRender(scene *Scene)
 	Texture() uint32
 }
 
@@ -417,8 +418,15 @@ func (s *Scene) Draw() {
 		return
 	}
 
+	rendered := make(map[SourceName]bool, len(ord))
 	for _, source := range ord {
 		s.sources[source].Render(s)
+		rendered[source] = true
+	}
+	for name, source := range s.sources {
+		if !rendered[name] {
+			source.SkipRender(s)
+		}
 	}
 	windowSrc.Render(s)
 

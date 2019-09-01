@@ -82,6 +82,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 	carbon.DrawArrays(carbon.TRIANGLES, 0, 2*3)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }
+func (s *ShaderSource) SkipRender(scene *Scene) {}
 func (s *ShaderSource) Dimensions() (width, height int32) {
 	return 1, 1
 }

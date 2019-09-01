@@ -182,9 +182,11 @@ func netSetup() {
 		w.Add(fShaderPath)
 
 		go func() {
+			defer logs.Log("watcher killed", name, vShaderPath, fShaderPath)
 			for {
 				select {
-				case <-w.Events:
+				case e := <-w.Events:
+					logs.Log("reloading", name, vShaderPath, fShaderPath, e)
 					loadProgram(name, vShaderPath, fShaderPath)
 				case <-done:
 					w.Close()

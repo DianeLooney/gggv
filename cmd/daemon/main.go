@@ -78,7 +78,7 @@ func netSetup() {
 
 	server.Handle("/source.ffvideo/create", func(msg *osc.Message) {
 		sourceName := msg.Arguments[0].(string)
-		path := msg.Arguments[0].(string)
+		path := msg.Arguments[1].(string)
 
 		logs.Log("/source.ffvideo/create", sourceName, path)
 		dmn.AddSourceFFVideo(sourceName, path)

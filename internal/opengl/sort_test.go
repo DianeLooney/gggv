@@ -22,6 +22,9 @@ func (s testSource) Children() []SourceName {
 func (s testSource) Render(scene *Scene) {
 	return
 }
+func (s testSource) SkipRender(scene *Scene) {
+	return
+}
 func (s testSource) Dimensions() (width, height int32) {
 	return 0, 0
 }

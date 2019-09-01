@@ -7,18 +7,13 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-func init() {
-	var f Source
-	f = &ShaderSource{}
-	f.Name()
-}
-
 var ShaderSourceKind SourceKind = "ShaderSource"
 
 const SHADER_TEXTURE_COUNT = 10
 
 type ShaderSource struct {
-	name SourceName
+	name       SourceName
+	flipOutput bool
 
 	p        string
 	sources  [SHADER_TEXTURE_COUNT]SourceName
@@ -76,10 +71,14 @@ func (s *ShaderSource) Render(scene *Scene) {
 
 	scene.bindCommonUniforms(program)
 
-	projectionMat := mgl32.Ortho(-1, 1, 1, -1, 0.1, 10)
-	carbon.Uniform(program, "projection", projectionMat)
+	if s.flipOutput {
+		projectionMat := mgl32.Ortho(-1, 1, 1, -1, 0.1, 10)
+		carbon.Uniform(program, "projection", projectionMat)
+	} else {
+		projectionMat := mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
+		carbon.Uniform(program, "projection", projectionMat)
+	}
 
-	carbon.ActiveTexture(carbon.TEXTURE0)
 	carbon.DrawArrays(carbon.TRIANGLES, 0, 2*3)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }

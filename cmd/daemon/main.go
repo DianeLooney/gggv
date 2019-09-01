@@ -42,21 +42,6 @@ func main() {
 		dmn.AddProgram(name, string(vShader), string(fShader))
 	}
 
-	{
-		name := "window"
-		vShaderPath := "shaders/vert/window.glsl"
-		fShaderPath := "shaders/frag/window.glsl"
-		vShader, err := ioutil.ReadFile(vShaderPath)
-		if err != nil {
-			return
-		}
-		fShader, err := ioutil.ReadFile(fShaderPath)
-		if err != nil {
-			return
-		}
-		dmn.AddProgram(name, string(vShader), string(fShader))
-	}
-
 	dmn.Scene.BindBuffers()
 	dmn.AddSourceFFVideo("default0", "sample0.mp4")
 	dmn.AddSourceFFVideo("default1", "sample1.mp4")
@@ -65,7 +50,7 @@ func main() {
 	dmn.SetShaderInput("default", 0, "default0")
 	dmn.SetShaderInput("default", 1, "default1")
 	dmn.SetShaderInput("default", 2, "default2")
-	dmn.AddSourceShader("window")
+	dmn.Scene.AddWindow()
 	dmn.SetShaderInput("window", 0, "default")
 	dmn.SetUniform("default", "ampl", float32(0.0))
 

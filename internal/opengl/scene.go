@@ -203,6 +203,8 @@ func (s *Scene) AddWindow() {
 		p:          "window",
 		flipOutput: false,
 	}
+}
+
 func (s *Scene) SetSourceMinFilter(name, value string) {
 	opt, ok := map[string]int32{
 		"NEAREST":                carbon.NEAREST,

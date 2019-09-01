@@ -1,6 +1,7 @@
 package ffmpeg
 
 import (
+	"flag"
 	"time"
 	"unsafe"
 
@@ -11,6 +12,8 @@ import (
 	"github.com/giorgisio/goav/avutil"
 	"github.com/giorgisio/goav/swscale"
 )
+
+var fflogformat = flag.Bool("fflogformat", false, "Run AvDumpFormat when decoding a video file")
 
 type Decoder struct {
 	buffer         unsafe.Pointer
@@ -41,7 +44,9 @@ func (d *Decoder) Begin(fname string) error {
 		return errors.FFDecoderStreamInfo(fname, avutil.ErrorFromCode(code))
 	}
 
-	d.pFormatContext.AvDumpFormat(0, fname, 0)
+	if *fflogformat {
+		d.pFormatContext.AvDumpFormat(0, fname, 0)
+	}
 
 	for i := 0; i < int(d.pFormatContext.NbStreams()); i++ {
 		switch d.pFormatContext.Streams()[i].CodecParameters().AvCodecGetType() {

@@ -44,13 +44,9 @@ func main() {
 	}
 
 	dmn.Scene.BindBuffers()
-	dmn.AddSourceFFVideo("default0", "sample0.mp4")
-	dmn.AddSourceFFVideo("default1", "sample1.mp4")
-	dmn.AddSourceFFVideo("default2", "sample2.mp4")
+	dmn.AddSourceFFVideo("default0", "sample.mp4")
 	dmn.AddSourceShader("default")
 	dmn.SetShaderInput("default", 0, "default0")
-	dmn.SetShaderInput("default", 1, "default1")
-	dmn.SetShaderInput("default", 2, "default2")
 	dmn.Scene.AddWindow()
 	dmn.SetShaderInput("window", 0, "default")
 	dmn.SetUniform("default", "ampl", float32(0.0))

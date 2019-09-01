@@ -177,11 +177,11 @@ func netSetup() {
 		watchers[name] = done
 
 		w := watcher.New()
-		if err := w.Add("./" + vShaderPath); err != nil {
+		if err := w.Add(vShaderPath); err != nil {
 			logs.Log("Unable to watch shader", name, vShaderPath, err)
 			return
 		}
-		if err := w.Add("./" + fShaderPath); err != nil {
+		if err := w.Add(fShaderPath); err != nil {
 			logs.Log("Unable to watch shader", name, fShaderPath, err)
 			return
 		}

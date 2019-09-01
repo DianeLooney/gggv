@@ -69,6 +69,27 @@ func (d *D) AddProgram(name, vShader, fShader string) {
 	})
 }
 
+func (d *D) SetSourceWrapS(name, value string) {
+	d.Schedule(func() {
+		d.Scene.SetSourceWrapS(name, value)
+	})
+}
+func (d *D) SetSourceWrapT(name, value string) {
+	d.Schedule(func() {
+		d.Scene.SetSourceWrapT(name, value)
+	})
+}
+func (d *D) SetSourceMinFilter(name, value string) {
+	d.Schedule(func() {
+		d.Scene.SetSourceMinFilter(name, value)
+	})
+}
+func (d *D) SetSourceMagFilter(name, value string) {
+	d.Schedule(func() {
+		d.Scene.SetSourceMagFilter(name, value)
+	})
+}
+
 func (d *D) SetUniform(layer string, name string, value interface{}) {
 	d.Schedule(func() {
 		d.Scene.SetUniform(layer, name, value)

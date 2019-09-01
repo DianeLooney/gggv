@@ -10,5 +10,5 @@ in vec2 fragTexCoord;
 out vec4 outputColor;
 
 void main() {
-    outputColor = texture(tex0, fragTexCoord);
+    outputColor = texture(tex0, fragTexCoord * time);
 }

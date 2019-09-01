@@ -6,6 +6,8 @@ import (
 	"io/ioutil"
 	"runtime"
 
+	"github.com/fsnotify/fsnotify"
+
 	"github.com/dianelooney/gggv/internal/logs"
 
 	"github.com/hypebeast/go-osc/osc"
@@ -60,10 +62,30 @@ var netAddr = flag.String("net", ":4200", "Network address to listen at.")
 
 func netSetup() {
 	server := &osc.Server{Addr: *netAddr}
-
+	server.Handle("/source/set/wrap.s", func(msg *osc.Message) {
+		name := msg.Arguments[0].(string)
+		opt := msg.Arguments[1].(string)
+		dmn.SetSourceWrapS(name, opt)
+	})
+	server.Handle("/source/set/wrap.t", func(msg *osc.Message) {
+		name := msg.Arguments[0].(string)
+		opt := msg.Arguments[1].(string)
+		dmn.SetSourceWrapT(name, opt)
+	})
+	server.Handle("/source/set/minfilter", func(msg *osc.Message) {
+		name := msg.Arguments[0].(string)
+		opt := msg.Arguments[1].(string)
+		dmn.SetSourceMinFilter(name, opt)
+	})
+	server.Handle("/source/set/magfilter", func(msg *osc.Message) {
+		name := msg.Arguments[0].(string)
+		opt := msg.Arguments[1].(string)
+		dmn.SetSourceMagFilter(name, opt)
+	})
+	//TODO: better error handling on all of the type assertions.
 	server.Handle("/source.ffvideo/create", func(msg *osc.Message) {
 		sourceName := msg.Arguments[0].(string)
-		path := msg.Arguments[0].(string)
+		path := msg.Arguments[1].(string)
 
 		logs.Log("/source.ffvideo/create", sourceName, path)
 		dmn.AddSourceFFVideo(sourceName, path)
@@ -114,11 +136,8 @@ func netSetup() {
 		logs.Log("/source.shader/set/uniform1f", layer, name, value)
 		dmn.SetUniform(layer, name, value)
 	})
-	server.Handle("/program/create", func(msg *osc.Message) {
-		name := msg.Arguments[0].(string)
-		vShaderPath := msg.Arguments[1].(string)
-		fShaderPath := msg.Arguments[2].(string)
-
+	watchers := make(map[string]chan bool)
+	loadProgram := func(name, vShaderPath, fShaderPath string) {
 		vShader, err := ioutil.ReadFile(vShaderPath)
 		if err != nil {
 			return
@@ -127,9 +146,53 @@ func netSetup() {
 		if err != nil {
 			return
 		}
-
-		logs.Log("/program/create", name, string(vShader), string(fShader))
 		dmn.AddProgram(name, string(vShader), string(fShader))
+	}
+	server.Handle("/program/create", func(msg *osc.Message) {
+		name := msg.Arguments[0].(string)
+		vShaderPath := msg.Arguments[1].(string)
+		fShaderPath := msg.Arguments[2].(string)
+		loadProgram(name, vShaderPath, fShaderPath)
+
+		if ch, ok := watchers[name]; ok {
+			ch <- true
+			delete(watchers, name)
+		}
+		logs.Log("/program/create", name, vShaderPath, fShaderPath)
+	})
+	server.Handle("/program/watch", func(msg *osc.Message) {
+		name := msg.Arguments[0].(string)
+		vShaderPath := msg.Arguments[1].(string)
+		fShaderPath := msg.Arguments[2].(string)
+
+		loadProgram(name, vShaderPath, fShaderPath)
+
+		if ch, ok := watchers[name]; ok {
+			ch <- true
+			delete(watchers, name)
+		}
+
+		done := make(chan bool)
+		watchers[name] = done
+		w, err := fsnotify.NewWatcher()
+		if err != nil {
+			return
+		}
+		w.Add(vShaderPath)
+		w.Add(fShaderPath)
+
+		go func() {
+			for {
+				select {
+				case <-w.Events:
+					loadProgram(name, vShaderPath, fShaderPath)
+				case <-done:
+					w.Close()
+					return
+				}
+			}
+		}()
+		logs.Log("/program/watch", name, vShaderPath, fShaderPath)
 	})
 	server.ListenAndServe()
 }

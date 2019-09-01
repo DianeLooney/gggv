@@ -150,8 +150,6 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 	carbon.BindTexture(carbon.TEXTURE_2D, t)
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
-	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_WRAP_S, carbon.CLAMP_TO_EDGE)
-	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_WRAP_T, carbon.CLAMP_TO_EDGE)
 	s.sources[SourceName(name)] = &FFVideoSource{
 		name:    SourceName(name),
 		decoder: dec,
@@ -205,6 +203,64 @@ func (s *Scene) AddWindow() {
 		p:          "window",
 		flipOutput: false,
 	}
+func (s *Scene) SetSourceMinFilter(name, value string) {
+	opt, ok := map[string]int32{
+		"NEAREST":                carbon.NEAREST,
+		"LINEAR":                 carbon.LINEAR,
+		"NEAREST_MIPMAP_NEAREST": carbon.NEAREST_MIPMAP_NEAREST,
+		"LINEAR_MIPMAP_NEAREST":  carbon.LINEAR_MIPMAP_NEAREST,
+		"NEAREST_MIPMAP_LINEAR":  carbon.NEAREST_MIPMAP_LINEAR,
+		"LINEAR_MIPMAP_LINEAR":   carbon.LINEAR_MIPMAP_LINEAR,
+	}[value]
+	if !ok {
+		return
+	}
+	src := s.sources[SourceName(name)]
+	carbon.ActiveTexture(src.Texture())
+	//TODO: better error handling on all of these.
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, opt)
+}
+func (s *Scene) SetSourceMagFilter(name, value string) {
+	opt, ok := map[string]int32{
+		"NEAREST": carbon.NEAREST,
+		"LINEAR":  carbon.LINEAR,
+	}[value]
+	if !ok {
+		return
+	}
+	src := s.sources[SourceName(name)]
+	carbon.ActiveTexture(src.Texture())
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, opt)
+}
+func (s *Scene) SetSourceWrapS(name, value string) {
+	opt, ok := map[string]int32{
+		"CLAMP_TO_EDGE":        carbon.CLAMP_TO_EDGE,
+		"CLAMP_TO_BORDER":      carbon.CLAMP_TO_BORDER,
+		"MIRRORED_REPEAT":      carbon.MIRRORED_REPEAT,
+		"REPEAT":               carbon.REPEAT,
+		"MIRROR_CLAMP_TO_EDGE": carbon.MIRROR_CLAMP_TO_EDGE,
+	}[value]
+	if !ok {
+		return
+	}
+	src := s.sources[SourceName(name)]
+	carbon.ActiveTexture(src.Texture())
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_WRAP_S, opt)
+}
+func (s *Scene) SetSourceWrapT(name, value string) {
+	opt, ok := map[string]int32{
+		"CLAMP_TO_EDGE":        carbon.CLAMP_TO_EDGE,
+		"CLAMP_TO_BORDER":      carbon.CLAMP_TO_BORDER,
+		"MIRRORED_REPEAT":      carbon.MIRRORED_REPEAT,
+		"REPEAT":               carbon.REPEAT,
+		"MIRROR_CLAMP_TO_EDGE": carbon.MIRROR_CLAMP_TO_EDGE,
+	}[value]
+	if !ok {
+		return
+	}
+	src := s.sources[SourceName(name)]
+	carbon.ActiveTexture(src.Texture())
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_WRAP_T, opt)
 }
 
 func (s *Scene) SetUniform(layer, name string, value interface{}) {

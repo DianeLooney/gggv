@@ -1,6 +1,6 @@
 # GO GO GADGET: VIDEO [![CircleCI](https://circleci.com/gh/DianeLooney/gggv/tree/master.svg?style=svg)](https://circleci.com/gh/DianeLooney/gggv/tree/master)
 
-Command-line video editing environment. Not intended for use as a package.
+OSC based video editing environment. Not intended for use as a package.
 
 How to build:
 

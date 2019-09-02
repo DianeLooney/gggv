@@ -63,6 +63,12 @@ func (d *D) SetShaderInput(name string, idx int32, target string) {
 	})
 }
 
+func (d *D) SetShaderProgram(name, program string) {
+	d.Schedule(func() {
+		d.Scene.SetShaderProgram(name, program)
+	})
+}
+
 func (d *D) AddProgram(name, vShader, fShader string) {
 	d.Schedule(func() {
 		d.Scene.LoadProgram(name, vShader, fShader)

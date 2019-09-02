@@ -159,7 +159,6 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 }
 
 func (s *Scene) AddSourceShader(name string) {
-	s.LoadProgram(name, "shaders/vert/default.glsl", "shaders/frag/default.glsl")
 	sh := ShaderSource{
 		name:       SourceName(name),
 		uniforms:   make(map[string]Uniform),
@@ -203,6 +202,14 @@ func (s *Scene) AddWindow() {
 		uniforms:   make(map[string]Uniform),
 		p:          "window",
 		flipOutput: false,
+	}
+}
+
+func (s *Scene) SetShaderProgram(name, program string) {
+	if src, ok := s.sources[SourceName(name)]; ok {
+		if sh, ok := src.(*ShaderSource); ok {
+			sh.p = program
+		}
 	}
 }
 

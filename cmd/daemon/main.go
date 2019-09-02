@@ -45,7 +45,9 @@ func main() {
 
 	dmn.Scene.BindBuffers()
 	dmn.AddSourceFFVideo("default0", "sample.mp4")
-	dmn.AddSourceShader("default")
+	// dmn.AddSourceFFVideo("default1", "sample1.mp4")
+	// dmn.AddSourceFFVideo("default2", "sample2.mp4")
+	dmn.AddSourceShader("default", "default")
 	dmn.SetShaderInput("default", 0, "default0")
 	dmn.Scene.AddWindow()
 	dmn.SetShaderInput("window", 0, "default")
@@ -98,6 +100,13 @@ func netSetup() {
 		value := msg.Arguments[2].(string)
 
 		logs.Log("/source.shader/set/input", layer, index, value)
+		dmn.SetShaderInput(layer, index, value)
+	})
+	server.Handle("/source.shader/set/program", func(msg *osc.Message) {
+		shader := msg.Arguments[0].(string)
+		program := msg.Arguments[1].(string)
+
+		logs.Log("/source.shader/set/program", layer, index, value)
 		dmn.SetShaderInput(layer, index, value)
 	})
 	server.Handle("/source.shader/set/uniform1f", func(msg *osc.Message) {

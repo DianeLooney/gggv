@@ -74,7 +74,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: Build Docker image
-          command: docker build -t diane/gggv:latest -f build/gggv-base/Dockerfile .
+          command: docker build -t diane/gggv-base:latest -f build/gggv-base/Dockerfile .
       - run:
           name: Publish Docker Image to Docker Hub
           command: |

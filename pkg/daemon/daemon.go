@@ -4,6 +4,8 @@ import (
 	"flag"
 	"sync"
 
+	"github.com/dianelooney/gggv/internal/logs"
+
 	"github.com/dianelooney/gggv/internal/opengl"
 )
 
@@ -71,7 +73,10 @@ func (d *D) SetShaderProgram(name, program string) {
 
 func (d *D) AddProgram(name, vShader, fShader string) {
 	d.Schedule(func() {
-		d.Scene.LoadProgram(name, vShader, fShader)
+		err := d.Scene.LoadProgram(name, vShader, fShader)
+		if err != nil {
+			logs.Error("Unable to load program", name, err)
+		}
 	})
 }
 

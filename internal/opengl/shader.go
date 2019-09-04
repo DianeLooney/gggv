@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dianelooney/gggv/internal/carbon"
+	"github.com/dianelooney/gggv/internal/fps"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
@@ -60,11 +61,35 @@ func (s *ShaderSource) Render(scene *Scene) {
 		}
 	}
 
+	{
+		vertAttrib := uint32(carbon.GetAttribLocation(program, carbon.Str("vert\x00")))
+		carbon.EnableVertexAttribArray(vertAttrib)
+		carbon.VertexAttribPointer(vertAttrib, 3, carbon.FLOAT, false, 5*4, carbon.PtrOffset(0))
+
+		texCoordAttrib := uint32(carbon.GetAttribLocation(program, carbon.Str("vertTexCoord\x00")))
+		carbon.EnableVertexAttribArray(texCoordAttrib)
+		carbon.VertexAttribPointer(texCoordAttrib, 2, carbon.FLOAT, false, 5*4, carbon.PtrOffset(3*4))
+
+		carbon.Uniform(program, "camera", scene.Camera)
+
+		for i := 0; i < SHADER_TEXTURE_COUNT; i++ {
+			carbon.UniformTex(program, fmt.Sprintf("tex%v", i), int32(i))
+		}
+
+		carbon.Uniform(program, "time", scene.time)
+		carbon.Uniform(program, "fps", float32(fps.LastSec()))
+		carbon.Uniform(program, "renderTime", float32(fps.FrameDuration())/NANOSTOSEC)
+		x, y := scene.Window.GetCursorPos()
+		carbon.Uniform(program, "cursorX", x)
+		carbon.Uniform(program, "cursorY", y)
+		windowWidth, windowHeight := scene.Window.GetSize()
+		carbon.Uniform(program, "windowWidth", windowWidth)
+		carbon.Uniform(program, "windowHeight", windowHeight)
+	}
+
 	for _, u := range s.uniforms {
 		carbon.Uniform(program, u.Name, u.Value)
 	}
-
-	scene.bindCommonUniforms(program)
 
 	if s.flipOutput {
 		projectionMat := mgl32.Ortho(-1, 1, 1, -1, 0.1, 10)

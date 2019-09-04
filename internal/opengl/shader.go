@@ -7,8 +7,6 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-var ShaderSourceKind SourceKind = "ShaderSource"
-
 const SHADER_TEXTURE_COUNT = 10
 
 type ShaderSource struct {
@@ -24,9 +22,6 @@ type ShaderSource struct {
 	texture uint32
 }
 
-func (s *ShaderSource) Kind() SourceKind {
-	return ShaderSourceKind
-}
 func (s *ShaderSource) Name() SourceName {
 	return s.name
 }

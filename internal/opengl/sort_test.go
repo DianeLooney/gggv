@@ -10,9 +10,6 @@ type testSource struct {
 	children []SourceName
 }
 
-func (s testSource) Kind() SourceKind {
-	return SourceKind("testSource")
-}
 func (s testSource) Name() SourceName {
 	return ""
 }

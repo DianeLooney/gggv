@@ -40,7 +40,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.fbo)
 	carbon.Clear(carbon.COLOR_BUFFER_BIT | carbon.DEPTH_BUFFER_BIT)
 	carbon.UseProgram(program)
-	carbon.BufferData(carbon.ARRAY_BUFFER, len(staticVerts)*4, carbon.Ptr(&staticVerts[0]), carbon.STATIC_DRAW)
+	carbon.BufferData(carbon.ARRAY_BUFFER, len(hexagon)*4, carbon.Ptr(&hexagon[0]), carbon.STATIC_DRAW)
 
 	for i, name := range s.sources {
 		if name == "" {
@@ -71,6 +71,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 		carbon.VertexAttribPointer(texCoordAttrib, 2, carbon.FLOAT, false, 5*4, carbon.PtrOffset(3*4))
 
 		carbon.Uniform(program, "camera", scene.Camera)
+		carbon.Uniform(program, "projection", projectionMat)
 
 		for i := 0; i < SHADER_TEXTURE_COUNT; i++ {
 			carbon.UniformTex(program, fmt.Sprintf("tex%v", i), int32(i))
@@ -92,14 +93,12 @@ func (s *ShaderSource) Render(scene *Scene) {
 	}
 
 	if s.flipOutput {
-		projectionMat := mgl32.Ortho(-1, 1, 1, -1, 0.1, 10)
-		carbon.Uniform(program, "projection", projectionMat)
+		carbon.Uniform(program, "flipOutput", int(1))
 	} else {
-		projectionMat := mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
-		carbon.Uniform(program, "projection", projectionMat)
+		carbon.Uniform(program, "flipOutput", int(0))
 	}
 
-	carbon.DrawArrays(carbon.TRIANGLES, 0, 2*3)
+	carbon.DrawArrays(carbon.TRIANGLES, 0, 18)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }
 func (s *ShaderSource) SkipRender(scene *Scene) {}
@@ -110,11 +109,40 @@ func (s *ShaderSource) Texture() uint32 {
 	return s.texture
 }
 
-var staticVerts = []float32{
-	-1, -1, 0, 0, 1,
-	+1, -1, 0, 1, 1,
-	-1, +1, 0, 0, 0,
-	+1, -1, 0, 1, 1,
-	+1, +1, 0, 1, 0,
-	-1, +1, 0, 0, 0,
+var projectionMat = mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
+
+const sqrt3 = 1.732
+
+var hexagon = []float32{
+	-1, -1, 0, -1, -1,
+	+1, -1, 0, +1, -1,
+	+0, +0, 0, +0, +0,
+	//
+	+1, -1, 0, +1, -1,
+	+2, +0, 0, +2, +0,
+	+0, +0, 0, +0, +0,
+	//
+	+2, +0, 0, +2, +0,
+	+1, +1, 0, +1, +1,
+	+0, +0, 0, +0, +0,
+	//
+	+1, +1, 0, +1, +1,
+	-1, +1, 0, -1, +1,
+	+0, +0, 0, +0, +0,
+	//
+	-1, +1, 0, -1, +1,
+	-2, +0, 0, -2, +0,
+	+0, +0, 0, +0, +0,
+	//
+	-2, +0, 0, -2, +0,
+	-1, -1, 0, -1, -1,
+	+0, +0, 0, +0, +0,
+}
+
+func init() {
+	for i := 0; i < 18; i++ {
+		hexagon[5*i+1] *= sqrt3
+		hexagon[5*i+3] = (hexagon[5*i+3] + 1) / 2
+		hexagon[5*i+4] = (hexagon[5*i+4] + 1) * sqrt3 / 2
+	}
 }

@@ -183,19 +183,22 @@ func (s *Scene) AddWindow() {
 	if err != nil {
 		panic(err)
 	}
+	gShader, err := ioutil.ReadFile("shaders/geom/window.glsl")
+	if err != nil {
+		panic(err)
+	}
 	fShader, err := ioutil.ReadFile("shaders/frag/window.glsl")
 	if err != nil {
 		panic(err)
 	}
 
-	if err := s.LoadProgram("window", string(vShader), string(fShader)); err != nil {
+	if err := s.LoadProgram("window", string(vShader), string(gShader), string(fShader)); err != nil {
 		panic(err)
 	}
 	s.sources[SourceName("window")] = &ShaderSource{
-		name:       SourceName("window"),
-		uniforms:   make(map[string]Uniform),
-		p:          "window",
-		flipOutput: false,
+		name:     SourceName("window"),
+		uniforms: make(map[string]Uniform),
+		p:        "window",
 	}
 }
 
@@ -292,8 +295,12 @@ func (s *Scene) SetShaderInput(layer string, index int32, target string) {
 	s.sources[SourceName(layer)] = src
 }
 
-func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
+func (s *Scene) LoadProgram(name, vShader, gShader, fShader string) (err error) {
 	vertexShader, err := compileShader(vShader+"\x00", carbon.VERTEX_SHADER)
+	if err != nil {
+		return err
+	}
+	geometryShader, err := compileShader(gShader+"\x00", carbon.GEOMETRY_SHADER)
 	if err != nil {
 		return err
 	}
@@ -308,6 +315,7 @@ func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
 	}
 
 	carbon.AttachShader(program, vertexShader)
+	carbon.AttachShader(program, geometryShader)
 	carbon.AttachShader(program, fragmentShader)
 	carbon.LinkProgram(program)
 
@@ -329,7 +337,6 @@ func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
 	s.programs[name] = p
 
 	carbon.BindFragDataLocation(program, 0, carbon.Str("outputColor\x00"))
-
 	carbon.DeleteShader(vertexShader)
 	carbon.DeleteShader(fragmentShader)
 

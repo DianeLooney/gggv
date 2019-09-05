@@ -71,9 +71,9 @@ func (d *D) SetShaderProgram(name, program string) {
 	})
 }
 
-func (d *D) AddProgram(name, vShader, fShader string) {
+func (d *D) AddProgram(name, vShader, gShader, fShader string) {
 	d.Schedule(func() {
-		err := d.Scene.LoadProgram(name, vShader, fShader)
+		err := d.Scene.LoadProgram(name, vShader, gShader, fShader)
 		if err != nil {
 			logs.Error("Unable to load program", name, err)
 		}

@@ -8,9 +8,9 @@ uniform float depth;
 in vec3 vert;
 in vec2 vertTexCoord;
 
-out vec2 fragTexCoord;
+out vec2 geomTexCoord;
 
 void main() {
-    fragTexCoord = vertTexCoord;
+    geomTexCoord = vertTexCoord;
     gl_Position = projection * camera * vec4(vert, 1);
 }

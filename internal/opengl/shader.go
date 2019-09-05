@@ -101,7 +101,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 	carbon.Uniform(program, "projection", projectionMat)
 	r := rect(float32(w), float32(h))
 	carbon.BufferData(carbon.ARRAY_BUFFER, len(r)*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)
-	carbon.DrawArrays(carbon.TRIANGLES, 0, 18)
+	carbon.DrawArrays(carbon.TRIANGLES, 0, int32(len(r)/5))
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }
 func (s *ShaderSource) SkipRender(scene *Scene) {}
@@ -118,16 +118,38 @@ func proj(w, h float32) mgl32.Mat4 {
 	return mgl32.Ortho(-w/2, w/2, -h/2, h/2, 0.1, 10)
 }
 
-func rect(w, h float32) []float32 {
+const size = 5
+
+func rect(w, h float32) (out []float32) {
 	w, h = w/2, h/2
-	return []float32{
-		-w, -h, 0, 0, 0,
-		+w, -h, 0, 1, 0,
-		-w, +h, 0, 0, 1,
-		+w, -h, 0, 1, 0,
-		-w, +h, 0, 0, 1,
-		+w, +h, 0, 1, 1,
+	dx := 2 * w / size
+	dy := 2 * h / size
+	for x := float32(0); x < size; x++ {
+		for y := float32(0); y < size; y++ {
+			out = append(out, []float32{
+				-w + x*dx, -h + y*dy, 0, 0 + x/size, 0 + y/size,
+				-w + (x+1)*dx, -h + y*dy, 0, 0 + (x+1)/size, 0 + y/size,
+				-w + x*dx, -h + (y+1)*dy, 0, 0 + x/size, 0 + (y+1)/size,
+				//
+				-w + (x+1)*dx, -h + y*dy, 0, 0 + (x+1)/size, 0 + y/size,
+				-w + x*dx, -h + (y+1)*dy, 0, 0 + x/size, 0 + (y+1)/size,
+				-w + (x+1)*dx, -h + (y+1)*dy, 0, 0 + (x+1)/size, 0 + (y+1)/size,
+			}...)
+		}
 	}
+
+	/*
+		[]float32{
+			-w, -h, 0, 0, 0,
+			+w, -h, 0, 1, 0,
+			-w, +h, 0, 0, 1,
+			//
+			+w, -h, 0, 1, 0,
+			-w, +h, 0, 0, 1,
+			+w, +h, 0, 1, 1,
+		}
+	*/
+	return
 }
 
 var hexagon = []float32{

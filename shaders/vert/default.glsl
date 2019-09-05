@@ -12,8 +12,5 @@ out vec2 geomTexCoord;
 
 void main() {
     geomTexCoord = vertTexCoord;
-    if (flipOutput != 0) {
-        geomTexCoord.y = 1 - geomTexCoord.y;   
-    }
     gl_Position = projection * camera * vec4(vert, 1);
 }

@@ -40,7 +40,6 @@ func (s *ShaderSource) Render(scene *Scene) {
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.fbo)
 	carbon.Clear(carbon.COLOR_BUFFER_BIT | carbon.DEPTH_BUFFER_BIT)
 	carbon.UseProgram(program)
-	carbon.BufferData(carbon.ARRAY_BUFFER, len(hexagon)*4, carbon.Ptr(&hexagon[0]), carbon.STATIC_DRAW)
 
 	for i, name := range s.sources {
 		if name == "" {
@@ -71,7 +70,6 @@ func (s *ShaderSource) Render(scene *Scene) {
 		carbon.VertexAttribPointer(texCoordAttrib, 2, carbon.FLOAT, false, 5*4, carbon.PtrOffset(3*4))
 
 		carbon.Uniform(program, "camera", scene.Camera)
-		carbon.Uniform(program, "projection", projectionMat)
 
 		for i := 0; i < SHADER_TEXTURE_COUNT; i++ {
 			carbon.UniformTex(program, fmt.Sprintf("tex%v", i), int32(i))
@@ -98,6 +96,11 @@ func (s *ShaderSource) Render(scene *Scene) {
 		carbon.Uniform(program, "flipOutput", int(0))
 	}
 
+	w, h := s.Dimensions()
+	projectionMat := proj(float32(w), float32(h))
+	carbon.Uniform(program, "projection", projectionMat)
+	r := rect(float32(w), float32(h))
+	carbon.BufferData(carbon.ARRAY_BUFFER, len(r)*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)
 	carbon.DrawArrays(carbon.TRIANGLES, 0, 18)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }
@@ -109,9 +112,23 @@ func (s *ShaderSource) Texture() uint32 {
 	return s.texture
 }
 
-var projectionMat = mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
-
 const sqrt3 = 1.732
+
+func proj(w, h float32) mgl32.Mat4 {
+	return mgl32.Ortho(-w/2, w/2, -h/2, h/2, 0.1, 10)
+}
+
+func rect(w, h float32) []float32 {
+	w, h = w/2, h/2
+	return []float32{
+		-w, -h, 0, 0, 0,
+		+w, -h, 0, 1, 0,
+		-w, +h, 0, 0, 1,
+		+w, -h, 0, 1, 0,
+		-w, +h, 0, 0, 1,
+		+w, +h, 0, 1, 1,
+	}
+}
 
 var hexagon = []float32{
 	-1, -1, 0, -1, -1,

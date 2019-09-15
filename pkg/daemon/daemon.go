@@ -1,15 +1,12 @@
 package daemon
 
 import (
-	"flag"
 	"sync"
 
 	"github.com/dianelooney/gggv/internal/logs"
 
 	"github.com/dianelooney/gggv/internal/opengl"
 )
-
-var showFPS = flag.Bool("fps", false, "Log fps to the command line")
 
 func New() *D {
 	return &D{

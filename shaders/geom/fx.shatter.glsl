@@ -6,6 +6,7 @@ layout (triangle_strip, max_vertices = 9) out;
 uniform float time;
 in vec2 geomTexCoord[];
 out vec2 fragTexCoord;
+out float sample;
 
 void main() {
     float weight0 = sin(time + 0)+1.3;
@@ -20,6 +21,7 @@ void main() {
 
     vec2 centerTex = (geomTexCoord[0] + geomTexCoord[1] + geomTexCoord[2]) / 3;
 
+    sample = 0;
     gl_Position = gl_in[0].gl_Position;
     fragTexCoord = geomTexCoord[1];
     EmitVertex();
@@ -32,6 +34,7 @@ void main() {
     EndPrimitive();
 
 
+    sample = 1;
     gl_Position = gl_in[1].gl_Position; 
     fragTexCoord = geomTexCoord[2];
     EmitVertex();
@@ -43,6 +46,7 @@ void main() {
     EmitVertex();
     EndPrimitive();
 
+    sample = 2;
     gl_Position = gl_in[2].gl_Position; 
     fragTexCoord = geomTexCoord[0];
     EmitVertex();

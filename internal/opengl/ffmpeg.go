@@ -11,8 +11,6 @@ func init() {
 	f.Name()
 }
 
-var FFVideoSourceKind SourceKind = "FFVideoSourceKind"
-
 type FFVideoSource struct {
 	name    SourceName
 	width   int32
@@ -21,9 +19,6 @@ type FFVideoSource struct {
 	texture uint32
 }
 
-func (f *FFVideoSource) Kind() SourceKind {
-	return FFVideoSourceKind
-}
 func (f *FFVideoSource) Name() SourceName {
 	return f.name
 }

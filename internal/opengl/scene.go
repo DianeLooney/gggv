@@ -2,7 +2,6 @@ package opengl
 
 import (
 	"flag"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"strings"
@@ -68,7 +67,6 @@ func NewScene() *Scene {
 		panic(err)
 	}
 
-	s.Projection = mgl32.Ortho(-1, 1, -1, 1, 0.1, 10)
 	s.Camera = mgl32.LookAtV(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
 
 	// Configure global settings
@@ -103,8 +101,7 @@ type Scene struct {
 	vao uint32
 	vbo uint32
 
-	Camera     mgl32.Mat4
-	Projection mgl32.Mat4
+	Camera mgl32.Mat4
 
 	Width  int32
 	Height int32
@@ -117,12 +114,9 @@ type Scene struct {
 	sources map[SourceName]Source
 }
 
-type SourceKind string
-
 type SourceName string
 
 type Source interface {
-	Kind() SourceKind
 	Name() SourceName
 	Children() []SourceName
 	Render(scene *Scene)
@@ -189,19 +183,22 @@ func (s *Scene) AddWindow() {
 	if err != nil {
 		panic(err)
 	}
+	gShader, err := ioutil.ReadFile("shaders/geom/window.glsl")
+	if err != nil {
+		panic(err)
+	}
 	fShader, err := ioutil.ReadFile("shaders/frag/window.glsl")
 	if err != nil {
 		panic(err)
 	}
 
-	if err := s.LoadProgram("window", string(vShader), string(fShader)); err != nil {
+	if err := s.LoadProgram("window", string(vShader), string(gShader), string(fShader)); err != nil {
 		panic(err)
 	}
 	s.sources[SourceName("window")] = &ShaderSource{
-		name:       SourceName("window"),
-		uniforms:   make(map[string]Uniform),
-		p:          "window",
-		flipOutput: false,
+		name:     SourceName("window"),
+		uniforms: make(map[string]Uniform),
+		p:        "window",
 	}
 }
 
@@ -298,8 +295,12 @@ func (s *Scene) SetShaderInput(layer string, index int32, target string) {
 	s.sources[SourceName(layer)] = src
 }
 
-func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
+func (s *Scene) LoadProgram(name, vShader, gShader, fShader string) (err error) {
 	vertexShader, err := compileShader(vShader+"\x00", carbon.VERTEX_SHADER)
+	if err != nil {
+		return err
+	}
+	geometryShader, err := compileShader(gShader+"\x00", carbon.GEOMETRY_SHADER)
 	if err != nil {
 		return err
 	}
@@ -314,6 +315,7 @@ func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
 	}
 
 	carbon.AttachShader(program, vertexShader)
+	carbon.AttachShader(program, geometryShader)
 	carbon.AttachShader(program, fragmentShader)
 	carbon.LinkProgram(program)
 
@@ -335,7 +337,6 @@ func (s *Scene) LoadProgram(name, vShader, fShader string) (err error) {
 	s.programs[name] = p
 
 	carbon.BindFragDataLocation(program, 0, carbon.Str("outputColor\x00"))
-
 	carbon.DeleteShader(vertexShader)
 	carbon.DeleteShader(fragmentShader)
 
@@ -440,37 +441,4 @@ func (s *Scene) Draw() {
 	s.Window.SwapBuffers()
 	fps.Next()
 	glfw.PollEvents()
-}
-
-func (s *Scene) bindCommonUniforms(program uint32) {
-	vertAttrib := uint32(carbon.GetAttribLocation(program, carbon.Str("vert\x00")))
-	carbon.EnableVertexAttribArray(vertAttrib)
-	carbon.VertexAttribPointer(vertAttrib, 3, carbon.FLOAT, false, 5*4, carbon.PtrOffset(0))
-
-	texCoordAttrib := uint32(carbon.GetAttribLocation(program, carbon.Str("vertTexCoord\x00")))
-	carbon.EnableVertexAttribArray(texCoordAttrib)
-	carbon.VertexAttribPointer(texCoordAttrib, 2, carbon.FLOAT, false, 5*4, carbon.PtrOffset(3*4))
-
-	carbon.Uniform(program, "projection", s.Projection)
-	carbon.Uniform(program, "camera", s.Camera)
-
-	for i := 0; i < SHADER_TEXTURE_COUNT; i++ {
-		carbon.UniformTex(program, fmt.Sprintf("tex%v", i), int32(i))
-	}
-
-	carbon.Uniform(program, "time", s.time)
-
-	fpsU := carbon.GetUniformLocation(program, carbon.Str("fps\x00"))
-	carbon.Uniform1f(fpsU, float32(fps.LastSec()))
-
-	renderTime := carbon.GetUniformLocation(program, carbon.Str("renderTime\x00"))
-	carbon.Uniform1f(renderTime, float32(fps.FrameDuration())/NANOSTOSEC)
-
-	x, y := s.Window.GetCursorPos()
-	carbon.Uniform(program, "cursorX", x)
-	carbon.Uniform(program, "cursorY", y)
-
-	windowWidth, windowHeight := s.Window.GetSize()
-	carbon.Uniform(program, "windowWidth", windowWidth)
-	carbon.Uniform(program, "windowHeight", windowHeight)
 }

@@ -31,6 +31,7 @@ func main() {
 	{
 		name := "default"
 		vShaderPath := "shaders/vert/default.glsl"
+		gShaderPath := "shaders/geom/default.glsl"
 		fShaderPath := "shaders/frag/default.glsl"
 		vShader, err := ioutil.ReadFile(vShaderPath)
 		if err != nil {
@@ -40,18 +41,15 @@ func main() {
 		if err != nil {
 			return
 		}
-		dmn.AddProgram(name, string(vShader), string(fShader))
+		gShader, err := ioutil.ReadFile(gShaderPath)
+		if err != nil {
+			return
+		}
+		dmn.AddProgram(name, string(vShader), string(gShader), string(fShader))
 	}
 
 	dmn.Scene.BindBuffers()
-	dmn.AddSourceFFVideo("default0", "sample.mp4")
-	// dmn.AddSourceFFVideo("default1", "sample1.mp4")
-	// dmn.AddSourceFFVideo("default2", "sample2.mp4")
-	dmn.AddSourceShader("default")
-	dmn.SetShaderInput("default", 0, "default0")
 	dmn.Scene.AddWindow()
-	dmn.SetShaderInput("window", 0, "default")
-	dmn.SetUniform("default", "ampl", float32(0.0))
 
 	go netSetup()
 	dmn.DrawLoop()
@@ -143,8 +141,12 @@ func netSetup() {
 		dmn.SetUniform(layer, name, value)
 	})
 	watchers := make(map[string]chan bool)
-	loadProgram := func(name, vShaderPath, fShaderPath string) {
+	loadProgram := func(name, vShaderPath, gShaderPath, fShaderPath string) {
 		vShader, err := ioutil.ReadFile(vShaderPath)
+		if err != nil {
+			return
+		}
+		gShader, err := ioutil.ReadFile(gShaderPath)
 		if err != nil {
 			return
 		}
@@ -152,13 +154,14 @@ func netSetup() {
 		if err != nil {
 			return
 		}
-		dmn.AddProgram(name, string(vShader), string(fShader))
+		dmn.AddProgram(name, string(vShader), string(gShader), string(fShader))
 	}
 	server.Handle("/program/create", func(msg *osc.Message) {
 		name := msg.Arguments[0].(string)
 		vShaderPath := msg.Arguments[1].(string)
-		fShaderPath := msg.Arguments[2].(string)
-		loadProgram(name, vShaderPath, fShaderPath)
+		gShaderPath := msg.Arguments[2].(string)
+		fShaderPath := msg.Arguments[3].(string)
+		loadProgram(name, vShaderPath, gShaderPath, fShaderPath)
 
 		if ch, ok := watchers[name]; ok {
 			ch <- true
@@ -169,9 +172,10 @@ func netSetup() {
 	server.Handle("/program/watch", func(msg *osc.Message) {
 		name := msg.Arguments[0].(string)
 		vShaderPath := msg.Arguments[1].(string)
-		fShaderPath := msg.Arguments[2].(string)
+		gShaderPath := msg.Arguments[2].(string)
+		fShaderPath := msg.Arguments[3].(string)
 
-		loadProgram(name, vShaderPath, fShaderPath)
+		loadProgram(name, vShaderPath, gShaderPath, fShaderPath)
 
 		if ch, ok := watchers[name]; ok {
 			ch <- true
@@ -186,6 +190,10 @@ func netSetup() {
 			logs.Log("Unable to watch shader", name, vShaderPath, err)
 			return
 		}
+		if err := w.Add(gShaderPath); err != nil {
+			logs.Log("Unable to watch shader", name, gShaderPath, err)
+			return
+		}
 		if err := w.Add(fShaderPath); err != nil {
 			logs.Log("Unable to watch shader", name, fShaderPath, err)
 			return
@@ -194,8 +202,8 @@ func netSetup() {
 			for {
 				select {
 				case e := <-w.Event:
-					logs.Log("Reloading shader", name, vShaderPath, fShaderPath, e)
-					loadProgram(name, vShaderPath, fShaderPath)
+					logs.Log("Reloading shader", name, vShaderPath, gShaderPath, fShaderPath, e)
+					loadProgram(name, vShaderPath, gShaderPath, fShaderPath)
 				case <-done:
 					w.Close()
 					return

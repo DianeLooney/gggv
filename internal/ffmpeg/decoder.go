@@ -157,15 +157,19 @@ func (d *Decoder) NextFrame() (rgb []uint8, duration int) {
 		width, height := d.Dimensions()
 		offset := uintptr(unsafe.Pointer(avutil.Data(d.pFrameRGB)[0]))
 		linesize := uintptr(avutil.Linesize(d.pFrameRGB)[0])
+		var sls [][]uint8
 		for y := 0; y < height; y++ {
 			buf := make([]uint8, width*3)
 			for i := 0; i < width*3; i++ {
 				ptr := offset + uintptr(i)
 				buf[i] = *(*uint8)(unsafe.Pointer(ptr))
 			}
-			rgb = append(rgb, buf...)
+			sls = append(sls, buf)
 
 			offset += linesize
+		}
+		for i := len(sls) - 1; i >= 0; i-- {
+			rgb = append(rgb, sls[i]...)
 		}
 
 		if len(rgb) == 0 {

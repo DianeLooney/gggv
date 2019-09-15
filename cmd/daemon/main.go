@@ -10,6 +10,7 @@ import (
 	"github.com/radovskyb/watcher"
 
 	"github.com/dianelooney/gggv/internal/logs"
+	"github.com/dianelooney/gggv/internal/net"
 
 	"github.com/hypebeast/go-osc/osc"
 
@@ -55,58 +56,20 @@ func main() {
 	dmn.DrawLoop()
 }
 
-var netAddr = flag.String("net", ":4200", "Network address to listen at.")
+var addr = flag.String("net", ":4200", "Network address to listen at.")
 
 func netSetup() {
-	server := &osc.Server{Addr: *netAddr}
-	server.Handle("/source/set/wrap.s", func(msg *osc.Message) {
-		name := msg.Arguments[0].(string)
-		opt := msg.Arguments[1].(string)
-		dmn.SetSourceWrapS(name, opt)
-	})
-	server.Handle("/source/set/wrap.t", func(msg *osc.Message) {
-		name := msg.Arguments[0].(string)
-		opt := msg.Arguments[1].(string)
-		dmn.SetSourceWrapT(name, opt)
-	})
-	server.Handle("/source/set/minfilter", func(msg *osc.Message) {
-		name := msg.Arguments[0].(string)
-		opt := msg.Arguments[1].(string)
-		dmn.SetSourceMinFilter(name, opt)
-	})
-	server.Handle("/source/set/magfilter", func(msg *osc.Message) {
-		name := msg.Arguments[0].(string)
-		opt := msg.Arguments[1].(string)
-		dmn.SetSourceMagFilter(name, opt)
-	})
-	//TODO: better error handling on all of the type assertions.
-	server.Handle("/source.ffvideo/create", func(msg *osc.Message) {
-		sourceName := msg.Arguments[0].(string)
-		path := msg.Arguments[1].(string)
+	server := &osc.Server{Addr: *addr}
 
-		logs.Log("/source.ffvideo/create", sourceName, path)
-		dmn.AddSourceFFVideo(sourceName, path)
-	})
-	server.Handle("/source.shader/create", func(msg *osc.Message) {
-		name := msg.Arguments[0].(string)
-		logs.Log("/source.shader/create", name)
-		dmn.AddSourceShader(name)
-	})
-	server.Handle("/source.shader/set/input", func(msg *osc.Message) {
-		layer := msg.Arguments[0].(string)
-		index := msg.Arguments[1].(int32)
-		value := msg.Arguments[2].(string)
+	net.HandleSS(server, "/source/set/wrap.s", "name", "opt", dmn.SetSourceWrapS)
+	net.HandleSS(server, "/source/set/wrap.t", "name", "opt", dmn.SetSourceWrapT)
+	net.HandleSS(server, "/source/set/minfilter", "name", "opt", dmn.SetSourceMinFilter)
+	net.HandleSS(server, "/source/set/magfilter", "name", "opt", dmn.SetSourceMagFilter)
+	net.HandleSS(server, "/source.ffvideo/create", "name", "opt", dmn.AddSourceFFVideo)
+	net.HandleS(server, "/source.shader/create", "name", dmn.AddSourceShader)
+	net.HandleSIS(server, "/source.shader/set/input", "name", "index", "value", dmn.SetShaderInput)
+	net.HandleSS(server, "/source.shader/set/program", "shader", "program", dmn.SetShaderProgram)
 
-		logs.Log("/source.shader/set/input", layer, index, value)
-		dmn.SetShaderInput(layer, index, value)
-	})
-	server.Handle("/source.shader/set/program", func(msg *osc.Message) {
-		shader := msg.Arguments[0].(string)
-		program := msg.Arguments[1].(string)
-
-		logs.Log("/source.shader/set/program", shader, program)
-		dmn.SetShaderProgram(shader, program)
-	})
 	server.Handle("/source.shader/set/uniform1f", func(msg *osc.Message) {
 		layer := msg.Arguments[0].(string)
 		name := msg.Arguments[1].(string)

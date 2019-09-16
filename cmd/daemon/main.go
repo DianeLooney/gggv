@@ -69,6 +69,7 @@ func netSetup() {
 	net.HandleS(server, "/source.shader/create", "name", dmn.AddSourceShader)
 	net.HandleSIS(server, "/source.shader/set/input", "name", "index", "value", dmn.SetShaderInput)
 	net.HandleSS(server, "/source.shader/set/program", "shader", "program", dmn.SetShaderProgram)
+	net.HandleSSFFF(server, "/source.shader/set/uniform3f", "shader", "uniform", "vec[0]", "vec[1]", "vec[2]", dmn.SetUniform3f)
 
 	server.Handle("/source.shader/set/uniform1f", func(msg *osc.Message) {
 		layer := msg.Arguments[0].(string)

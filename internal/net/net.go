@@ -65,6 +65,50 @@ func HandleSIS(s *osc.Server, path string, n1 string, n2 string, n3 string, f Ha
 	})
 }
 
+type HandlerSSFFF = func(s1, s2 string, v0, v1, v2 float32)
+
+func HandleSSFFF(s *osc.Server, path string, n1, n2, n3, n4, n5 string, f HandlerSSFFF) {
+	s.Handle(path, func(msg *osc.Message) {
+		logs.Log(path)
+		if count := msg.CountArguments(); count != 5 {
+			logs.Error(errors.NetTooManyArgs(5, count))
+			return
+		}
+		args := newArguments(path, msg)
+		s1, err := args.NextString()
+		if err != nil {
+			logs.Error(path, n1, err)
+			return
+		}
+		s2, err := args.NextString()
+		if err != nil {
+			logs.Error(path, n2, err)
+			return
+		}
+
+		v0, err := args.NextFloat32()
+		if err != nil {
+			logs.Error(path, n1, err)
+			return
+		}
+
+		v1, err := args.NextFloat32()
+		if err != nil {
+			logs.Error(path, n1, err)
+			return
+		}
+
+		v2, err := args.NextFloat32()
+		if err != nil {
+			logs.Error(path, n1, err)
+			return
+		}
+
+		logs.Log(path, s1, s2, v0, v1, v2)
+		f(s1, s2, v0, v1, v2)
+	})
+}
+
 type HanlderS func(s string)
 
 func HandleS(s *osc.Server, path string, n string, f HanlderS) {

@@ -103,3 +103,9 @@ func (d *D) SetUniform(layer string, name string, value interface{}) {
 		d.Scene.SetUniform(layer, name, value)
 	})
 }
+
+func (d *D) SetUniform3f(layer string, name string, v0, v1, v2 float32) {
+	d.Schedule(func() {
+		d.Scene.SetUniform(layer, name, [3]float32{v0, v1, v2})
+	})
+}

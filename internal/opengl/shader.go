@@ -84,6 +84,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 		windowWidth, windowHeight := scene.Window.GetSize()
 		carbon.Uniform(program, "windowWidth", windowWidth)
 		carbon.Uniform(program, "windowHeight", windowHeight)
+		carbon.Uniform(program, "windowSize", [2]float32{float32(windowWidth), float32(windowHeight)})
 	}
 
 	for _, u := range s.uniforms {

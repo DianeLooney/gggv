@@ -20,10 +20,10 @@ import (
 
 const NANOSTOSEC = 1000000000
 
-var tStart = time.Now()
+var tStart = time.Now().Add(-1 * time.Second) // subtracted a second to enforce non-zero times
 
-var borderless = flag.Bool("borderless", true, "Hide borders")
-var fullscreen = flag.Bool("fullscreen", true, "Start in fullscreen mode")
+var borderless = flag.Bool("borderless", false, "Hide borders")
+var fullscreen = flag.Bool("fullscreen", false, "Start in fullscreen mode")
 
 var vsync = flag.Bool("vsync", true, "Enable/Disable vsync")
 
@@ -422,7 +422,7 @@ func (s *Scene) Draw() {
 
 	ord, err := Order("window", s.sources)
 	if err != nil {
-		//logs.Error(errors.SceneRenderOrder(err))
+		logs.Error(errors.SceneRenderOrder(err))
 		return
 	}
 

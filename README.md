@@ -6,7 +6,7 @@ OSC based video editing environment. Not intended for use as a package.
 
 ### Linux
 
-Follow along in the dockerfile at `build/gggv-base` to install the dependencies from source, and `build/gggv` to install gvd.
+Follow along in the dockerfile at `build/gggv-base` to install the dependencies from source, and `build/gggv` to install gggv.
 
 ### OSX
 

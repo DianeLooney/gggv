@@ -16,7 +16,7 @@ type ShaderSource struct {
 
 	p        string
 	sources  [SHADER_TEXTURE_COUNT]SourceName
-	uniforms map[string]Uniform
+	uniforms map[string]BindUniformer
 
 	fbo     uint32
 	rbo     uint32
@@ -88,7 +88,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 	}
 
 	for _, u := range s.uniforms {
-		carbon.Uniform(program, u.Name, u.Value)
+		u.BindUniform(program)
 	}
 
 	if s.flipOutput {

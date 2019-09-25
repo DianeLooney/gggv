@@ -128,9 +128,26 @@ type Program struct {
 	GLProgram uint32
 }
 
-type Uniform struct {
+type ValueUniform struct {
 	Name  string
 	Value interface{}
+}
+
+func (u ValueUniform) BindUniform(program uint32) {
+	carbon.Uniform(program, u.Name, u.Value)
+}
+
+type ClockUniform struct {
+	Name   string
+	Offset time.Time
+}
+
+func (u ClockUniform) BindUniform(program uint32) {
+	carbon.Uniform(program, u.Name, float32(time.Since(u.Offset))/NANOSTOSEC)
+}
+
+type BindUniformer interface {
+	BindUniform(program uint32)
 }
 
 func (s *Scene) AddSourceFFVideo(name, path string) {
@@ -155,7 +172,7 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 func (s *Scene) AddSourceShader(name string) {
 	sh := ShaderSource{
 		name:       SourceName(name),
-		uniforms:   make(map[string]Uniform),
+		uniforms:   make(map[string]BindUniformer),
 		p:          name,
 		flipOutput: true,
 	}
@@ -197,7 +214,7 @@ func (s *Scene) AddWindow() {
 	}
 	s.sources[SourceName("window")] = &ShaderSource{
 		name:     SourceName("window"),
-		uniforms: make(map[string]Uniform),
+		uniforms: make(map[string]BindUniformer),
 		p:        "window",
 	}
 }
@@ -276,7 +293,17 @@ func (s *Scene) SetUniform(layer, name string, value interface{}) {
 		return
 	}
 	if shader, ok := src.(*ShaderSource); ok {
-		shader.uniforms[name] = Uniform{name, value}
+		shader.uniforms[name] = ValueUniform{name, value}
+	}
+}
+
+func (s *Scene) SetUniformClock(layer, name string, offset time.Time) {
+	src, ok := s.sources[SourceName(layer)]
+	if !ok {
+		return
+	}
+	if shader, ok := src.(*ShaderSource); ok {
+		shader.uniforms[name] = ClockUniform{name, offset}
 	}
 }
 

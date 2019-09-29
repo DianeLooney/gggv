@@ -35,6 +35,9 @@ func (f *FFVideoSource) Render(scene *Scene) {
 
 	carbon.ActiveTexture(f.texture)
 	carbon.BindTexture(carbon.TEXTURE_2D, f.texture)
+	if len(img) == 0 {
+		return
+	}
 	carbon.TexImage2D(
 		carbon.TEXTURE_2D,
 		0,

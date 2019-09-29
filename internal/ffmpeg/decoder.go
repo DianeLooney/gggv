@@ -2,10 +2,10 @@ package ffmpeg
 
 import (
 	"flag"
+	"fmt"
 	"time"
 	"unsafe"
 
-	"github.com/dianelooney/gggv/internal/logs"
 	"github.com/giorgisio/goav/avcodec"
 	"github.com/giorgisio/goav/avformat"
 	"github.com/giorgisio/goav/avutil"
@@ -38,10 +38,34 @@ func (d *fileDecoder) Read() (frame Frame, err error) {
 	frame.duration = d.frameDuration()
 
 	for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
-		ok := d.readFrame()
-		if !ok {
+		if d.packet.StreamIndex() != d.videoStreamNum {
 			continue
 		}
+		response := d.pCodecCtx.AvcodecSendPacket(d.packet)
+		if response < 0 {
+			continue
+		}
+		response = d.pCodecCtx.AvcodecReceiveFrame((*avcodec.Frame)(unsafe.Pointer(d.pFrame)))
+		if response == avutil.AvErrorEAGAIN {
+			continue
+		}
+		if response == avutil.AvErrorEOF {
+			err = fmt.Errorf("EOF reached")
+			return
+		}
+		if response != 0 {
+			err = fmt.Errorf("Error while receiving a frame from the decoder", avutil.ErrorFromCode(response))
+			return
+		}
+		swscale.SwsScale2(
+			d.swsCtx,
+			avutil.Data(d.pFrame),
+			avutil.Linesize(d.pFrame),
+			0,
+			d.pCodecCtx.Height(),
+			avutil.Data(d.pFrameRGB),
+			avutil.Linesize(d.pFrameRGB),
+		)
 
 		offset := uintptr(unsafe.Pointer(avutil.Data(d.pFrameRGB)[0]))
 		linesize := uintptr(avutil.Linesize(d.pFrameRGB)[0])
@@ -61,41 +85,6 @@ func (d *fileDecoder) Read() (frame Frame, err error) {
 		return
 	}
 	return
-}
-
-func (d *fileDecoder) readFrame() (ok bool) {
-	if d.packet.StreamIndex() != d.videoStreamNum {
-		return false
-	}
-
-	// Decode video frame
-	response := d.pCodecCtx.AvcodecSendPacket(d.packet)
-	if response < 0 {
-		logs.Error("Error while sending a packet to the decoder", avutil.ErrorFromCode(response))
-	}
-	for response >= 0 {
-		response = d.pCodecCtx.AvcodecReceiveFrame((*avcodec.Frame)(unsafe.Pointer(d.pFrame)))
-		if response == avutil.AvErrorEAGAIN || response == avutil.AvErrorEOF {
-			return false
-		} else if response < 0 {
-			logs.Error("Error while receiving a frame from the decoder", avutil.ErrorFromCode(response))
-			return false
-		}
-
-		// Convert the image from its native format to RGB
-		swscale.SwsScale2(
-			d.swsCtx,
-			avutil.Data(d.pFrame),
-			avutil.Linesize(d.pFrame),
-			0,
-			d.pCodecCtx.Height(),
-			avutil.Data(d.pFrameRGB),
-			avutil.Linesize(d.pFrameRGB),
-		)
-		return true
-	}
-
-	return false
 }
 
 func (d *fileDecoder) frameDuration() time.Duration {

@@ -1,6 +1,7 @@
 package ffmpeg
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"time"
@@ -45,11 +46,11 @@ func (d *reader) Read() (frame Frame, err error) {
 			continue
 		}
 		if response == avutil.AvErrorEOF {
-			err = fmt.Errorf("EOF reached")
+			err = errors.New("EOF reached")
 			return
 		}
 		if response != 0 {
-			err = fmt.Errorf("Error while receiving a frame from the decoder", avutil.ErrorFromCode(response))
+			err = fmt.Errorf("Error while receiving a frame from the decoder: %v", avutil.ErrorFromCode(response))
 			return
 		}
 		swscale.SwsScale2(

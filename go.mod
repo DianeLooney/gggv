@@ -8,3 +8,5 @@ require (
 	github.com/hypebeast/go-osc v0.0.0-20181130121958-adefe22206c1
 	github.com/radovskyb/watcher v1.0.7
 )
+
+go 1.13

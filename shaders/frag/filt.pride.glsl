@@ -5,16 +5,17 @@ in vec2 fragTexCoord;
 out vec4 outputColor;
 
 uniform sampler2D tex0;
+uniform float time;
 
 // trans pride
 uniform vec3 color0 = vec3(0, 0, 0);
 uniform vec3 color1 = vec3(85.0 / 255.0, 205.0 / 255.0, 252.0 / 255.0); // blue (85, 205, 252)
 uniform vec3 color2 = vec3(247.0 / 255.0, 168.0 / 255.0, 184.0 / 255.0); // pink (247, 168, 184)
 uniform vec3 color3 = vec3(1,1,1);
-uniform float color0Wt = 1;
-uniform float color1Wt = 1.5;
-uniform float color2Wt = 1.5;
-uniform float color3Wt = 4;
+uniform float color0Wt = 0.5;
+uniform float color1Wt = 0.5;
+uniform float color2Wt = 0.5;
+uniform float color3Wt = 0.5;
 
 /*
 // nb pride
@@ -41,7 +42,12 @@ uniform float color3Wt = 3;
 void main() {
     vec4 color = texture(tex0, fragTexCoord);
     float totalWt = color0Wt + color1Wt + color2Wt + color3Wt;
-    float brightness = totalWt * (color.r + color.g + color.b) / 3;
+    float brightness = (8 + 6 * sin(0.3 * time)) * (color.r + color.g + color.b) / 3;
+
+    //brightness  time;
+    brightness += 0.3*time;
+    brightness = mod(brightness, totalWt);
+
     if (brightness < color0Wt) {
         outputColor = vec4(color0, 1);
     } else if (brightness < color0Wt + color1Wt) {

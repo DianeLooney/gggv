@@ -16,6 +16,9 @@ import (
 
 	"github.com/dianelooney/gggv/pkg/daemon"
 	_ "github.com/dianelooney/gggv/wrappers/opengl" // necessary to fill carbon stubs
+
+	"net/http"
+	_ "net/http/pprof" // makes things go fast
 )
 
 func init() {
@@ -27,6 +30,8 @@ var dmn *daemon.D
 
 func main() {
 	flag.Parse()
+	enablePprof()
+
 	dmn = daemon.New()
 
 	{
@@ -56,6 +61,16 @@ func main() {
 	dmn.DrawLoop()
 }
 
+var pprof = flag.Bool("pprof", false, "Enable pprof on :6060 or not.")
+
+func enablePprof() {
+	if *pprof {
+		go func() {
+			http.ListenAndServe("localhost:6060", nil)
+		}()
+	}
+}
+
 var addr = flag.String("net", ":4200", "Network address to listen at.")
 
 func netSetup() {
@@ -70,6 +85,8 @@ func netSetup() {
 	net.HandleSIS(server, "/source.shader/set/input", "name", "index", "value", dmn.SetShaderInput)
 	net.HandleSS(server, "/source.shader/set/program", "shader", "program", dmn.SetShaderProgram)
 	net.HandleSSFFF(server, "/source.shader/set/uniform3f", "shader", "uniform", "vec[0]", "vec[1]", "vec[2]", dmn.SetUniform3f)
+	net.HandleSS(server, "/source.shader/set/uniform.clock", "shader", "uniform", dmn.SetUniformClock)
+	net.HandleSS(server, "/source.shader/set/uniform.timestamp", "shader", "uniform", dmn.SetUniformTimestamp)
 
 	server.Handle("/source.shader/set/uniform1f", func(msg *osc.Message) {
 		layer := msg.Arguments[0].(string)

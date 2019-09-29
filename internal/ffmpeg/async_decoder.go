@@ -6,33 +6,29 @@ import (
 
 func NewFileSampler(fname string) (a *Sampler, err error) {
 	a = &Sampler{
-		d:         &Decoder{},
-		nextFrame: make(chan frame, 20),
+		nextFrame: make(chan Frame, 20),
 		done:      make(chan bool),
 	}
-	err = a.d.Begin(fname)
+	r, err := NewReadSizer(fname)
 	if err != nil {
 		return nil, err
 	}
+	a.d = r
 
 	a.t = time.Now()
-	a.d.width = a.d.pCodecCtx.Width()
-	a.d.height = a.d.pCodecCtx.Height()
 
 	go func() {
-		defer a.d.Dealloc()
-
 		for {
-			rgb, duration := a.d.NextFrame()
+			a.d.Read()
+			frame, err := a.d.Read()
 
-			if rgb == nil {
-				a.d.pCodecCtx.AvcodecFlushBuffers()
-				a.d.Begin(fname)
+			if err != nil {
+				a.d, _ = NewReadSizer(fname)
 				continue
 			}
 
 			select {
-			case a.nextFrame <- frame{rgb, duration}:
+			case a.nextFrame <- frame:
 			case <-a.done:
 				return
 			}
@@ -43,9 +39,9 @@ func NewFileSampler(fname string) (a *Sampler, err error) {
 }
 
 type Sampler struct {
-	d         *Decoder
+	d         ReadSizer
 	t         time.Time
-	nextFrame chan frame
+	nextFrame chan Frame
 	done      chan bool
 }
 
@@ -64,10 +60,10 @@ func (a *Sampler) SkipSample() {
 
 func (a *Sampler) Sample() (width, height int, pix []uint8) {
 	f := <-a.nextFrame
-	duration := time.Duration(f.duration) * a.d.frameDuration()
+	duration := f.duration
 	a.t = a.t.Add(duration)
 
-	width, height = a.d.Dimensions()
+	width, height = a.d.Size()
 	pix = f.pix
 
 	return

@@ -32,6 +32,7 @@ func (f *FFVideoSource) Render(scene *Scene) {
 
 	w, h, img := f.decoder.Sample()
 	f.width, f.height = int32(w), int32(h)
+
 	carbon.ActiveTexture(f.texture)
 	carbon.BindTexture(carbon.TEXTURE_2D, f.texture)
 	carbon.TexImage2D(

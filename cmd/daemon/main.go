@@ -16,6 +16,9 @@ import (
 
 	"github.com/dianelooney/gggv/pkg/daemon"
 	_ "github.com/dianelooney/gggv/wrappers/opengl" // necessary to fill carbon stubs
+
+	"net/http"
+	_ "net/http/pprof" // makes things go fast
 )
 
 func init() {
@@ -27,6 +30,8 @@ var dmn *daemon.D
 
 func main() {
 	flag.Parse()
+	enablePprof()
+
 	dmn = daemon.New()
 
 	{
@@ -54,6 +59,16 @@ func main() {
 
 	go netSetup()
 	dmn.DrawLoop()
+}
+
+var pprof = flag.Bool("pprof", false, "Enable pprof on :6060 or not.")
+
+func enablePprof() {
+	if *pprof {
+		go func() {
+			http.ListenAndServe("localhost:6060", nil)
+		}()
+	}
 }
 
 var addr = flag.String("net", ":4200", "Network address to listen at.")

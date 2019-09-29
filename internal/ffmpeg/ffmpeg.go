@@ -1,6 +1,7 @@
 package ffmpeg
 
 import (
+	"time"
 	"unsafe"
 
 	"github.com/dianelooney/gggv/internal/errors"
@@ -10,17 +11,16 @@ import (
 	"github.com/giorgisio/goav/swscale"
 )
 
-// A ReadSizer reads a frame, and can give the size of the frame
-type ReadSizer interface {
-	Size() (width, height int)
+// A Reader reads a frame, and can give the size of the frame
+type Reader interface {
 	Read() (frame Frame, err error)
 }
 
-// NewReadSizer returns a new ReadSizer from the specified source
+// NewReader returns a new ReadSizer from the specified source
 //
 // source should be recognizable by ffmpeg's avformat_open_input
-func NewReadSizer(source string) (ReadSizer, error) {
-	d := fileDecoder{}
+func NewReader(source string) (Reader, error) {
+	d := reader{}
 	d.pFormatContext = avformat.AvformatAllocContext()
 	if code := avformat.AvformatOpenInput(&d.pFormatContext, source, nil, nil); code != 0 {
 		return nil, errors.FFDecoderOpenInput(source, avutil.ErrorFromCode(code))
@@ -98,4 +98,12 @@ func NewReadSizer(source string) (ReadSizer, error) {
 	d.packet = avcodec.AvPacketAlloc()
 
 	return &d, nil
+}
+
+// Frame contains the data regarding a frame of video
+type Frame struct {
+	Pix      []uint8
+	Duration time.Duration
+	Width    int
+	Height   int
 }

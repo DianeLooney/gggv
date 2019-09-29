@@ -14,7 +14,7 @@ import (
 
 var fflogformat = flag.Bool("fflogformat", false, "Run AvDumpFormat when decoding a video file")
 
-type fileDecoder struct {
+type reader struct {
 	width  int
 	height int
 
@@ -29,13 +29,8 @@ type fileDecoder struct {
 	swsCtx         *swscale.Context
 }
 
-func (d *fileDecoder) Size() (width, height int) {
-	return d.width, d.height
-}
-
-func (d *fileDecoder) Read() (frame Frame, err error) {
-	width, height := d.Size()
-	frame.duration = d.frameDuration()
+func (d *reader) Read() (frame Frame, err error) {
+	frame.Duration = d.frameDuration()
 
 	for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
 		if d.packet.StreamIndex() != d.videoStreamNum {
@@ -69,17 +64,19 @@ func (d *fileDecoder) Read() (frame Frame, err error) {
 
 		offset := uintptr(unsafe.Pointer(avutil.Data(d.pFrameRGB)[0]))
 		linesize := uintptr(avutil.Linesize(d.pFrameRGB)[0])
-		rgb := make([]uint8, width*height*3)
+		rgb := make([]uint8, d.width*d.height*3)
 
-		for y := 0; y < height; y++ {
-			for i := 0; i < width*3; i++ {
+		for y := 0; y < d.height; y++ {
+			for i := 0; i < d.width*3; i++ {
 				ptr := offset + uintptr(i)
-				rgb[(height-1-y)*3*width+i] = *(*uint8)(unsafe.Pointer(ptr))
+				rgb[(d.height-1-y)*3*d.width+i] = *(*uint8)(unsafe.Pointer(ptr))
 			}
 			offset += linesize
 		}
 
-		frame.pix = rgb
+		frame.Width = d.width
+		frame.Height = d.height
+		frame.Pix = rgb
 
 		d.packet.AvFreePacket()
 		return
@@ -87,12 +84,12 @@ func (d *fileDecoder) Read() (frame Frame, err error) {
 	return
 }
 
-func (d *fileDecoder) frameDuration() time.Duration {
+func (d *reader) frameDuration() time.Duration {
 	r := d.pCodecCtx.AvCodecGetPktTimebase()
 	return (time.Duration)(r.Num()) * time.Second / time.Duration(r.Den())
 }
 
-func (d *fileDecoder) Dealloc() {
+func (d *reader) Dealloc() {
 	d.packet.AvFreePacket()
 	// Free the RGB image
 	avutil.AvFree(d.buffer)
@@ -107,9 +104,4 @@ func (d *fileDecoder) Dealloc() {
 
 	// Close the video file
 	d.pFormatContext.AvformatCloseInput()
-}
-
-type Frame struct {
-	pix      []uint8
-	duration time.Duration
 }

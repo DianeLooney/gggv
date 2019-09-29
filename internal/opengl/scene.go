@@ -151,11 +151,10 @@ type BindUniformer interface {
 }
 
 func (s *Scene) AddSourceFFVideo(name, path string) {
-	dec, err := ffmpeg.NewFileSampler(path)
-	if err != nil {
-		logs.Error("Error adding new FFVideoSource", err)
-		return
-	}
+	reader := ffmpeg.Loop(func() (ffmpeg.Reader, error) {
+		return ffmpeg.NewReader(path)
+	})
+
 	var t uint32
 	carbon.GenTextures(1, &t)
 	carbon.ActiveTexture(t)
@@ -164,7 +163,7 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
 	s.sources[SourceName(name)] = &FFVideoSource{
 		name:    SourceName(name),
-		decoder: dec,
+		decoder: reader,
 		texture: t,
 	}
 }

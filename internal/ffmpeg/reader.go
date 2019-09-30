@@ -31,8 +31,6 @@ type reader struct {
 }
 
 func (d *reader) Read() (frame Frame, err error) {
-	frame.Duration = d.frameDuration()
-
 	for d.pFormatContext.AvReadFrame(d.packet) >= 0 {
 		if d.packet.StreamIndex() != d.videoStreamNum {
 			continue
@@ -78,7 +76,7 @@ func (d *reader) Read() (frame Frame, err error) {
 		frame.Width = d.width
 		frame.Height = d.height
 		frame.Pix = rgb
-
+		frame.Duration = (time.Duration)((float64)(d.frameDuration()) * (float64)(d.packet.Duration()))
 		d.packet.AvFreePacket()
 		return
 	}

@@ -15,7 +15,7 @@ func (r *loopedReader) Read() (frame Frame, err error) {
 
 	for {
 		frame, err = r.r.Read()
-		if err == nil {
+		if err == nil && len(frame.Pix) > 0 {
 			return
 		}
 		r.r, err = r.f()

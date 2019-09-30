@@ -38,8 +38,11 @@ func (s *ShaderSource) Children() []SourceName {
 func (s *ShaderSource) Render(scene *Scene) {
 	program := scene.programs[s.p].GLProgram
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.fbo)
-	carbon.Clear(carbon.COLOR_BUFFER_BIT | carbon.DEPTH_BUFFER_BIT)
+	carbon.Clear(carbon.DEPTH_BUFFER_BIT)
 	carbon.UseProgram(program)
+
+	carbon.ActiveTexture(carbon.TEXTURE0)
+	carbon.BindTexture(carbon.TEXTURE_2D, s.texture)
 
 	for i, name := range s.sources {
 		if name == "" {
@@ -50,7 +53,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 		if !ok {
 			continue
 		}
-		carbon.ActiveTexture(carbon.TEXTURE0 + uint32(i))
+		carbon.ActiveTexture(carbon.TEXTURE1 + uint32(i))
 		carbon.BindTexture(carbon.TEXTURE_2D, source.Texture())
 
 		switch src := source.(type) {
@@ -71,8 +74,9 @@ func (s *ShaderSource) Render(scene *Scene) {
 
 		carbon.Uniform(program, "camera", scene.Camera)
 
+		carbon.UniformTex(program, "lastFrame", 0)
 		for i := 0; i < SHADER_TEXTURE_COUNT; i++ {
-			carbon.UniformTex(program, fmt.Sprintf("tex%v", i), int32(i))
+			carbon.UniformTex(program, fmt.Sprintf("tex%v", i), int32(i)+1)
 		}
 
 		carbon.Uniform(program, "time", scene.time)

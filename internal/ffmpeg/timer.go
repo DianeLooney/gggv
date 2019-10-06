@@ -9,6 +9,10 @@ type timer struct {
 }
 
 func (t *timer) Read() (Frame, error) {
+	if time.Now().Add(1 * time.Second).Before(t.next) {
+		t.next = time.Now()
+	}
+
 	if t.next.After(time.Now()) {
 		return t.prev, nil
 	}

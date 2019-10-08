@@ -52,9 +52,9 @@ func NewScene() *Scene {
 
 	var err error
 	if *fullscreen {
-		s.Window, err = glfw.CreateWindow(mode.Width, mode.Height, "gvd", nil, nil)
+		s.Window, err = glfw.CreateWindow(mode.Width, mode.Height, "gggv", nil, nil)
 	} else {
-		s.Window, err = glfw.CreateWindow(mode.Width/2, mode.Height/2, "gvd", nil, nil)
+		s.Window, err = glfw.CreateWindow(mode.Width/2, mode.Height/2, "gggv", nil, nil)
 	}
 
 	if err != nil {
@@ -215,6 +215,14 @@ func (s *Scene) AddWindow() {
 		name:     SourceName("window"),
 		uniforms: make(map[string]BindUniformer),
 		p:        "window",
+	}
+}
+
+func (s *Scene) SetFFVideoTimescale(name string, timescale float64) {
+	if src, ok := s.sources[SourceName(name)]; ok {
+		if ffv, ok := src.(*FFVideoSource); ok {
+			ffv.decoder.Timescale(timescale)
+		}
 	}
 }
 

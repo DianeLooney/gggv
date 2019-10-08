@@ -81,6 +81,7 @@ func netSetup() {
 	net.HandleSS(server, "/source/set/minfilter", "name", "opt", dmn.SetSourceMinFilter)
 	net.HandleSS(server, "/source/set/magfilter", "name", "opt", dmn.SetSourceMagFilter)
 	net.HandleSS(server, "/source.ffvideo/create", "name", "opt", dmn.AddSourceFFVideo)
+	net.HandleSF(server, "/source.ffvideo/set/timescale", "name", "timescale", dmn.SetFFVideoTimescale)
 	net.HandleS(server, "/source.shader/create", "name", dmn.AddSourceShader)
 	net.HandleSIS(server, "/source.shader/set/input", "name", "index", "value", dmn.SetShaderInput)
 	net.HandleSS(server, "/source.shader/set/program", "shader", "program", dmn.SetShaderProgram)

@@ -17,7 +17,7 @@ type FFVideoSource struct {
 	name    SourceName
 	width   int32
 	height  int32
-	decoder ffmpeg.Reader
+	decoder ffmpeg.TimescaleReader
 	texture uint32
 }
 

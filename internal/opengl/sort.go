@@ -16,6 +16,9 @@ type sorter struct {
 func (s *sorter) order(name SourceName) error {
 	this := s.sources[name]
 	if this == nil {
+		if name == SourceName("-") {
+			return nil
+		}
 		return errors.SourceMissing(name)
 	}
 

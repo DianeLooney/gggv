@@ -45,7 +45,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 	carbon.BindTexture(carbon.TEXTURE_2D, s.texture)
 
 	for i, name := range s.sources {
-		if name == "" {
+		if name == "" || name == "-" {
 			continue
 		}
 

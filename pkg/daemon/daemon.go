@@ -87,6 +87,12 @@ func (d *D) SetShaderProgram(name, program string) {
 	})
 }
 
+func (d *D) SetFFVideoTimescale(name string, timescale float32) {
+	d.Schedule(func() {
+		d.Scene.SetFFVideoTimescale(name, float64(timescale))
+	})
+}
+
 func (d *D) AddProgram(name, vShader, gShader, fShader string) {
 	d.Schedule(func() {
 		err := d.Scene.LoadProgram(name, vShader, gShader, fShader)

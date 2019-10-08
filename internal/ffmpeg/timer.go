@@ -2,14 +2,28 @@ package ffmpeg
 
 import "time"
 
+type TimescaleReader interface {
+	Reader
+	Timescale(f float64)
+}
+
 type timer struct {
-	r    Reader
-	prev Frame
-	next time.Time
+	r         Reader
+	prev      Frame
+	next      time.Time
+	timescale float64
+}
+
+func (t *timer) Timescale(ts float64) {
+	t.timescale = ts
 }
 
 func (t *timer) Read() (Frame, error) {
-	if time.Now().Add(1 * time.Second).Before(t.next) {
+	if t.timescale == 0 {
+		return t.prev, nil
+	}
+
+	if time.Now().Add(10 * time.Second).Before(t.next) {
 		t.next = time.Now()
 	}
 
@@ -22,10 +36,16 @@ func (t *timer) Read() (Frame, error) {
 		return f, err
 	}
 	t.prev = f
-	t.next = t.next.Add(f.Duration)
+	frameDuration := time.Duration(float64(f.Duration) / t.timescale)
+	t.next = t.next.Add(time.Duration(frameDuration))
 	return f, nil
 }
 
-func NewTimer(r Reader) Reader {
-	return &timer{r, Frame{}, time.Now()}
+func NewTimer(r Reader) TimescaleReader {
+	return &timer{
+		r,
+		Frame{},
+		time.Now(),
+		1,
+	}
 }

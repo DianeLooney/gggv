@@ -109,6 +109,33 @@ func HandleSSFFF(s *osc.Server, path string, n1, n2, n3, n4, n5 string, f Handle
 	})
 }
 
+type HandlerSF = func(s string, v float32)
+
+func HandleSF(s *osc.Server, path string, n1, n2 string, f HandlerSF) {
+	s.Handle(path, func(msg *osc.Message) {
+		logs.Log(path)
+		if count := msg.CountArguments(); count != 2 {
+			logs.Error(errors.NetTooManyArgs(2, count))
+			return
+		}
+		args := newArguments(path, msg)
+		s, err := args.NextString()
+		if err != nil {
+			logs.Error(path, n1, err)
+			return
+		}
+
+		v, err := args.NextFloat32()
+		if err != nil {
+			logs.Error(path, n1, err)
+			return
+		}
+
+		logs.Log(path, s, v)
+		f(s, v)
+	})
+}
+
 type HanlderS func(s string)
 
 func HandleS(s *osc.Server, path string, n string, f HanlderS) {
@@ -185,10 +212,14 @@ func (p *Arguments) NextFloat32() (float32, error) {
 	}
 
 	v := p.msg.Arguments[p.offset]
-	f, ok := v.(float32)
-	if !ok {
-		return 0, errors.NetWrongArgType(p.offset, "float32", v)
+
+	if f, ok := v.(float32); ok {
+		return f, nil
 	}
 
-	return f, nil
+	if i, ok := v.(int32); ok {
+		return float32(i), nil
+	}
+
+	return 0, errors.NetWrongArgType(p.offset, "float32", v)
 }

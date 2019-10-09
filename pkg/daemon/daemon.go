@@ -132,9 +132,21 @@ func (d *D) SetUniform(layer string, name string, value interface{}) {
 	})
 }
 
+func (d *D) SetGlobalUniform(name string, value interface{}) {
+	d.Schedule(func() {
+		d.Scene.SetGlobalUniform(name, value)
+	})
+}
+
 func (d *D) SetUniformTimestamp(layer string, name string) {
 	d.Schedule(func() {
 		d.Scene.SetUniform(layer, name, time.Now())
+	})
+}
+
+func (d *D) SetGlobalUniformTimestamp(name string) {
+	d.Schedule(func() {
+		d.Scene.SetGlobalUniform(name, time.Now())
 	})
 }
 
@@ -144,8 +156,20 @@ func (d *D) SetUniformClock(layer string, name string) {
 	})
 }
 
+func (d *D) SetGlobalUniformClock(name string) {
+	d.Schedule(func() {
+		d.Scene.SetGlobalUniformClock(name, time.Now())
+	})
+}
+
 func (d *D) SetUniform3f(layer string, name string, v0, v1, v2 float32) {
 	d.Schedule(func() {
 		d.Scene.SetUniform(layer, name, [3]float32{v0, v1, v2})
+	})
+}
+
+func (d *D) SetGlobalUniform3f(name string, v0, v1, v2 float32) {
+	d.Schedule(func() {
+		d.Scene.SetGlobalUniform(name, [3]float32{v0, v1, v2})
 	})
 }

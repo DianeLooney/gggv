@@ -34,11 +34,16 @@ out vec4 outputColor;
 uniform float fadeRate = 0.01;
 uniform float threshold = 0.8;
 
+uniform float highlightR = 255;
+uniform float highlightG = 255;
+uniform float highlightB = 255;
+
 void main() {
+
     outputColor = texture(lastFrame, fragTexCoord) - vec4(fadeRate, fadeRate, fadeRate, 0);
     vec4 col = texture(tex0, fragTexCoord);
     if (col.r > threshold && col.g > threshold && col.b > threshold) {
-        outputColor = vec4(1,1,1,1);
+        outputColor = vec4(highlightR/255.0,highlightG/255.0,highlightB/255.0,1);
     }
 
     if (outputColor.r < 0) outputColor.r = 0;

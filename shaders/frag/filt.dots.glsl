@@ -33,6 +33,15 @@ out vec4 outputColor;
 
 #define PI 3.1415926535897932384626433832795
 
+vec2 fragToScreen(vec2 fragCoords) {
+    return fragCoords * vec2(windowWidth, windowHeight);
+}
+
+vec2 screenToFrag(vec2 screenCoords) {
+    return screenCoords / vec2(windowWidth, windowHeight);
+}
+
+
 vec2 screenToPolar(vec2 screenCoords) {
     screenCoords -= vec2(0.5, 0.5);
     screenCoords *= vec2(windowWidth, windowHeight);
@@ -49,22 +58,18 @@ vec2 polarToScreen(vec2 polarCoords) {
     ) / vec2(windowWidth, windowHeight);
 }
 
-uniform float flakes = 4;
-uniform float radius = 300;
-
 void main() {
-    vec2 coords = fragTexCoord;
-    coords = screenToPolar(coords);
-    coords.y = mod(coords.y, PI / flakes);
-    if (coords.y > PI / (2*flakes)) coords.y = PI / flakes - coords.y;
-    coords.y += time * 0.1;
-    coords = polarToScreen(coords);
-    if (screenToPolar(coords).x > radius) {
-        outputColor = vec4(0,0,0,1);
-        return;
-    }
-    //coords.x -= time * 0.2;
-    //coords.x = mod(coords.x, 1);
+    float dotSize = 5;
+    float dotDistance = 12;
 
-    outputColor = texture(tex0, coords);
+    vec2 coords = fragToScreen(fragTexCoord);
+    vec2 sampleCoords = vec2(
+        floor(coords.x / dotDistance) * dotDistance + floor(dotDistance / 2),
+        floor(coords.y / dotDistance) * dotDistance + floor(dotDistance / 2)
+    );
+    if (length(sampleCoords - coords) > dotSize) {
+        outputColor = vec4(0,0,0,1);
+    } else {
+        outputColor = texture(tex0, screenToFrag(sampleCoords));
+    }
 }

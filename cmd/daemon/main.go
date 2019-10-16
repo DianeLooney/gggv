@@ -86,8 +86,11 @@ func netSetup() {
 	net.HandleSIS(server, "/source.shader/set/input", "name", "index", "value", dmn.SetShaderInput)
 	net.HandleSS(server, "/source.shader/set/program", "shader", "program", dmn.SetShaderProgram)
 	net.HandleSSFFF(server, "/source.shader/set/uniform3f", "shader", "uniform", "vec[0]", "vec[1]", "vec[2]", dmn.SetUniform3f)
+	//net.HandleSFFF(server, "/source.shader/set.global/uniform3f", "shader", "uniform", "vec[0]", "vec[1]", "vec[2]", dmn.SetGlobalUniform3f)
 	net.HandleSS(server, "/source.shader/set/uniform.clock", "shader", "uniform", dmn.SetUniformClock)
+	net.HandleS(server, "/source.shader/set.global/uniform.clock", "uniform", dmn.SetGlobalUniformClock)
 	net.HandleSS(server, "/source.shader/set/uniform.timestamp", "shader", "uniform", dmn.SetUniformTimestamp)
+	net.HandleS(server, "/source.shader/set.global/uniform.timestamp", "uniform", dmn.SetGlobalUniformTimestamp)
 
 	server.Handle("/source.shader/set/uniform1f", func(msg *osc.Message) {
 		layer := msg.Arguments[0].(string)
@@ -121,6 +124,38 @@ func netSetup() {
 
 		logs.Log("/source.shader/set/uniform1f", layer, name, value)
 		dmn.SetUniform(layer, name, value)
+	})
+	server.Handle("/source.shader/set.global/uniform1f", func(msg *osc.Message) {
+		name := msg.Arguments[0].(string)
+		var value float32
+		switch v := msg.Arguments[1].(type) {
+		case int:
+			value = float32(v)
+		case int16:
+			value = float32(v)
+		case int32:
+			value = float32(v)
+		case int64:
+			value = float32(v)
+		case uint:
+			value = float32(v)
+		case uint16:
+			value = float32(v)
+		case uint32:
+			value = float32(v)
+		case uint64:
+			value = float32(v)
+		case float64:
+			value = float32(v)
+		case float32:
+			value = v
+		default:
+			logs.Error("Expected to receive float32 uniform, but it was %T\n", value)
+			return
+		}
+
+		logs.Log("/source.shader/set.global/uniform1f", name, value)
+		dmn.SetGlobalUniform(name, value)
 	})
 	watchers := make(map[string]chan bool)
 	loadProgram := func(name, vShaderPath, gShaderPath, fShaderPath string) {

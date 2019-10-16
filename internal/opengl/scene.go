@@ -44,6 +44,7 @@ func NewScene() *Scene {
 		programs: make(map[string]Program),
 		textures: make(map[string]uint32),
 		sources:  make(map[SourceName]Source),
+		uniforms: make(map[string]BindUniformer),
 	}
 
 	if *borderless {
@@ -110,6 +111,7 @@ type Scene struct {
 
 	programs map[string]Program
 	textures map[string]uint32
+	uniforms map[string]BindUniformer
 
 	sources map[SourceName]Source
 }
@@ -304,6 +306,10 @@ func (s *Scene) SetUniform(layer, name string, value interface{}) {
 	}
 }
 
+func (s *Scene) SetGlobalUniform(name string, value interface{}) {
+	s.uniforms[name] = ValueUniform{name, value}
+}
+
 func (s *Scene) SetUniformClock(layer, name string, offset time.Time) {
 	src, ok := s.sources[SourceName(layer)]
 	if !ok {
@@ -312,6 +318,10 @@ func (s *Scene) SetUniformClock(layer, name string, offset time.Time) {
 	if shader, ok := src.(*ShaderSource); ok {
 		shader.uniforms[name] = ClockUniform{name, offset}
 	}
+}
+
+func (s *Scene) SetGlobalUniformClock(name string, offset time.Time) {
+	s.uniforms[name] = ClockUniform{name, offset}
 }
 
 func (s *Scene) SetShaderInput(layer string, index int32, target string) {

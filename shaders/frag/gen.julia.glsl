@@ -58,14 +58,14 @@ vec2 func(vec2 o, vec2 c) {
 
 
 void main() {
-    float r = 100;
-    float cx = sin(time / 10);
-    float cy = cos(time / 15);
+    float r = 20;
+    float cx = 0.7 * sin(time);
+    float cy = 0.7 * cos(time);
     outputColor = texture(tex0, fragTexCoord);
     vec2 v = 4 * (fragTexCoord - vec2(0.5, 0.5));
     vec2 c = vec2(cx, cy);
     float baseIter = 20;
-    float iterMult = 5;
+    float iterMult = 1;
     float iter = baseIter * iterMult;
     for (float i = 0; i < iter; i++) {
         v = func(v, c);

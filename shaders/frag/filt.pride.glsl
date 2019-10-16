@@ -17,7 +17,7 @@ uniform float color1Wt = 0.5;
 uniform float color2Wt = 0.5;
 uniform float color3Wt = 0.5;
 */
-/*
+
 // nb pride
 uniform vec3 color0 = vec3(0, 0, 0);
 uniform vec3 color1 = vec3(155.0 / 255.0, 89.0 / 255.0, 208.0 / 255.0); // purple (155,89,208)
@@ -27,7 +27,6 @@ uniform float color0Wt = 1;
 uniform float color1Wt = 2;
 uniform float color2Wt = 2;
 uniform float color3Wt = 3;
-*/
 
 /*
 // ace pride

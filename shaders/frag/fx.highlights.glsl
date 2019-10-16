@@ -40,6 +40,7 @@ uniform float highlightB = 255;
 
 void main() {
 
+void main() {
     outputColor = texture(lastFrame, fragTexCoord) - vec4(fadeRate, fadeRate, fadeRate, 0);
     vec4 col = texture(tex0, fragTexCoord);
     if (col.r > threshold && col.g > threshold && col.b > threshold) {

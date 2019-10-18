@@ -153,9 +153,9 @@ type BindUniformer interface {
 }
 
 func (s *Scene) AddSourceFFVideo(name, path string) {
-	reader := ffmpeg.NewTimer(ffmpeg.Loop(func() (ffmpeg.Reader, error) {
+	reader := ffmpeg.NewTimer(ffmpeg.Buffer(ffmpeg.Loop(func() (ffmpeg.Reader, error) {
 		return ffmpeg.NewReader(path)
-	}))
+	})))
 
 	var t uint32
 	carbon.GenTextures(1, &t)

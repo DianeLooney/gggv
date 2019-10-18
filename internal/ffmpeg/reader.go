@@ -84,7 +84,7 @@ func (d *reader) Read() (frame Frame, err error) {
 		d.packet.AvFreePacket()
 		return
 	}
-	panic("no stream found")
+	err = errors.New("no stream found")
 	return
 }
 

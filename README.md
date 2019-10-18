@@ -13,7 +13,9 @@ Follow along in the dockerfile at `build/gggv-base` to install the dependencies 
 ```bash
 go get github.com/dianelooney/gggv
 brew install ffmpeg
-go run cmd/daemon/main.go
+
+go run cmd/shadertest/main.go # for a simple shader live-reload environment
+go run cmd/daemon/main.go # for the full OSC-controlled daemon
 ```
 
 ### Windows

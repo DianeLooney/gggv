@@ -43,6 +43,10 @@ func (d *reader) Read() (frame Frame, err error) {
 		if response == avutil.AvErrorEAGAIN {
 			continue
 		}
+		const errResourceTemporairlyUnavailable = -11
+		if response == errResourceTemporairlyUnavailable {
+			continue
+		}
 		if response == avutil.AvErrorEOF {
 			err = errors.New("EOF reached")
 			return
@@ -80,6 +84,7 @@ func (d *reader) Read() (frame Frame, err error) {
 		d.packet.AvFreePacket()
 		return
 	}
+	err = errors.New("no stream found")
 	return
 }
 

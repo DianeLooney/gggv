@@ -95,11 +95,11 @@ func (d *reader) frameDuration() time.Duration {
 
 func (d *reader) Dealloc() {
 	d.packet.AvFreePacket()
+	swscale.SwsFreecontext(d.swsCtx)
+
 	// Free the RGB image
 	avutil.AvFree(d.buffer)
 	avutil.AvFrameFree(d.pFrameRGB)
-
-	// Free the YUV frame
 	avutil.AvFrameFree(d.pFrame)
 
 	// Close the codecs

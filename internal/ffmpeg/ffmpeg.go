@@ -1,6 +1,7 @@
 package ffmpeg
 
 import (
+	"runtime"
 	"time"
 	"unsafe"
 
@@ -19,7 +20,7 @@ type Reader interface {
 // NewReader returns a new ReadSizer from the specified source
 //
 // source should be recognizable by ffmpeg's avformat_open_input
-func NewReader(source string) (Reader, error) {
+func NewReader(source string) (r Reader, err error) {
 	d := reader{}
 	d.pFormatContext = avformat.AvformatAllocContext()
 	if code := avformat.AvformatOpenInput(&d.pFormatContext, source, nil, nil); code != 0 {
@@ -97,7 +98,10 @@ func NewReader(source string) (Reader, error) {
 
 	d.packet = avcodec.AvPacketAlloc()
 
-	return &d, nil
+	r = &d
+	runtime.SetFinalizer(r, (*reader).Dealloc)
+
+	return
 }
 
 // Frame contains the data regarding a frame of video

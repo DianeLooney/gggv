@@ -28,11 +28,6 @@ func (f *FFVideoSource) Children() []SourceName {
 	return nil
 }
 func (f *FFVideoSource) Render(scene *Scene) {
-	/**
-	if !f.decoder.Ready() {
-		return
-	}*/
-
 	frame, err := f.decoder.Read()
 	if err != nil {
 		fmt.Println(err)

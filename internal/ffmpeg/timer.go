@@ -23,7 +23,7 @@ func (t *timer) Read() (Frame, error) {
 		return t.prev, nil
 	}
 
-	if time.Now().Add(-10 * time.Second).Before(t.next) {
+	if t.next.Add(10 * time.Second).Before(time.Now()) {
 		t.next = time.Now()
 	}
 

@@ -31,14 +31,12 @@ in vec2 fragTexCoord;
 //output pixel color
 out vec4 outputColor;
 
-uniform float fadeRate = 0.01;
-uniform float threshold = 0.8;
+uniform float fadeRate = 0.003;
+uniform float threshold = 0.4;
 
 uniform float highlightR = 255;
 uniform float highlightG = 255;
 uniform float highlightB = 255;
-
-void main() {
 
 void main() {
     outputColor = texture(lastFrame, fragTexCoord) - vec4(fadeRate, fadeRate, fadeRate, 0);

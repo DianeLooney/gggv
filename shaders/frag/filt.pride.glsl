@@ -40,7 +40,7 @@ uniform float color2Wt = 1;
 uniform float color3Wt = 3;
 */
 
-
+/*
 // bi pride
 uniform vec3 color0 = vec3(0, 0, 0);
 uniform vec3 color1 = vec3(  0.0 / 255.0,  56.0 / 255.0, 168.0 / 255.0); // purple (0, 56, 168)
@@ -50,7 +50,7 @@ uniform float color0Wt = 1;
 uniform float color1Wt = 2;
 uniform float color2Wt = 2;
 uniform float color3Wt = 3;
-
+*/
 
 void main() {
     vec4 color = texture(tex0, fragTexCoord);

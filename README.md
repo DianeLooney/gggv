@@ -24,4 +24,5 @@ Binaries are available through CircleCI as a build artifact. View build artifact
 
 ## Frontends
 
-[Clojure](https://github.com/DianeLooney/gggv-clojure)
+[Clojurescript](https://github.com/DianeLooney/gggv-clojurescript)
+

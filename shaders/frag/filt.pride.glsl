@@ -6,28 +6,28 @@ out vec4 outputColor;
 
 uniform sampler2D tex0;
 uniform float time;
-/*
+
 // trans pride
 uniform vec3 color0 = vec3(0, 0, 0);
 uniform vec3 color1 = vec3(85.0 / 255.0, 205.0 / 255.0, 252.0 / 255.0); // blue (85, 205, 252)
 uniform vec3 color2 = vec3(247.0 / 255.0, 168.0 / 255.0, 184.0 / 255.0); // pink (247, 168, 184)
 uniform vec3 color3 = vec3(1,1,1);
-uniform float color0Wt = 0.5;
-uniform float color1Wt = 0.5;
-uniform float color2Wt = 0.5;
-uniform float color3Wt = 0.5;
-*/
+uniform float color0Wt = 0;
+uniform float color1Wt = 1;
+uniform float color2Wt = 1;
+uniform float color3Wt = 2;
 
+/*
 // nb pride
 uniform vec3 color0 = vec3(0, 0, 0);
 uniform vec3 color1 = vec3(155.0 / 255.0, 89.0 / 255.0, 208.0 / 255.0); // purple (155,89,208)
 uniform vec3 color2 = vec3(255.0 / 255.0, 244.0 / 255.0, 51.0 / 255.0); // yellow (255,244,51)
 uniform vec3 color3 = vec3(1,1,1);
 uniform float color0Wt = 1;
-uniform float color1Wt = 2;
-uniform float color2Wt = 2;
-uniform float color3Wt = 3;
-
+uniform float color1Wt = 1;
+uniform float color2Wt = 1;
+uniform float color3Wt = 0;
+*/
 /*
 // ace pride
 uniform vec3 color0 = vec3(0, 0, 0);
@@ -39,7 +39,6 @@ uniform float color1Wt = 2;
 uniform float color2Wt = 1;
 uniform float color3Wt = 3;
 */
-
 /*
 // bi pride
 uniform vec3 color0 = vec3(0, 0, 0);
@@ -69,3 +68,4 @@ void main() {
         outputColor = vec4(color3, 1);
     }
 }
+

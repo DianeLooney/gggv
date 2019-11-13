@@ -1,5 +1,7 @@
 package ffmpeg
 
+import "log"
+
 type bufferedReader struct {
 	reader Reader
 	buffer chan interface{}
@@ -15,7 +17,8 @@ func (b *bufferedReader) Read() (Frame, error) {
 		return Frame{}, v
 	}
 
-	panic("Should not occur")
+	log.Fatalf("Received unexpected value of type %T from channel: %v", f, f)
+	panic("not reachable")
 }
 
 // Buffer returns a Reader wrapping r that performs decodes ahead of time to smooth out framerates

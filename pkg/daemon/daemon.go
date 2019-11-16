@@ -1,11 +1,13 @@
 package daemon
 
 import (
+	"io/ioutil"
 	"sync"
 	"time"
 
 	"github.com/dianelooney/gggv/internal/logs"
 	"github.com/dianelooney/gggv/internal/net"
+	"github.com/radovskyb/watcher"
 
 	"github.com/dianelooney/gggv/internal/opengl"
 )
@@ -13,6 +15,7 @@ import (
 func New() *D {
 	return &D{
 		Scene:           opengl.NewScene(),
+		watchers:        make(map[string]chan bool),
 		mainThreadTasks: make(chan func(), 10000),
 	}
 }
@@ -20,6 +23,8 @@ func New() *D {
 type D struct {
 	Mtx   sync.Mutex
 	Scene *opengl.Scene
+
+	watchers map[string]chan bool
 
 	mainThreadTasks chan func()
 }
@@ -105,16 +110,81 @@ func (d *D) SetFFVideoTimescale(args net.Shifter) {
 	})
 }
 
-func (d *D) AddProgram(args net.Shifter) {
-	name := args.Shift().(string)
-	vShader := args.Shift().(string)
-	gShader := args.Shift().(string)
-	fShader := args.Shift().(string)
+func (d *D) loadShader(name, v, g, f string) {
+	vShader, err := ioutil.ReadFile(v)
+	if err != nil {
+		panic(err)
+	}
+	gShader, err := ioutil.ReadFile(g)
+	if err != nil {
+		panic(err)
+	}
+	fShader, err := ioutil.ReadFile(f)
+	if err != nil {
+		panic(err)
+	}
+
 	d.Schedule(func() {
-		err := d.Scene.LoadProgram(name, vShader, gShader, fShader)
+		err := d.Scene.LoadProgram(name, string(vShader), string(gShader), string(fShader))
 		if err != nil {
 			logs.Error("Unable to load program", name, err)
 		}
+	})
+}
+func (d *D) CreateProgram(args net.Shifter) {
+	name := args.Shift().(string)
+	vShaderPath := args.Shift().(string)
+	gShaderPath := args.Shift().(string)
+	fShaderPath := args.Shift().(string)
+	d.loadShader(name, vShaderPath, gShaderPath, fShaderPath)
+	d.Schedule(func() {
+		if ch, ok := d.watchers[name]; ok {
+			ch <- true
+			delete(d.watchers, name)
+		}
+	})
+}
+func (d *D) WatchProgram(args net.Shifter) {
+	name := args.Shift().(string)
+	vShaderPath := args.Shift().(string)
+	gShaderPath := args.Shift().(string)
+	fShaderPath := args.Shift().(string)
+	d.loadShader(name, vShaderPath, gShaderPath, fShaderPath)
+	d.Schedule(func() {
+		w := watcher.New()
+		if err := w.Add(vShaderPath); err != nil {
+			logs.Log("Unable to watch shader", name, vShaderPath, err)
+			return
+		}
+		if err := w.Add(gShaderPath); err != nil {
+			logs.Log("Unable to watch shader", name, gShaderPath, err)
+			return
+		}
+		if err := w.Add(fShaderPath); err != nil {
+			logs.Log("Unable to watch shader", name, fShaderPath, err)
+			return
+		}
+		if ch, ok := d.watchers[name]; ok {
+			ch <- true
+			delete(d.watchers, name)
+		}
+
+		done := make(chan bool)
+		d.watchers[name] = done
+
+		go func() {
+			for {
+				select {
+				case e := <-w.Event:
+					logs.Log("Reloading shader", name, vShaderPath, gShaderPath, fShaderPath, e)
+					d.loadShader(name, vShaderPath, gShaderPath, fShaderPath)
+				case <-done:
+					w.Close()
+					return
+				}
+			}
+		}()
+		go w.Start(time.Second / 3)
 	})
 }
 

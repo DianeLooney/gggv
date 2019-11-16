@@ -39,7 +39,7 @@ jobs:
       LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
     executor:
       name: win/vs2019
-      shell: bash.ex
+      shell: bash.exe
     working_directory: /go/src/github.com/dianelooney/gggv
     steps:
       - checkout

@@ -31,6 +31,26 @@ jobs:
           path: /tmp/coverage
 #     - codecov/upload:
 #         file: /tmp/coverage/c.out
+  win-test:
+    environment:
+      PKG_CONFIG_PATH: /tmp/pkg-config
+      CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
+      CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
+      LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
+    executor:
+      name: win/vs2019
+      shell: bash.ex
+    working_directory: /go/src/github.com/dianelooney/gggv
+    steps:
+      - checkout
+      - run: go get -v -t -d ./...
+      - run: mkdir /tmp/coverage
+      - run: go test -v ./... -coverprofile=/tmp/coverage/c.out
+      - run: go tool cover -html=/tmp/coverage/c.out -o /tmp/coverage/c.html
+      - store_artifacts:
+          path: /tmp/coverage
+#     - codecov/upload:
+#         file: /tmp/coverage/c.out
   win-build:
     environment:
       PKG_CONFIG_PATH: /tmp/pkg-config
@@ -116,11 +136,18 @@ workflows:
     jobs:
       - vet
       - test
+      - win-test:
+          requires:
+            - vet
+            - test
       - win-build:
           requires:
             - vet
             - test
           filters:
+          filters:
+            branches:
+              only: master
             branches:
               only: master
       - docker-build-gggv:

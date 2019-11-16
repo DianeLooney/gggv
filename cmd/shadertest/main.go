@@ -43,7 +43,7 @@ func main() {
 		if err != nil {
 			return
 		}
-		dmn.AddProgram("default", string(vShader), string(gShader), string(fShader))
+		dmn.Scene.LoadProgram("default", string(vShader), string(gShader), string(fShader))
 	}
 	reloadProgram()
 	w := watcher.New()
@@ -70,13 +70,13 @@ func main() {
 
 	dmn.Scene.BindBuffers()
 	dmn.Scene.AddWindow()
-	dmn.AddSourceShader("default")
-	dmn.SetShaderInput("window", 0, "default")
+	dmn.Scene.AddSourceShader("default")
+	dmn.Scene.SetShaderInput("window", 0, "default")
 	var sources = flag.Args()
 	for i, s := range sources {
 		fmt.Println("Adding source", i, s)
-		dmn.AddSourceFFVideo(s, s)
-		dmn.SetShaderInput("default", int32(i), s)
+		dmn.Scene.AddSourceFFVideo(s, s)
+		dmn.Scene.SetShaderInput("default", int32(i), s)
 	}
 
 	dmn.DrawLoop()

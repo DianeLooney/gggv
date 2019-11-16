@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/dianelooney/gggv/internal/logs"
+	"github.com/dianelooney/gggv/internal/net"
 
 	"github.com/dianelooney/gggv/internal/opengl"
 )
@@ -53,7 +54,10 @@ func (d *D) DrawLoop() {
 // Accepts two arguments
 // 1. Name (string) - the name of the source to create
 // 2. Path (string) - the path of the video
-func (d *D) AddSourceFFVideo(name, path string) {
+func (d *D) AddSourceFFVideo(args net.Shifter) {
+	name := args.Shift().(string)
+	path := args.Shift().(string)
+
 	d.Schedule(func() {
 		d.Scene.AddSourceFFVideo(name, path)
 	})
@@ -63,7 +67,8 @@ func (d *D) AddSourceFFVideo(name, path string) {
 //
 // Accepts one argument
 // 1. Name (string) - the name of the shader to create
-func (d *D) AddSourceShader(name string) {
+func (d *D) AddSourceShader(args net.Shifter) {
+	name := args.Shift().(string)
 	d.Schedule(func() {
 		d.Scene.AddSourceShader(name)
 	})
@@ -75,25 +80,36 @@ func (d *D) AddSourceShader(name string) {
 // 1. Name (string) - the name of the shader
 // 2. Index (int32) - the index the source should be bound to
 // 3. Source (string) - the name of the source to be bound to the shader
-func (d *D) SetShaderInput(name string, idx int32, source string) {
+func (d *D) SetShaderInput(args net.Shifter) {
+	name := args.Shift().(string)
+	idx := args.Shift().(int32)
+	shader := args.Shift().(string)
 	d.Schedule(func() {
-		d.Scene.SetShaderInput(name, idx, source)
+		d.Scene.SetShaderInput(name, idx, shader)
 	})
 }
 
-func (d *D) SetShaderProgram(name, program string) {
+func (d *D) SetShaderProgram(args net.Shifter) {
+	name := args.Shift().(string)
+	program := args.Shift().(string)
 	d.Schedule(func() {
 		d.Scene.SetShaderProgram(name, program)
 	})
 }
 
-func (d *D) SetFFVideoTimescale(name string, timescale float32) {
+func (d *D) SetFFVideoTimescale(args net.Shifter) {
+	name := args.Shift().(string)
+	timescale := args.Shift().(float32)
 	d.Schedule(func() {
 		d.Scene.SetFFVideoTimescale(name, float64(timescale))
 	})
 }
 
-func (d *D) AddProgram(name, vShader, gShader, fShader string) {
+func (d *D) AddProgram(args net.Shifter) {
+	name := args.Shift().(string)
+	vShader := args.Shift().(string)
+	gShader := args.Shift().(string)
+	fShader := args.Shift().(string)
 	d.Schedule(func() {
 		err := d.Scene.LoadProgram(name, vShader, gShader, fShader)
 		if err != nil {
@@ -102,74 +118,102 @@ func (d *D) AddProgram(name, vShader, gShader, fShader string) {
 	})
 }
 
-func (d *D) SetSourceWrapS(name, value string) {
+func (d *D) SetSourceWrapS(args net.Shifter) {
+	name := args.Shift().(string)
+	value := args.Shift().(string)
 	d.Schedule(func() {
 		d.Scene.SetSourceWrapS(name, value)
 	})
 }
 
-func (d *D) SetSourceWrapT(name, value string) {
+func (d *D) SetSourceWrapT(args net.Shifter) {
+	name := args.Shift().(string)
+	value := args.Shift().(string)
 	d.Schedule(func() {
 		d.Scene.SetSourceWrapT(name, value)
 	})
 }
 
-func (d *D) SetSourceMinFilter(name, value string) {
+func (d *D) SetSourceMinFilter(args net.Shifter) {
+	name := args.Shift().(string)
+	value := args.Shift().(string)
 	d.Schedule(func() {
 		d.Scene.SetSourceMinFilter(name, value)
 	})
 }
 
-func (d *D) SetSourceMagFilter(name, value string) {
+func (d *D) SetSourceMagFilter(args net.Shifter) {
+	name := args.Shift().(string)
+	value := args.Shift().(string)
 	d.Schedule(func() {
 		d.Scene.SetSourceMagFilter(name, value)
 	})
 }
 
-func (d *D) SetUniform(layer string, name string, value interface{}) {
+func (d *D) SetUniform(args net.Shifter) {
+	layer := args.Shift().(string)
+	uniform := args.Shift().(string)
+	value := args.Shift()
 	d.Schedule(func() {
-		d.Scene.SetUniform(layer, name, value)
+		d.Scene.SetUniform(layer, uniform, value)
 	})
 }
 
-func (d *D) SetGlobalUniform(name string, value interface{}) {
+func (d *D) SetGlobalUniform(args net.Shifter) {
+	name := args.Shift().(string)
+	value := args.Shift()
 	d.Schedule(func() {
 		d.Scene.SetGlobalUniform(name, value)
 	})
 }
 
-func (d *D) SetUniformTimestamp(layer string, name string) {
+func (d *D) SetUniformTimestamp(args net.Shifter) {
+	layer := args.Shift().(string)
+	uniform := args.Shift().(string)
 	d.Schedule(func() {
-		d.Scene.SetUniform(layer, name, time.Now())
+		d.Scene.SetUniform(layer, uniform, time.Now())
 	})
 }
 
-func (d *D) SetGlobalUniformTimestamp(name string) {
+func (d *D) SetGlobalUniformTimestamp(args net.Shifter) {
+	uniform := args.Shift().(string)
 	d.Schedule(func() {
-		d.Scene.SetGlobalUniform(name, time.Now())
+		d.Scene.SetGlobalUniform(uniform, time.Now())
 	})
 }
 
-func (d *D) SetUniformClock(layer string, name string) {
+func (d *D) SetUniformClock(args net.Shifter) {
+	layer := args.Shift().(string)
+	uniform := args.Shift().(string)
 	d.Schedule(func() {
-		d.Scene.SetUniformClock(layer, name, time.Now())
+		d.Scene.SetUniformClock(layer, uniform, time.Now())
 	})
 }
 
-func (d *D) SetGlobalUniformClock(name string) {
+func (d *D) SetGlobalUniformClock(args net.Shifter) {
+	uniform := args.Shift().(string)
 	d.Schedule(func() {
-		d.Scene.SetGlobalUniformClock(name, time.Now())
+		d.Scene.SetGlobalUniformClock(uniform, time.Now())
 	})
 }
 
-func (d *D) SetUniform3f(layer string, name string, v0, v1, v2 float32) {
+func (d *D) SetUniform3f(args net.Shifter) {
+	layer := args.Shift().(string)
+	uniform := args.Shift().(string)
+	v0 := args.Shift().(float32)
+	v1 := args.Shift().(float32)
+	v2 := args.Shift().(float32)
 	d.Schedule(func() {
-		d.Scene.SetUniform(layer, name, [3]float32{v0, v1, v2})
+		d.Scene.SetUniform(layer, uniform, [3]float32{v0, v1, v2})
 	})
 }
 
-func (d *D) SetGlobalUniform3f(name string, v0, v1, v2 float32) {
+func (d *D) SetGlobalUniform3f(args net.Shifter) {
+	uniform := args.Shift().(string)
+	v0 := args.Shift().(float32)
+	v1 := args.Shift().(float32)
+	v2 := args.Shift().(float32)
 	d.Schedule(func() {
-		d.Scene.SetGlobalUniform(name, [3]float32{v0, v1, v2})
+		d.Scene.SetGlobalUniform(uniform, [3]float32{v0, v1, v2})
 	})
 }

@@ -145,7 +145,6 @@ workflows:
             - vet
             - test
           filters:
-          filters:
             branches:
               only: master
             branches:

@@ -147,8 +147,6 @@ workflows:
           filters:
             branches:
               only: master
-            branches:
-              only: master
       - docker-build-gggv:
           requires:
             - vet

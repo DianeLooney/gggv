@@ -2,11 +2,21 @@ package ffmpeg_test
 
 import (
 	"errors"
+	"sync"
 	"testing"
 	"time"
 
 	"github.com/dianelooney/gggv/internal/ffmpeg"
 )
+
+type slowFailReader struct{ read bool }
+
+func (p *slowFailReader) Read() (ffmpeg.Frame, error) {
+	if p.read {
+		return ffmpeg.Frame{}, nil
+	}
+	return ffmpeg.Frame{Duration: time.Second}, errors.New("whoops")
+}
 
 type quickFailReader struct{}
 
@@ -26,18 +36,6 @@ func (p *panicReader) Read() (ffmpeg.Frame, error) {
 	return ffmpeg.Frame{Duration: time.Second}, nil
 }
 
-type quickPanic struct {
-	read bool
-}
-
-func (p *quickPanic) Read() (ffmpeg.Frame, error) {
-	if p.read {
-		return ffmpeg.Frame{}, errors.New("whoops")
-	}
-	p.read = true
-	return ffmpeg.Frame{Duration: time.Millisecond}, nil
-}
-
 func TestTimer(t *testing.T) {
 	t.Run("It caches the return value", func(t *testing.T) {
 		r := ffmpeg.NewTimer(&panicReader{})
@@ -47,12 +45,24 @@ func TestTimer(t *testing.T) {
 		}
 	})
 	t.Run("It re-reads quickly on errors", func(t *testing.T) {
-		r := ffmpeg.NewTimer(&quickFailReader{})
-		r.Read()
-		_, err := r.Read()
-		if err != nil {
-			t.Fail()
-		}
+		r := ffmpeg.NewTimer(&slowFailReader{})
+		fail := true
+		wg := sync.WaitGroup{}
+		wg.Add(2)
+		go func() {
+			defer wg.Done()
+			r.Read()
+			r.Read()
+			fail = false
+		}()
+		go func() {
+			defer wg.Done()
+			time.Sleep(20 * time.Millisecond)
+			if fail {
+				t.Fail()
+			}
+		}()
+		wg.Wait()
 	})
 	t.Run("Setting timescale 0 pauses readback", func(t *testing.T) {
 		r := ffmpeg.NewTimer(&quickFailReader{})

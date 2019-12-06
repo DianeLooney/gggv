@@ -136,8 +136,8 @@ func (d *D) CreateProgram(args net.Shifter) {
 	vShaderPath := args.Shift().(string)
 	gShaderPath := args.Shift().(string)
 	fShaderPath := args.Shift().(string)
-	d.loadShader(name, vShaderPath, gShaderPath, fShaderPath)
 	d.Schedule(func() {
+		d.loadShader(name, vShaderPath, gShaderPath, fShaderPath)
 		if ch, ok := d.watchers[name]; ok {
 			ch <- true
 			delete(d.watchers, name)
@@ -149,8 +149,8 @@ func (d *D) WatchProgram(args net.Shifter) {
 	vShaderPath := args.Shift().(string)
 	gShaderPath := args.Shift().(string)
 	fShaderPath := args.Shift().(string)
-	d.loadShader(name, vShaderPath, gShaderPath, fShaderPath)
 	d.Schedule(func() {
+		d.loadShader(name, vShaderPath, gShaderPath, fShaderPath)
 		w := watcher.New()
 		if err := w.Add(vShaderPath); err != nil {
 			logs.Log("Unable to watch shader", name, vShaderPath, err)

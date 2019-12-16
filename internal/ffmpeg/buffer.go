@@ -14,8 +14,7 @@ func (b *bufferedReader) Read() (Frame, error) {
 	case error:
 		return Frame{}, v
 	}
-
-	panic("Should not occur")
+	panic("not reachable")
 }
 
 // Buffer returns a Reader wrapping r that performs decodes ahead of time to smooth out framerates

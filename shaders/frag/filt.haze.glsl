@@ -49,25 +49,24 @@ vec2 polarToScreen(vec2 polarCoords) {
     ) / vec2(windowWidth, windowHeight);
 }
 
-uniform float flakes = 4;
-uniform float radius = 300;
+uniform float threshold = 0;
+uniform float decay = 0.003;
 
 void main() {
-    vec2 coords = fragTexCoord;
-    coords = screenToPolar(coords);
-    coords.y += time * 0.1;
-	coords.x -= 1 * time;
-	coords.x -= 1080 * time;
-	coords.x = mod(coords.x, 1080);
-	if (coords.x > radius) {
-		coords.x = 2 * radius - coords.x;
-	}
-	if (coords.x < 0) {
-		coords.x = -coords.x;
-	}
-    coords.y = mod(coords.y, PI / flakes);
-	coords.x += (coords.y / 50) *  cos(coords.y * 8);
-    if (coords.y > PI / (2*flakes)) coords.y = PI / flakes - coords.y;
-    coords = polarToScreen(coords);
-    outputColor = texture(tex0, coords);
+    outputColor = texture(tex0, fragTexCoord);
+	outputColor.a = 1;
+	vec4 decayed = texture(lastFrame, fragTexCoord);
+	decayed.a = 1;
+	if (outputColor.r > decayed.r)
+		outputColor.r = decayed.r + decay;
+	else
+		outputColor.r = decayed.r - decay;
+	if (outputColor.g > decayed.g)
+		outputColor.g = decayed.g + decay;
+	else
+		outputColor.g = decayed.g - decay;
+	if (outputColor.b > decayed.b)
+		outputColor.b = decayed.b + decay;
+	else
+		outputColor.b = decayed.b - decay;
 }

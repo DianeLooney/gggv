@@ -59,13 +59,14 @@ func NewScene() *Scene {
 	}
 
 	if err != nil {
-		panic(err)
+		log.Fatalf("Unable to create window: %v", err)
 	}
+
 	s.Window.MakeContextCurrent()
 
 	// Initialize Glow
 	if err := carbon.Init(); err != nil {
-		panic(err)
+		log.Fatalf("Unable to initialize glow: %v", err)
 	}
 
 	s.Camera = mgl32.LookAtV(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
@@ -199,19 +200,19 @@ func (s *Scene) AddSourceShader(name string) {
 func (s *Scene) AddWindow() {
 	vShader, err := ioutil.ReadFile("shaders/vert/window.glsl")
 	if err != nil {
-		panic(err)
+		log.Fatalln("Missing a window shader, expeccted to find it at shaders/vert/window.glsl")
 	}
 	gShader, err := ioutil.ReadFile("shaders/geom/window.glsl")
 	if err != nil {
-		panic(err)
+		log.Fatalln("Missing a window shader, expeccted to find it at shaders/geom/window.glsl")
 	}
 	fShader, err := ioutil.ReadFile("shaders/frag/window.glsl")
 	if err != nil {
-		panic(err)
+		log.Fatalln("Missing a window shader, expeccted to find it at shaders/frag/window.glsl")
 	}
 
 	if err := s.LoadProgram("window", string(vShader), string(gShader), string(fShader)); err != nil {
-		panic(err)
+		log.Fatalf("Unable to compile window program: %v", err)
 	}
 	s.sources[SourceName("window")] = &ShaderSource{
 		name:     SourceName("window"),

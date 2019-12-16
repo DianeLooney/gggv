@@ -6,23 +6,25 @@ type loopedReader struct {
 }
 
 func (r *loopedReader) Read() (frame Frame, err error) {
-	if r.r == nil {
-		r.r, err = r.f()
-		if err != nil {
-			return Frame{}, err
-		}
-	}
-
 	for {
-		frame, err = r.r.Read()
-		if err == nil && len(frame.Pix) > 0 {
+		frame, err = r.read()
+		if err == nil {
 			return
 		}
-		r.r, err = r.f()
-		if err != nil {
-			return Frame{}, err
-		}
 	}
+}
+
+func (r *loopedReader) read() (frame Frame, err error) {
+	if r.r == nil {
+		r.r, err = r.f()
+		return
+	}
+
+	frame, err = r.r.Read()
+	if err != nil {
+		r.r = nil
+	}
+	return
 }
 
 // Loop wraps the video, returning the start of the video's frame data when it is exhausted.

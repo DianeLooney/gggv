@@ -116,10 +116,6 @@ workflows:
     jobs:
       - vet
       - test
-      - win-test:
-          requires:
-            - vet
-            - test
       - win-build:
           requires:
             - vet

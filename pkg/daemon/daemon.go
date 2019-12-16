@@ -270,11 +270,22 @@ func (d *D) SetGlobalUniformClock(args net.Shifter) {
 func (d *D) SetUniform3f(args net.Shifter) {
 	layer := args.Shift().(string)
 	uniform := args.Shift().(string)
-	v0 := args.Shift().(float32)
-	v1 := args.Shift().(float32)
-	v2 := args.Shift().(float32)
+	var f0, f1, f2 float32
+	var ok bool
+	v0 := args.Shift()
+	if f0, ok = v0.(float32); !ok {
+		f0 = float32(v0.(int32))
+	}
+	v1 := args.Shift()
+	if f1, ok = v1.(float32); !ok {
+		f1 = float32(v1.(int32))
+	}
+	v2 := args.Shift()
+	if f2, ok = v0.(float32); !ok {
+		f2 = float32(v2.(int32))
+	}
 	d.Schedule(func() {
-		d.Scene.SetUniform(layer, uniform, [3]float32{v0, v1, v2})
+		d.Scene.SetUniform(layer, uniform, [3]float32{f0, f1, f2})
 	})
 }
 

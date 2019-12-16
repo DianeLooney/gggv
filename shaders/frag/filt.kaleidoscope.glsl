@@ -49,6 +49,22 @@ vec2 polarToScreen(vec2 polarCoords) {
     ) / vec2(windowWidth, windowHeight);
 }
 
+uniform float flakes = 4;
+uniform float radius = 300;
+
 void main() {
-    outputColor = texture(tex0, fragTexCoord);
+    vec2 coords = fragTexCoord;
+    coords = screenToPolar(coords);
+    coords.y = mod(coords.y, PI / flakes);
+    if (coords.y > PI / (2*flakes)) coords.y = PI / flakes - coords.y;
+    coords.y += time * 0.1;
+    coords = polarToScreen(coords);
+    if (screenToPolar(coords).x > radius) {
+        outputColor = vec4(0,0,0,1);
+        return;
+    }
+    //coords.x -= time * 0.2;
+    //coords.x = mod(coords.x, 1);
+
+    outputColor = texture(tex0, coords);
 }

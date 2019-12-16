@@ -10,9 +10,6 @@ type testSource struct {
 	children []SourceName
 }
 
-func (s testSource) Kind() SourceKind {
-	return SourceKind("testSource")
-}
 func (s testSource) Name() SourceName {
 	return ""
 }
@@ -20,6 +17,9 @@ func (s testSource) Children() []SourceName {
 	return s.children
 }
 func (s testSource) Render(scene *Scene) {
+	return
+}
+func (s testSource) SkipRender(scene *Scene) {
 	return
 }
 func (s testSource) Dimensions() (width, height int32) {

@@ -1,4 +1,4 @@
-FROM golang:1.11.4
+FROM golang:1.13
 
 # begin github.com/giorgisio/goav
 RUN apt-get update

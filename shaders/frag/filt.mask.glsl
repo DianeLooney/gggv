@@ -4,6 +4,8 @@
 
 //futher sources are set as tex1, tex2, tex3
 uniform sampler2D tex0;
+uniform sampler2D tex1;
+uniform sampler2D tex2;
 
 //result of the last render of this shader
 uniform sampler2D lastFrame;
@@ -31,24 +33,10 @@ in vec2 fragTexCoord;
 //output pixel color
 out vec4 outputColor;
 
-#define PI 3.1415926535897932384626433832795
-
-vec2 screenToPolar(vec2 screenCoords) {
-    screenCoords -= vec2(0.5, 0.5);
-    screenCoords *= vec2(windowWidth, windowHeight);
-    return vec2(
-        length(screenCoords),
-        atan(screenCoords.y, screenCoords.x)
-    );
-}
-
-vec2 polarToScreen(vec2 polarCoords) {
-    return vec2(0.5, 0.5) + vec2(
-        polarCoords.x * cos(polarCoords.y),
-        polarCoords.x * sin(polarCoords.y)
-    ) / vec2(windowWidth, windowHeight);
-}
 
 void main() {
-    outputColor = texture(tex0, fragTexCoord);
+    vec4 mask = texture(tex0, fragTexCoord);
+    vec4 sample1 = texture(tex1, fragTexCoord);
+    vec4 sample2 = texture(tex2, fragTexCoord);
+    outputColor = mask*sample1 + (vec4(1,1,1,1) - mask) * sample2;
 }

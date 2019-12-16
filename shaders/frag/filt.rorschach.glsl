@@ -31,24 +31,22 @@ in vec2 fragTexCoord;
 //output pixel color
 out vec4 outputColor;
 
-#define PI 3.1415926535897932384626433832795
-
-vec2 screenToPolar(vec2 screenCoords) {
-    screenCoords -= vec2(0.5, 0.5);
-    screenCoords *= vec2(windowWidth, windowHeight);
-    return vec2(
-        length(screenCoords),
-        atan(screenCoords.y, screenCoords.x)
-    );
-}
-
-vec2 polarToScreen(vec2 polarCoords) {
-    return vec2(0.5, 0.5) + vec2(
-        polarCoords.x * cos(polarCoords.y),
-        polarCoords.x * sin(polarCoords.y)
-    ) / vec2(windowWidth, windowHeight);
-}
+const float PI = 3.1415926535897932384626433832795;
 
 void main() {
-    outputColor = texture(tex0, fragTexCoord);
+    vec4 sample = texture(tex0, fragTexCoord);
+    float rhigh = 0.5 + 0.3 * sin(time / 10);
+    float rlow  = 0.5 - 0.3 * sin(time / 10);
+    float ghigh = 0.5 + 0.3 * sin(time / 10+2*PI/3);
+    float glow  = 0.5 - 0.3 * sin(time / 10+2*PI/3);
+    float bhigh = 0.5 + 0.3 * sin(time / 10+4*PI/3);
+    float blow  = 0.5 - 0.3 * sin(time / 10+4*PI/3);
+
+    if ((sample.r > rlow && sample.r < rhigh) ||
+        (sample.g > glow && sample.g < ghigh) || 
+        (sample.b > blow && sample.b < bhigh)) {
+        outputColor = vec4(1,1,1,1);
+    } else {
+        outputColor = vec4(0,0,0,1);
+    }
 }

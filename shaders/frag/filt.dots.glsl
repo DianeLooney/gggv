@@ -33,6 +33,15 @@ out vec4 outputColor;
 
 #define PI 3.1415926535897932384626433832795
 
+vec2 fragToScreen(vec2 fragCoords) {
+    return fragCoords * vec2(windowWidth, windowHeight);
+}
+
+vec2 screenToFrag(vec2 screenCoords) {
+    return screenCoords / vec2(windowWidth, windowHeight);
+}
+
+
 vec2 screenToPolar(vec2 screenCoords) {
     screenCoords -= vec2(0.5, 0.5);
     screenCoords *= vec2(windowWidth, windowHeight);
@@ -50,5 +59,20 @@ vec2 polarToScreen(vec2 polarCoords) {
 }
 
 void main() {
-    outputColor = texture(tex0, fragTexCoord);
+    float dotDistance = 70;
+
+    vec2 coords = fragToScreen(fragTexCoord);
+    vec2 sampleCoords = vec2(
+        floor(coords.x / dotDistance) * dotDistance,
+        floor(coords.y / dotDistance) * dotDistance
+    );
+    vec2 centerCoords = vec2(
+        floor(coords.x / dotDistance) * dotDistance + dotDistance/2,
+        floor(coords.y / dotDistance) * dotDistance + dotDistance/2
+    );
+    outputColor = texture(tex0, screenToFrag(sampleCoords));
+    float dotSize = 5 * (outputColor.r + outputColor.g + outputColor.b);
+    if (length(centerCoords - coords) > dotSize) {
+        outputColor = vec4(0,0,0,1);
+    }
 }

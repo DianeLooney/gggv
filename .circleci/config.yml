@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  codecov: codecov/codecov@1.0.5
+# codecov: codecov/codecov@1.0.5
   win: circleci/windows@1.0.0
 
 jobs:
@@ -29,8 +29,8 @@ jobs:
       - run: go tool cover -html=/tmp/coverage/c.out -o /tmp/coverage/c.html
       - store_artifacts:
           path: /tmp/coverage
-      - codecov/upload:
-          file: /tmp/coverage/c.out
+#     - codecov/upload:
+#         file: /tmp/coverage/c.out
   win-build:
     environment:
       PKG_CONFIG_PATH: /tmp/pkg-config
@@ -59,6 +59,9 @@ jobs:
           name: Extract FFMPEG-dev
           command: unzip /tmp/ffmpeg-latest-win64-dev.zip -d /tmp/
       - run:
+          name: Install go 1.13
+          command: choco install golang
+      - run:
           name: Build Daemon
           command: go build -o=daemon.exe cmd/daemon/main.go
       - store_artifacts:
@@ -74,7 +77,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: Build Docker image
-          command: docker build -t diane/gggv:latest -f build/gggv-base/Dockerfile .
+          command: docker build -t diane/gggv-base:latest -f build/gggv-base/Dockerfile .
       - run:
           name: Publish Docker Image to Docker Hub
           command: |

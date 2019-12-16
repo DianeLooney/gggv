@@ -13,6 +13,10 @@ func Uniform(program uint32, name string, value interface{}) {
 		Uniform1f(u, float32(v))
 	case mgl32.Mat4:
 		UniformMatrix4fv(u, 1, false, &v[0])
+	case [2]float32:
+		Uniform2f(u, v[0], v[1])
+	case [3]float32:
+		Uniform3f(u, v[0], v[1], v[2])
 	}
 }
 

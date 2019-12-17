@@ -72,15 +72,10 @@ func NewScene() *Scene {
 	s.Camera = mgl32.LookAtV(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
 
 	// Configure global settings
-	carbon.Enable(carbon.DEPTH_TEST)
-	carbon.Disable(carbon.CULL_FACE)
-	carbon.Enable(carbon.BLEND)
-	carbon.BlendFunc(carbon.SRC_ALPHA, carbon.ONE_MINUS_SRC_ALPHA)
 	carbon.PixelStorei(carbon.UNPACK_ALIGNMENT, 1)
 
-	carbon.DepthFunc(carbon.LESS)
 	carbon.ClearColor(0, 0, 0, 1)
-	carbon.Clear(carbon.COLOR_BUFFER_BIT | carbon.DEPTH_BUFFER_BIT)
+	carbon.Clear(carbon.COLOR_BUFFER_BIT)
 	if *vsync {
 		glfw.SwapInterval(1)
 	} else {

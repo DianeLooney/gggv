@@ -38,7 +38,6 @@ func (s *ShaderSource) Children() []SourceName {
 func (s *ShaderSource) Render(scene *Scene) {
 	program := scene.programs[s.p].GLProgram
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.fbo)
-	carbon.Clear(carbon.COLOR_BUFFER_BIT)
 	carbon.UseProgram(program)
 
 	carbon.ActiveTexture(carbon.TEXTURE0)

@@ -75,7 +75,6 @@ func NewScene() *Scene {
 	carbon.PixelStorei(carbon.UNPACK_ALIGNMENT, 1)
 
 	carbon.ClearColor(0, 0, 0, 1)
-	carbon.Clear(carbon.COLOR_BUFFER_BIT)
 	if *vsync {
 		glfw.SwapInterval(1)
 	} else {

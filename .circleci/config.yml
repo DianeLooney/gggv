@@ -53,8 +53,11 @@ jobs:
           name: Download Portaudio
           command: curl http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz > /tmp/portaudio.tgz
       - run:
-          name: Extract Portaudio
-          command: unzip /tmp/portaudio.tgz -d /tmp/
+          name: Extract Portaudio (1)
+          command: 7z x /tmp/portaudio.tgz
+      - run:
+          name: Extract Portaudio (2)
+          command: 7z x /tmp/portaudio.tar
       - run:
           name: Download FFMPEG-dev
           command: curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip

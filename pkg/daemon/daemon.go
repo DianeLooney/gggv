@@ -51,7 +51,9 @@ func (d *D) FlushTasks() {
 func (d *D) DrawLoop() {
 	for !d.Scene.Window.ShouldClose() {
 		d.FlushTasks()
-		d.Scene.Draw()
+		if !d.Paused {
+			d.Scene.Draw()
+		}
 	}
 }
 

@@ -147,6 +147,10 @@ type BindUniformer interface {
 	BindUniform(program uint32)
 }
 
+func (s *Scene) AddSourceFFT(name string) {
+	s.sources[SourceName(name)] = NewPortaudio()
+}
+
 func (s *Scene) AddSourceFFVideo(name, path string) {
 	reader := ffmpeg.NewTimer(ffmpeg.Buffer(ffmpeg.Loop(func() (ffmpeg.Reader, error) {
 		return ffmpeg.NewReader(path)
@@ -219,6 +223,14 @@ func (s *Scene) SetFFVideoTimescale(name string, timescale float64) {
 	if src, ok := s.sources[SourceName(name)]; ok {
 		if ffv, ok := src.(*FFVideoSource); ok {
 			ffv.decoder.Timescale(timescale)
+		}
+	}
+}
+
+func (s *Scene) SetFFTScale(name string, scale float32) {
+	if src, ok := s.sources[SourceName(name)]; ok {
+		if ffv, ok := src.(*Portaudio); ok {
+			ffv.scale = scale
 		}
 	}
 }

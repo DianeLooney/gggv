@@ -81,6 +81,7 @@ func NewReader(source string) (r Reader, err error) {
 	avp := (*avcodec.Picture)(unsafe.Pointer(d.pFrameRGB))
 	avp.AvpictureFill((*uint8)(d.buffer), avcodec.AV_PIX_FMT_RGB24, d.pCodecCtx.Width(), d.pCodecCtx.Height())
 
+	// To Do: When given an image with 0 width and height this fails?
 	d.swsCtx = swscale.SwsGetcontext(
 		d.pCodecCtx.Width(),
 		d.pCodecCtx.Height(),

@@ -21,8 +21,9 @@ func New() *D {
 }
 
 type D struct {
-	Mtx   sync.Mutex
-	Scene *opengl.Scene
+	Mtx    sync.Mutex
+	Scene  *opengl.Scene
+	Paused bool
 
 	watchers map[string]chan bool
 
@@ -50,8 +51,22 @@ func (d *D) FlushTasks() {
 func (d *D) DrawLoop() {
 	for !d.Scene.Window.ShouldClose() {
 		d.FlushTasks()
-		d.Scene.Draw()
+		if !d.Paused {
+			d.Scene.Draw()
+		}
 	}
+}
+
+func (d *D) Pause(args net.Shifter) {
+	d.Schedule(func() {
+		d.Paused = true
+	})
+}
+
+func (d *D) Play(args net.Shifter) {
+	d.Schedule(func() {
+		d.Paused = false
+	})
 }
 
 // AddSourceFFVideo - /source.ffvideo/create
@@ -65,6 +80,27 @@ func (d *D) AddSourceFFVideo(args net.Shifter) {
 
 	d.Schedule(func() {
 		d.Scene.AddSourceFFVideo(name, path)
+	})
+}
+
+func (d *D) AddSourceFFT(args net.Shifter) {
+	name := args.Shift().(string)
+
+	d.Schedule(func() {
+		d.Scene.AddSourceFFT(name)
+	})
+}
+
+func (d *D) SetFFTScale(args net.Shifter) {
+	name := args.Shift().(string)
+	_scale := args.Shift()
+	scale, ok := _scale.(float32)
+	if !ok {
+		scale = float32(_scale.(int32))
+	}
+
+	d.Schedule(func() {
+		d.Scene.SetFFTScale(name, scale)
 	})
 }
 
@@ -87,7 +123,11 @@ func (d *D) AddSourceShader(args net.Shifter) {
 // 3. Source (string) - the name of the source to be bound to the shader
 func (d *D) SetShaderInput(args net.Shifter) {
 	name := args.Shift().(string)
-	idx := args.Shift().(int32)
+	_idx := args.Shift()
+	idx, ok := _idx.(int32)
+	if !ok {
+		idx = int32(_idx.(float32))
+	}
 	shader := args.Shift().(string)
 	d.Schedule(func() {
 		d.Scene.SetShaderInput(name, idx, shader)
@@ -131,6 +171,7 @@ func (d *D) loadShader(name, v, g, f string) {
 		}
 	})
 }
+
 func (d *D) CreateProgram(args net.Shifter) {
 	name := args.Shift().(string)
 	vShaderPath := args.Shift().(string)
@@ -144,6 +185,7 @@ func (d *D) CreateProgram(args net.Shifter) {
 		}
 	})
 }
+
 func (d *D) WatchProgram(args net.Shifter) {
 	name := args.Shift().(string)
 	vShaderPath := args.Shift().(string)

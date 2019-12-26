@@ -89,7 +89,7 @@ func netSetup() {
 	net.Handle(server, "/source.shader/set/uniform3f", dmn.SetUniform3f)
 	net.Handle(server, "/source.shader/set/uniform.clock", dmn.SetUniformClock)
 	net.Handle(server, "/source.shader/set/uniform.timestamp", dmn.SetUniformTimestamp)
-	net.Handle(server, "/source.shader/set.global/unfiform1f", dmn.SetUniform)
+	net.Handle(server, "/source.shader/set.global/uniform1f", dmn.SetUniform)
 	net.Handle(server, "/source.shader/set.global/uniform3f", dmn.SetGlobalUniform3f)
 	net.Handle(server, "/source.shader/set.global/uniform.clock", dmn.SetGlobalUniformClock)
 	net.Handle(server, "/source.shader/set.global/uniform.timestamp", dmn.SetGlobalUniformTimestamp)

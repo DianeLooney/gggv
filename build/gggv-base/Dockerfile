@@ -18,3 +18,7 @@ RUN cd ffmpeg && ./configure && make && make install
 # begin github.com/go-gl/gl
 RUN apt-get install -y libgl1-mesa-dev xorg-dev
 # end
+
+# begin github.com/ggordonklaus/portaudio
+RUN apt-get install -y portaudio19-dev
+# end

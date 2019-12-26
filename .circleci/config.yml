@@ -50,8 +50,11 @@ jobs:
           name: Setup pkg-config stubs
           command: ./build/windows/configure.sh
       - run:
-          name: Install MinGW
-          command: choco install mingw
+          name: Download Portaudio
+          command: curl http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz > /tmp/portaudio.tgz
+      -run:
+          name: Extract Portaudio
+          command: unzip /tmp/portaudio.tgz -d /tmp/
       - run:
           name: Download FFMPEG-dev
           command: curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip

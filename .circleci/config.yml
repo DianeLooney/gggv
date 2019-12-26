@@ -52,7 +52,7 @@ jobs:
       - run:
           name: Download Portaudio
           command: curl http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz > /tmp/portaudio.tgz
-      -run:
+      - run:
           name: Extract Portaudio
           command: unzip /tmp/portaudio.tgz -d /tmp/
       - run:

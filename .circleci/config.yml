@@ -57,7 +57,7 @@ jobs:
           command: 7z x /tmp/portaudio.tgz
       - run:
           name: Extract Portaudio (2)
-          command: 7z x /tmp/portaudio.tar
+          command: 7z x portaudio.tar
       - run:
           name: Download FFMPEG-dev
           command: curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip

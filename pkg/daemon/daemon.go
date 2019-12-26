@@ -81,6 +81,27 @@ func (d *D) AddSourceFFVideo(args net.Shifter) {
 	})
 }
 
+func (d *D) AddSourceFFT(args net.Shifter) {
+	name := args.Shift().(string)
+
+	d.Schedule(func() {
+		d.Scene.AddSourceFFT(name)
+	})
+}
+
+func (d *D) SetFFTScale(args net.Shifter) {
+	name := args.Shift().(string)
+	_scale := args.Shift()
+	scale, ok := _scale.(float32)
+	if !ok {
+		scale = float32(_scale.(int32))
+	}
+
+	d.Schedule(func() {
+		d.Scene.SetFFTScale(name, scale)
+	})
+}
+
 // AddSourceShader - /source.shader/create
 //
 // Accepts one argument

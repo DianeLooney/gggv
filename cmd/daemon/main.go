@@ -78,6 +78,8 @@ func netSetup() {
 	net.Handle(server, "/source/set/wrap.t", dmn.SetSourceWrapT)
 	net.Handle(server, "/source/set/minfilter", dmn.SetSourceMinFilter)
 	net.Handle(server, "/source/set/magfilter", dmn.SetSourceMagFilter)
+	net.Handle(server, "/source.fft/create", dmn.AddSourceFFT)
+	net.Handle(server, "/source.fft/scale", dmn.SetFFTScale)
 	net.Handle(server, "/source.ffvideo/create", dmn.AddSourceFFVideo)
 	net.Handle(server, "/source.ffvideo/set/timescale", dmn.SetFFVideoTimescale)
 	net.Handle(server, "/source.shader/create", dmn.AddSourceShader)

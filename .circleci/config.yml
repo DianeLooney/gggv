@@ -115,4 +115,6 @@ workflows:
             - test
           filters:
             branches:
-              only: master
+              only:
+              - master
+              - djl/windows-builds

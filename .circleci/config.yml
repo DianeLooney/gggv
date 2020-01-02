@@ -1,8 +1,9 @@
 version: 2.1
 
 orbs:
-# codecov: codecov/codecov@1.0.5
+  # codecov: codecov/codecov@1.0.5
   win: circleci/windows@1.0.0
+  docker: circleci/docker@0.5.20
 
 jobs:
   vet:
@@ -14,7 +15,7 @@ jobs:
     steps:
       - checkout
       - run: go get -v -t -d ./...
-      - run: go vet -unsafeptr=false $(go list ./... | grep -v /wrappers/) 
+      - run: go vet -unsafeptr=false $(go list ./... | grep -v /wrappers/)
   test:
     docker:
       - image: diane/gggv-base:latest
@@ -29,8 +30,8 @@ jobs:
       - run: go tool cover -html=/tmp/coverage/c.out -o /tmp/coverage/c.html
       - store_artifacts:
           path: /tmp/coverage
-#     - codecov/upload:
-#         file: /tmp/coverage/c.out
+  #     - codecov/upload:
+  #         file: /tmp/coverage/c.out
   win-build:
     environment:
       PKG_CONFIG_PATH: /tmp/pkg-config
@@ -73,38 +74,6 @@ jobs:
       - store_artifacts:
           path: daemon.exe
           destination: daemon.exe
-  docker-build-gggv-base:
-    environment:
-      IMAGE_NAME: diane/gggv-base
-    docker:
-      - image: circleci/buildpack-deps:stretch
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Build Docker image
-          command: docker build -t diane/gggv-base:latest -f build/gggv-base/Dockerfile .
-      - run:
-          name: Publish Docker Image to Docker Hub
-          command: |
-            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            docker push $IMAGE_NAME:latest
-  docker-build-gggv:
-    environment:
-      IMAGE_NAME: diane/gggv
-    docker:
-      - image: circleci/buildpack-deps:stretch
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: Build Docker image
-          command: docker build -t diane/gggv:latest -f build/gggv/Dockerfile .
-      - run:
-          name: Publish Docker Image to Docker Hub
-          command: |
-            echo "$DOCKERHUB_PASS" | docker login -u "$DOCKERHUB_USERNAME" --password-stdin
-            docker push $IMAGE_NAME:latest
 
 workflows:
   version: 2
@@ -117,7 +86,13 @@ workflows:
               only:
                 - master
     jobs:
-      - docker-build-gggv-base
+      - docker/publish:
+          image: diane/gggv-base
+          tag: latest
+          extra_build_args: "--target base"
+          docker-password: DOCKERHUB_PASS
+          docker-username: DOCKERHUB_USERNAME
+          dockerfile: build/gggv/Dockerfile
   release:
     jobs:
       - vet
@@ -129,7 +104,12 @@ workflows:
           filters:
             branches:
               only: master
-      - docker-build-gggv:
+      - docker/publish:
+          image: diane/gggv
+          tag: latest
+          docker-password: DOCKERHUB_PASS
+          docker-username: DOCKERHUB_USERNAME
+          dockerfile: build/gggv/Dockerfile
           requires:
             - vet
             - test

@@ -1,0 +1,9 @@
+.circleci/
+binds/
+build/
+
+.dockerignore
+.editorconfig
+.gitignore
+LICENSE
+*.md

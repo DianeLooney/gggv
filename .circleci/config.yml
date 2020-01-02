@@ -55,10 +55,10 @@ jobs:
           command: curl http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz > /tmp/portaudio.tgz
       - run:
           name: Extract Portaudio (1)
-          command: 7z x /tmp/portaudio.tgz
+          command: 7z x /tmp/portaudio.tgz -o/tmp/
       - run:
           name: Extract Portaudio (2)
-          command: 7z x portaudio.tar
+          command: 7z x /tmp/portaudio.tar -o/tmp/
       - run:
           name: Download FFMPEG-dev
           command: curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip
@@ -115,6 +115,4 @@ workflows:
             - test
           filters:
             branches:
-              only:
-              - master
-              - djl/windows-builds
+              only: master

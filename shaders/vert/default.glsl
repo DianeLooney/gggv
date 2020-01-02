@@ -4,13 +4,17 @@ uniform mat4 projection;
 uniform mat4 camera;
 uniform mat4 model;
 
-in int flipOutput;
+uniform float windowHeight;
+uniform float windowWidth;
+
 in vec3 vert;
 in vec2 vertTexCoord;
 
 out vec2 geomTexCoord;
+out vec2 geomScreenCoord;
 
 void main() {
-    geomTexCoord = vertTexCoord;
-    gl_Position = projection * camera * vec4(vert, 1);
+  geomTexCoord = vertTexCoord;
+  geomScreenCoord = geomTexCoord * vec2(windowWidth + 1, windowHeight + 1);
+  gl_Position = projection * camera * vec4(vert, 1);
 }

@@ -26,6 +26,8 @@ var borderless = flag.Bool("borderless", false, "Hide borders")
 var fullscreen = flag.Bool("fullscreen", false, "Start in fullscreen mode")
 
 var vsync = flag.Bool("vsync", true, "Enable/Disable vsync")
+var width = flag.Int("width", -1, "Set the window width")
+var height = flag.Int("height", -1, "Set the window height")
 
 func NewScene() *Scene {
 	if err := glfw.Init(); err != nil {
@@ -55,7 +57,15 @@ func NewScene() *Scene {
 	if *fullscreen {
 		s.Window, err = glfw.CreateWindow(mode.Width, mode.Height, "gggv", nil, nil)
 	} else {
-		s.Window, err = glfw.CreateWindow(mode.Width/2, mode.Height/2, "gggv", nil, nil)
+		var w = *width
+		var h = *height
+		if h < 0 {
+			h = mode.Height / 2
+		}
+		if w < 0 {
+			w = mode.Width / 2
+		}
+		s.Window, err = glfw.CreateWindow(w, h, "gggv", nil, nil)
 	}
 
 	if err != nil {

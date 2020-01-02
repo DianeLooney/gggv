@@ -1,6 +1,8 @@
 package carbon
 
-import "github.com/go-gl/mathgl/mgl32"
+import (
+	"github.com/go-gl/mathgl/mgl32"
+)
 
 func Uniform(program uint32, name string, value interface{}) {
 	u := GetUniformLocation(program, Str(name+"\x00"))

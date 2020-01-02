@@ -263,6 +263,11 @@ func (d *D) SetSourceMagFilter(args net.Shifter) {
 }
 
 func (d *D) SetUniform(args net.Shifter) {
+	if args.Length() == 5 {
+		d.SetUniform3f(args)
+		return
+	}
+
 	layer := args.Shift().(string)
 	uniform := args.Shift().(string)
 	value := args.Shift()
@@ -323,7 +328,7 @@ func (d *D) SetUniform3f(args net.Shifter) {
 		f1 = float32(v1.(int32))
 	}
 	v2 := args.Shift()
-	if f2, ok = v0.(float32); !ok {
+	if f2, ok = v2.(float32); !ok {
 		f2 = float32(v2.(int32))
 	}
 	d.Schedule(func() {

@@ -54,9 +54,7 @@ void main() {
 	vec2 ftc = vec2(
 		floor(fragTexCoord.x * hres + 0.5) / hres,
 		floor(fragTexCoord.y * vres + 0.5) / vres);
-  vec4 actual_ = texture(tex0, ftc);
-	vec3 actual = vec3(actual_.r, actual_.g, actual_.b);
-	float diff = 18000;
+	vec3 actual = texture(tex0, ftc).rgb;
 	float diff0 = distance(actual, color0);
 	float diff1 = distance(actual, color1);
 	float diff2 = distance(actual, color2);
@@ -74,8 +72,8 @@ void main() {
 	float diffE = distance(actual, colorE);
 	float diffF = distance(actual, colorF);
 	
-	outputColor = vec4(0, 1, 0, 1);
-	if (diff0 < diff) { diff = diff0; outputColor = vec4(color0, 1); }
+	outputColor = vec4(0, 0, 0, 1);
+	float diff = diff0; outputColor = vec4(color0, 1);
 	if (diff1 < diff) { diff = diff1; outputColor = vec4(color1, 1); }
 	if (diff2 < diff) { diff = diff2; outputColor = vec4(color2, 1); }
 	if (diff3 < diff) { diff = diff3; outputColor = vec4(color3, 1); }
@@ -91,5 +89,4 @@ void main() {
 	if (diffD < diff) { diff = diffD; outputColor = vec4(colorD, 1); }
 	if (diffE < diff) { diff = diffE; outputColor = vec4(colorE, 1); }
 	if (diffF < diff) { diff = diffF; outputColor = vec4(colorF, 1); }
-	outputColor.a = 1;
 }

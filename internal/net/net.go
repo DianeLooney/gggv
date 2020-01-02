@@ -28,6 +28,7 @@ func Handle(s *osc.Server, path string, f Handler) {
 type Handler func(args Shifter)
 
 type Shifter interface {
+	Length() int
 	Shift() interface{}
 }
 
@@ -44,4 +45,8 @@ func (p *arguments) Shift() interface{} {
 		panic(errors.NetOutOfArgs(p.offset))
 	}
 	return p.msg.Arguments[p.offset]
+}
+
+func (p *arguments) Length() int {
+	return p.msg.CountArguments()
 }

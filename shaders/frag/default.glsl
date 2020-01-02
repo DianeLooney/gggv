@@ -28,25 +28,26 @@ uniform float cursorY;
 
 //texCoord
 in vec2 fragTexCoord;
+in vec2 screenCoord;
 //output pixel color
 out vec4 outputColor;
 
 #define PI 3.1415926535897932384626433832795
 
 vec2 screenToPolar(vec2 screenCoords) {
-    screenCoords -= vec2(0.5, 0.5);
-    screenCoords *= vec2(windowWidth, windowHeight);
-    return vec2(
-        length(screenCoords),
-        atan(screenCoords.y, screenCoords.x)
-    );
+  screenCoords -= vec2(0.5, 0.5);
+  screenCoords *= vec2(windowWidth, windowHeight);
+  return vec2(
+    length(screenCoords),
+    atan(screenCoords.y, screenCoords.x)
+  );
 }
 
 vec2 polarToScreen(vec2 polarCoords) {
-    return vec2(0.5, 0.5) + vec2(
-        polarCoords.x * cos(polarCoords.y),
-        polarCoords.x * sin(polarCoords.y)
-    ) / vec2(windowWidth, windowHeight);
+  return vec2(0.5, 0.5) + vec2(
+    polarCoords.x * cos(polarCoords.y),
+    polarCoords.x * sin(polarCoords.y)
+  ) / vec2(windowWidth, windowHeight);
 }
 
 void main() {

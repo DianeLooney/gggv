@@ -48,7 +48,7 @@ commands:
             unzip /tmp/ffmpeg-latest-win64-dev.zip -d /tmp/
       - run:
           name: Install go 1.13
-          command: choco install golang
+          command: choco install golang --force
 
 jobs:
   vet:

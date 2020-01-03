@@ -25,6 +25,31 @@ commands:
           paths:
             - /go/pkg
 
+  install-deps-windows:
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: choco install mingw pkgconfiglite
+      - run:
+          name: Setup pkg-config stubs
+          command: ./build/windows/configure.sh
+      # - run:
+      #     name: Install Portaudio
+      #     command: |
+      #       curl http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz > /tmp/portaudio.tgz
+      #       7z x /tmp/portaudio.tgz -o/tmp/
+      #       7z x /tmp/portaudio.tar -o/tmp/
+      #       cd /tmp/portaudio && ./configure && make install
+      - run:
+          name: Install FFMPEG-dev
+          command: |
+            curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip
+            unzip /tmp/ffmpeg-latest-win64-dev.zip -d /tmp/
+      - run:
+          name: Install go 1.13
+          command: choco install golang
+
 jobs:
   vet:
     executor: base-linux
@@ -57,35 +82,9 @@ jobs:
     executor:
       name: win/vs2019
       shell: bash.exe
+
     steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: choco install mingw pkgconfiglite
-      - run:
-          name: Setup pkg-config stubs
-          command: ./build/windows/configure.sh
-      # - run:
-      #     name: Download Portaudio
-      #     command: curl http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz > /tmp/portaudio.tgz
-      # - run:
-      #     name: Extract Portaudio (1)
-      #     command: 7z x /tmp/portaudio.tgz -o/tmp/
-      # - run:
-      #     name: Extract Portaudio (2)
-      #     command: 7z x /tmp/portaudio.tar -o/tmp/
-      # - run:
-      #     name: Install Portaudio
-      #     command: cd /tmp/portaudio && ./configure && make install
-      - run:
-          name: Download FFMPEG-dev
-          command: curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip
-      - run:
-          name: Extract FFMPEG-dev
-          command: unzip /tmp/ffmpeg-latest-win64-dev.zip -d /tmp/
-      - run:
-          name: Install go 1.13
-          command: choco install golang
+      - install-deps-windows
       - run:
           name: Build Daemon
           command: go build -o=daemon.exe cmd/daemon/main.go

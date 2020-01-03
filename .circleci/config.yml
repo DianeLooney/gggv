@@ -5,29 +5,44 @@ orbs:
   win: circleci/windows@1.0.0
   docker: circleci/docker@0.5.20
 
+executors:
+  base-linux:
+    docker:
+      - image: circleci/golang:1.13
+    working_directory: /go/src/github.com/dianelooney/gggv
+
+commands:
+  install-deps:
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-pkg-cache
+      - run: sudo ./build/gggv/configure.sh
+      - run: go get -v -t -d ./...
+      - save_cache:
+          key: v1-pkg-cache
+          paths:
+            - /go/pkg
+
 jobs:
   vet:
-    docker:
-      - image: diane/gggv-base:latest
-    environment:
-      CGO_CFLAGS: -w
-    working_directory: /go/src/github.com/dianelooney/gggv
+    executor: base-linux
     steps:
-      - checkout
-      - run: go get -v -t -d ./...
+      - install-deps
       - run: go vet -unsafeptr=false $(go list ./... | grep -v /wrappers/)
   test:
-    docker:
-      - image: diane/gggv-base:latest
+    executor: base-linux
     environment:
       CGO_CFLAGS: -w
-    working_directory: /go/src/github.com/dianelooney/gggv
+      COV_FILE: /tmp/coverage/c.out
     steps:
-      - checkout
-      - run: go get -v -t -d ./...
-      - run: mkdir /tmp/coverage
-      - run: go test -v ./... -coverprofile=/tmp/coverage/c.out
-      - run: go tool cover -html=/tmp/coverage/c.out -o /tmp/coverage/c.html
+      - install-deps
+      - run:
+          command: |
+            mkdir $(dirname ${COV_FILE})
+            go test -v ./... -coverprofile=${COV_FILE}
+      - run: go tool cover -html=${COV_FILE} -o ${COV_FILE/%.out/.html}
       - store_artifacts:
           path: /tmp/coverage
   #     - codecov/upload:

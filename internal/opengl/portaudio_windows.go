@@ -24,8 +24,13 @@ func NewPortaudio() Source {
 }
 
 type Portaudio struct {
-	N       string
-	texture uint32
+	N SourceName
+
+	scale    float32
+	samplesI []int32
+	samples  []float64
+	fft      []float32
+	texture  uint32
 }
 
 func (p *Portaudio) Name() SourceName {

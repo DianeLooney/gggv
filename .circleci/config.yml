@@ -60,6 +60,9 @@ jobs:
           name: Extract Portaudio (2)
           command: 7z x /tmp/portaudio.tar -o/tmp/
       - run:
+          name: Install Portaudio
+          command: cd /tmp/portaudio && make && make install
+      - run:
           name: Download FFMPEG-dev
           command: curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip
       - run:

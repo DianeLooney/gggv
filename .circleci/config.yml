@@ -61,7 +61,7 @@ jobs:
           command: 7z x /tmp/portaudio.tar -o/tmp/
       - run:
           name: Install Portaudio
-          command: cd /tmp/portaudio && make && make install
+          command: cd /tmp/portaudio && ./configure && make install
       - run:
           name: Download FFMPEG-dev
           command: curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip

@@ -5,29 +5,69 @@ orbs:
   win: circleci/windows@1.0.0
   docker: circleci/docker@0.5.20
 
+executors:
+  base-linux:
+    docker:
+      - image: circleci/golang:1.13
+    working_directory: /go/src/github.com/dianelooney/gggv
+
+commands:
+  install-deps:
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - v1-pkg-cache
+      - run: sudo ./build/gggv/configure.sh
+      - run: go get -v -t -d ./...
+      - save_cache:
+          key: v1-pkg-cache
+          paths:
+            - /go/pkg
+
+  install-deps-windows:
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: choco install mingw pkgconfiglite
+      - run:
+          name: Setup pkg-config stubs
+          command: ./build/windows/configure.sh
+      # - run:
+      #     name: Install Portaudio
+      #     command: |
+      #       curl http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz > /tmp/portaudio.tgz
+      #       7z x /tmp/portaudio.tgz -o/tmp/
+      #       7z x /tmp/portaudio.tar -o/tmp/
+      #       cd /tmp/portaudio && ./configure && make install
+      - run:
+          name: Install FFMPEG-dev
+          command: |
+            curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip
+            unzip /tmp/ffmpeg-latest-win64-dev.zip -d /tmp/
+      - run:
+          name: Install go 1.13
+          command: choco install golang --force
+
 jobs:
   vet:
-    docker:
-      - image: diane/gggv-base:latest
-    environment:
-      CGO_CFLAGS: -w
-    working_directory: /go/src/github.com/dianelooney/gggv
+    executor: base-linux
     steps:
-      - checkout
-      - run: go get -v -t -d ./...
+      - install-deps
       - run: go vet -unsafeptr=false $(go list ./... | grep -v /wrappers/)
   test:
-    docker:
-      - image: diane/gggv-base:latest
+    executor: base-linux
     environment:
       CGO_CFLAGS: -w
-    working_directory: /go/src/github.com/dianelooney/gggv
+      COV_FILE: /tmp/coverage/c.out
     steps:
-      - checkout
-      - run: go get -v -t -d ./...
-      - run: mkdir /tmp/coverage
-      - run: go test -v ./... -coverprofile=/tmp/coverage/c.out
-      - run: go tool cover -html=/tmp/coverage/c.out -o /tmp/coverage/c.html
+      - install-deps
+      - run:
+          command: |
+            mkdir $(dirname ${COV_FILE})
+            go test -v ./... -coverprofile=${COV_FILE}
+      - run: go tool cover -html=${COV_FILE} -o ${COV_FILE/%.out/.html}
       - store_artifacts:
           path: /tmp/coverage
   #     - codecov/upload:
@@ -42,35 +82,9 @@ jobs:
     executor:
       name: win/vs2019
       shell: bash.exe
+
     steps:
-      - checkout
-      - run:
-          name: Install dependencies
-          command: choco install mingw pkgconfiglite
-      - run:
-          name: Setup pkg-config stubs
-          command: ./build/windows/configure.sh
-      # - run:
-      #     name: Download Portaudio
-      #     command: curl http://www.portaudio.com/archives/pa_stable_v190600_20161030.tgz > /tmp/portaudio.tgz
-      # - run:
-      #     name: Extract Portaudio (1)
-      #     command: 7z x /tmp/portaudio.tgz -o/tmp/
-      # - run:
-      #     name: Extract Portaudio (2)
-      #     command: 7z x /tmp/portaudio.tar -o/tmp/
-      # - run:
-      #     name: Install Portaudio
-      #     command: cd /tmp/portaudio && ./configure && make install
-      - run:
-          name: Download FFMPEG-dev
-          command: curl https://ffmpeg.zeranoe.com/builds/win64/dev/ffmpeg-latest-win64-dev.zip > /tmp/ffmpeg-latest-win64-dev.zip
-      - run:
-          name: Extract FFMPEG-dev
-          command: unzip /tmp/ffmpeg-latest-win64-dev.zip -d /tmp/
-      - run:
-          name: Install go 1.13
-          command: choco install golang
+      - install-deps-windows
       - run:
           name: Build Daemon
           command: go build -o=daemon.exe cmd/daemon/main.go

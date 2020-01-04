@@ -86,7 +86,7 @@ jobs:
     steps:
       - run:
           name: Detect OS
-          command: cat /etc/os-release
+          command: env
       - install-deps-windows
       - run:
           name: Build Daemon

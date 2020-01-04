@@ -84,6 +84,9 @@ jobs:
       shell: bash.exe
 
     steps:
+      - run:
+          name: Detect OS
+          command: cat /etc/os-release
       - install-deps-windows
       - run:
           name: Build Daemon
@@ -118,9 +121,9 @@ workflows:
           requires:
             - vet
             - test
-          filters:
-            branches:
-              only: master
+          # filters:
+          #   branches:
+          #     only: master
       - docker/publish:
           image: diane/gggv
           tag: latest

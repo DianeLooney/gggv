@@ -2,7 +2,6 @@ package opengl
 
 import (
 	"flag"
-	"io/ioutil"
 	"log"
 	"strings"
 	"time"
@@ -206,22 +205,6 @@ func (s *Scene) AddSourceShader(name string) {
 }
 
 func (s *Scene) AddWindow() {
-	vShader, err := ioutil.ReadFile("shaders/vert/window.glsl")
-	if err != nil {
-		log.Fatalln("Missing a window shader, expeccted to find it at shaders/vert/window.glsl")
-	}
-	gShader, err := ioutil.ReadFile("shaders/geom/window.glsl")
-	if err != nil {
-		log.Fatalln("Missing a window shader, expeccted to find it at shaders/geom/window.glsl")
-	}
-	fShader, err := ioutil.ReadFile("shaders/frag/window.glsl")
-	if err != nil {
-		log.Fatalln("Missing a window shader, expeccted to find it at shaders/frag/window.glsl")
-	}
-
-	if err := s.LoadProgram("window", string(vShader), string(gShader), string(fShader)); err != nil {
-		log.Fatalf("Unable to compile window program: %v", err)
-	}
 	s.sources[SourceName("window")] = &ShaderSource{
 		name:     SourceName("window"),
 		uniforms: make(map[string]BindUniformer),

@@ -1,6 +1,7 @@
 package daemon
 
 import (
+	"flag"
 	"io/ioutil"
 	"sync"
 	"time"
@@ -150,6 +151,11 @@ func (d *D) SetFFVideoTimescale(args net.Shifter) {
 	})
 }
 
+var stubsEnabled = flag.Bool("stub", true, "Enable glsl stub replacement")
+var vStubPath = flag.String("vstub", "shaders/vert.stub.glsl", "Path to the vertex shader stub")
+var gStubPath = flag.String("gstub", "shaders/geom.stub.glsl", "Path to the geometry shader stub")
+var fStubPath = flag.String("fstub", "shaders/frag.stub.glsl", "Path to the fragment shader stub")
+
 func (d *D) loadShader(name, v, g, f string) {
 	vShader, err := ioutil.ReadFile(v)
 	if err != nil {
@@ -164,8 +170,27 @@ func (d *D) loadShader(name, v, g, f string) {
 		panic(err)
 	}
 
+	var vs, gs, fs = string(vShader), string(gShader), string(fShader)
+	if *stubsEnabled {
+		vShader, err := ioutil.ReadFile(*vStubPath)
+		if err != nil {
+			panic(err)
+		}
+		gShader, err := ioutil.ReadFile(*gStubPath)
+		if err != nil {
+			panic(err)
+		}
+		fShader, err := ioutil.ReadFile(*fStubPath)
+		if err != nil {
+			panic(err)
+		}
+		vs = string(vShader) + vs
+		gs = string(gShader) + gs
+		fs = string(fShader) + fs
+	}
+
 	d.Schedule(func() {
-		err := d.Scene.LoadProgram(name, string(vShader), string(gShader), string(fShader))
+		err := d.Scene.LoadProgram(name, vs, gs, fs)
 		if err != nil {
 			logs.Error("Unable to load program", name, err)
 		}
@@ -197,6 +222,9 @@ func (d *D) WatchProgram(args net.Shifter) {
 	vShaderPath := args.Shift().(string)
 	gShaderPath := args.Shift().(string)
 	fShaderPath := args.Shift().(string)
+	d.WatchProgramS(name, vShaderPath, gShaderPath, fShaderPath)
+}
+func (d *D) WatchProgramS(name, vShaderPath, gShaderPath, fShaderPath string) {
 	d.Schedule(func() {
 		defer func() {
 			if err := recover(); err != nil {
@@ -217,6 +245,20 @@ func (d *D) WatchProgram(args net.Shifter) {
 		if err := w.Add(fShaderPath); err != nil {
 			logs.Log("Unable to watch shader", name, fShaderPath, err)
 			return
+		}
+		if *stubsEnabled {
+			if err := w.Add(*vStubPath); err != nil {
+				logs.Log("Unable to watch shader", name, *vStubPath, err)
+				return
+			}
+			if err := w.Add(*gStubPath); err != nil {
+				logs.Log("Unable to watch shader", name, *gStubPath, err)
+				return
+			}
+			if err := w.Add(*fStubPath); err != nil {
+				logs.Log("Unable to watch shader", name, *fStubPath, err)
+				return
+			}
 		}
 		if ch, ok := d.watchers[name]; ok {
 			ch <- true

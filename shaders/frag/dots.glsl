@@ -58,20 +58,21 @@ vec2 polarToScreen(vec2 polarCoords) {
     ) / vec2(windowWidth, windowHeight);
 }
 
-void main() {
-    float dotDistance = 70;
+uniform float dist = 70;
+uniform float diam = 15;
 
+void main() {
     vec2 coords = fragToScreen(fragTexCoord);
     vec2 sampleCoords = vec2(
-        floor(coords.x / dotDistance) * dotDistance,
-        floor(coords.y / dotDistance) * dotDistance
+        floor(coords.x / dist) * dist,
+        floor(coords.y / dist) * dist
     );
     vec2 centerCoords = vec2(
-        floor(coords.x / dotDistance) * dotDistance + dotDistance/2,
-        floor(coords.y / dotDistance) * dotDistance + dotDistance/2
+        floor(coords.x / dist) * dist + dist/2,
+        floor(coords.y / dist) * dist + dist/2
     );
     outputColor = texture(tex0, screenToFrag(sampleCoords));
-    float dotSize = 5 * (outputColor.r + outputColor.g + outputColor.b);
+    float dotSize = (diam / 3) * (outputColor.r + outputColor.g + outputColor.b);
     if (length(centerCoords - coords) > dotSize) {
         outputColor = vec4(0,0,0,1);
     }

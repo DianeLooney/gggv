@@ -3,7 +3,6 @@
 uniform sampler2D tex0;
 uniform float time;
 
-
 uniform float frequency;
 uniform float amplitude;
 uniform float speed;

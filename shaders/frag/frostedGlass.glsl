@@ -1,13 +1,3 @@
-#version 330
-
-//a modification on the sobel that tries to dialate around the edges
-
-uniform sampler2D tex0;
-uniform float windowHeight;
-uniform float windowWidth;
-in vec2 fragTexCoord;
-out vec4 outputColor;
-
 uniform float strength = 0.4;
 
 mat3 x_kernel;

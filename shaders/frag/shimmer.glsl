@@ -1,11 +1,3 @@
-#version 330
-
-uniform sampler2D tex0;
-uniform sampler2D lastFrame;
-
-in vec2 fragTexCoord;
-out vec4 outputColor;
-
 uniform float rate = 0.02;
 uniform float threshold = 1.4;
 

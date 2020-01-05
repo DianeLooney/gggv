@@ -340,15 +340,15 @@ func (s *Scene) SetShaderInput(layer string, index int32, target string) {
 }
 
 func (s *Scene) LoadProgram(name, vShader, gShader, fShader string) (err error) {
-	vertexShader, err := compileShader(vShader+"\x00", carbon.VERTEX_SHADER)
+	vertexShader, err := carbon.WrappedCompileShader(vShader+"\x00", carbon.VERTEX_SHADER)
 	if err != nil {
 		return err
 	}
-	geometryShader, err := compileShader(gShader+"\x00", carbon.GEOMETRY_SHADER)
+	geometryShader, err := carbon.WrappedCompileShader(gShader+"\x00", carbon.GEOMETRY_SHADER)
 	if err != nil {
 		return err
 	}
-	fragmentShader, err := compileShader(fShader+"\x00", carbon.FRAGMENT_SHADER)
+	fragmentShader, err := carbon.WrappedCompileShader(fShader+"\x00", carbon.FRAGMENT_SHADER)
 	if err != nil {
 		return err
 	}
@@ -429,29 +429,6 @@ func (s *Scene) RebindTexture(name string, width, height int, img []uint8) {
 		carbon.RGB,
 		carbon.UNSIGNED_BYTE,
 		carbon.Ptr(&img[0]))
-}
-
-func compileShader(source string, shaderType uint32) (uint32, error) {
-	shader := carbon.CreateShader(shaderType)
-
-	csources, free := carbon.Strs(source)
-	carbon.ShaderSource(shader, 1, csources, nil)
-	free()
-	carbon.CompileShader(shader)
-
-	var status int32
-	carbon.GetShaderiv(shader, carbon.COMPILE_STATUS, &status)
-	if status == carbon.FALSE {
-		var logLength int32
-		carbon.GetShaderiv(shader, carbon.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		carbon.GetShaderInfoLog(shader, logLength, nil, carbon.Str(log))
-
-		return 0, errors.GLShaderCompile(log, source)
-	}
-
-	return shader, nil
 }
 
 func (s *Scene) Draw() {

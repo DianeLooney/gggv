@@ -66,12 +66,29 @@ jobs:
       - run:
           command: |
             mkdir $(dirname ${COV_FILE})
-            go test -v ./... -coverprofile=${COV_FILE}
+            go test -v $(go list ./... | grep -v /vendor/ | grep -v /shaders) -coverprofile=${COV_FILE}
       - run: go tool cover -html=${COV_FILE} -o ${COV_FILE/%.out/.html}
       - store_artifacts:
           path: /tmp/coverage
   #     - codecov/upload:
   #         file: /tmp/coverage/c.out
+  test-shaders:
+    environment:
+      PKG_CONFIG_PATH: /tmp/pkg-config
+      CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
+      CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
+      LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
+
+    executor:
+      name: win/vs2019
+      shell: bash.exe
+
+    steps:
+      - install-deps-windows
+      - run:
+          name: Test Shaders
+          command: go test ./shaders
+
   win-build:
     environment:
       PKG_CONFIG_PATH: /tmp/pkg-config
@@ -106,7 +123,7 @@ workflows:
       - docker/publish:
           image: diane/gggv-base
           tag: latest
-          extra_build_args: "--target base"
+          extra_build_args: "-v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v $HOME/.Xauthority:/root/.Xauthority --target base"
           docker-password: DOCKERHUB_PASS
           docker-username: DOCKERHUB_USERNAME
           dockerfile: build/gggv/Dockerfile

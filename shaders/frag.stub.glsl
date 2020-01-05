@@ -4,6 +4,15 @@
 
 //futher sources are set as tex1, tex2, tex3
 uniform sampler2D tex0;
+uniform sampler2D tex1;
+uniform sampler2D tex2;
+uniform sampler2D tex3;
+uniform sampler2D tex4;
+uniform sampler2D tex5;
+uniform sampler2D tex6;
+uniform sampler2D tex7;
+uniform sampler2D tex8;
+uniform sampler2D tex9;
 
 //result of the last render of this shader
 uniform sampler2D lastFrame;

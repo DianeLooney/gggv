@@ -1,8 +1,34 @@
 package carbon
 
 import (
+	"strings"
+
+	"github.com/dianelooney/gggv/internal/errors"
 	"github.com/go-gl/mathgl/mgl32"
 )
+
+func WrappedCompileShader(source string, shaderType uint32) (uint32, error) {
+	shader := CreateShader(shaderType)
+
+	csources, free := Strs(source)
+	ShaderSource(shader, 1, csources, nil)
+	free()
+	CompileShader(shader)
+
+	var status int32
+	GetShaderiv(shader, COMPILE_STATUS, &status)
+	if status == FALSE {
+		var logLength int32
+		GetShaderiv(shader, INFO_LOG_LENGTH, &logLength)
+
+		log := strings.Repeat("\x00", int(logLength+1))
+		GetShaderInfoLog(shader, logLength, nil, Str(log))
+
+		return 0, errors.GLShaderCompile(log, source)
+	}
+
+	return shader, nil
+}
 
 func Uniform(program uint32, name string, value interface{}) {
 	u := GetUniformLocation(program, Str(name+"\x00"))

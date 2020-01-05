@@ -1,9 +1,3 @@
-#version 330
-uniform sampler2D tex0;
-uniform sampler2D lastFrame;
-in vec2 fragTexCoord;
-out vec4 outputColor;
-
 uniform float newColorCoeff = 0.05;
 uniform float distanceThreshold = 0.01;
 

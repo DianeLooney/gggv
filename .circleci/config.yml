@@ -3,7 +3,6 @@ version: 2.1
 orbs:
   # codecov: codecov/codecov@1.0.5
   win: circleci/windows@1.0.0
-  docker: circleci/docker@0.5.20
 
 executors:
   base-linux:
@@ -81,9 +80,6 @@ jobs:
       shell: bash.exe
 
     steps:
-      - run:
-          name: Detect OS
-          command: env
       - install-deps-windows
       - run:
           name: Build Daemon
@@ -94,37 +90,10 @@ jobs:
 
 workflows:
   version: 2
-  base-image-update:
-    triggers:
-      - schedule:
-          cron: "0 0 * * 1"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - docker/publish:
-          image: diane/gggv-base
-          tag: latest
-          extra_build_args: "--target base"
-          docker-password: DOCKERHUB_PASS
-          docker-username: DOCKERHUB_USERNAME
-          dockerfile: build/gggv/Dockerfile
   release:
     jobs:
       - test
       - win-build:
-          requires:
-            - test
-          # filters:
-          #   branches:
-          #     only: master
-      - docker/publish:
-          image: diane/gggv
-          tag: latest
-          docker-password: DOCKERHUB_PASS
-          docker-username: DOCKERHUB_USERNAME
-          dockerfile: build/gggv/Dockerfile
           requires:
             - test
           filters:

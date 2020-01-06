@@ -2,7 +2,6 @@ package opengl
 
 import (
 	"flag"
-	"io/ioutil"
 	"log"
 	"strings"
 	"time"
@@ -206,22 +205,6 @@ func (s *Scene) AddSourceShader(name string) {
 }
 
 func (s *Scene) AddWindow() {
-	vShader, err := ioutil.ReadFile("shaders/vert/window.glsl")
-	if err != nil {
-		log.Fatalln("Missing a window shader, expeccted to find it at shaders/vert/window.glsl")
-	}
-	gShader, err := ioutil.ReadFile("shaders/geom/window.glsl")
-	if err != nil {
-		log.Fatalln("Missing a window shader, expeccted to find it at shaders/geom/window.glsl")
-	}
-	fShader, err := ioutil.ReadFile("shaders/frag/window.glsl")
-	if err != nil {
-		log.Fatalln("Missing a window shader, expeccted to find it at shaders/frag/window.glsl")
-	}
-
-	if err := s.LoadProgram("window", string(vShader), string(gShader), string(fShader)); err != nil {
-		log.Fatalf("Unable to compile window program: %v", err)
-	}
 	s.sources[SourceName("window")] = &ShaderSource{
 		name:     SourceName("window"),
 		uniforms: make(map[string]BindUniformer),
@@ -357,15 +340,15 @@ func (s *Scene) SetShaderInput(layer string, index int32, target string) {
 }
 
 func (s *Scene) LoadProgram(name, vShader, gShader, fShader string) (err error) {
-	vertexShader, err := compileShader(vShader+"\x00", carbon.VERTEX_SHADER)
+	vertexShader, err := carbon.WrappedCompileShader(vShader+"\x00", carbon.VERTEX_SHADER)
 	if err != nil {
 		return err
 	}
-	geometryShader, err := compileShader(gShader+"\x00", carbon.GEOMETRY_SHADER)
+	geometryShader, err := carbon.WrappedCompileShader(gShader+"\x00", carbon.GEOMETRY_SHADER)
 	if err != nil {
 		return err
 	}
-	fragmentShader, err := compileShader(fShader+"\x00", carbon.FRAGMENT_SHADER)
+	fragmentShader, err := carbon.WrappedCompileShader(fShader+"\x00", carbon.FRAGMENT_SHADER)
 	if err != nil {
 		return err
 	}
@@ -446,29 +429,6 @@ func (s *Scene) RebindTexture(name string, width, height int, img []uint8) {
 		carbon.RGB,
 		carbon.UNSIGNED_BYTE,
 		carbon.Ptr(&img[0]))
-}
-
-func compileShader(source string, shaderType uint32) (uint32, error) {
-	shader := carbon.CreateShader(shaderType)
-
-	csources, free := carbon.Strs(source)
-	carbon.ShaderSource(shader, 1, csources, nil)
-	free()
-	carbon.CompileShader(shader)
-
-	var status int32
-	carbon.GetShaderiv(shader, carbon.COMPILE_STATUS, &status)
-	if status == carbon.FALSE {
-		var logLength int32
-		carbon.GetShaderiv(shader, carbon.INFO_LOG_LENGTH, &logLength)
-
-		log := strings.Repeat("\x00", int(logLength+1))
-		carbon.GetShaderInfoLog(shader, logLength, nil, carbon.Str(log))
-
-		return 0, errors.GLShaderCompile(log, source)
-	}
-
-	return shader, nil
 }
 
 func (s *Scene) Draw() {

@@ -1,12 +1,3 @@
-#version 330
-
-in vec2 fragTexCoord;
-
-out vec4 outputColor;
-
-uniform sampler2D tex0;
-uniform float time;
-
 // trans pride
 uniform vec3 color0 = vec3(0, 0, 0);
 uniform vec3 color1 = vec3(85.0 / 255.0, 205.0 / 255.0, 252.0 / 255.0); // blue (85, 205, 252)

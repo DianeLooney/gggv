@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	_ "image/png"
-	"io/ioutil"
 	"runtime"
 
 	"github.com/dianelooney/gggv/internal/net"
@@ -30,27 +29,8 @@ func main() {
 
 	dmn = daemon.New()
 
-	{
-		name := "default"
-		vShaderPath := "shaders/vert/default.glsl"
-		gShaderPath := "shaders/geom/default.glsl"
-		fShaderPath := "shaders/frag/default.glsl"
-		vShader, err := ioutil.ReadFile(vShaderPath)
-		if err != nil {
-			return
-		}
-		fShader, err := ioutil.ReadFile(fShaderPath)
-		if err != nil {
-			return
-		}
-		gShader, err := ioutil.ReadFile(gShaderPath)
-		if err != nil {
-			return
-		}
-		dmn.Scene.LoadProgram(name, string(vShader), string(gShader), string(fShader))
-	}
-
 	dmn.Scene.BindBuffers()
+	dmn.WatchProgramS("window", "shaders/vert/window.glsl", "shaders/geom/window.glsl", "shaders/frag/window.glsl")
 	dmn.Scene.AddWindow()
 
 	go netSetup()

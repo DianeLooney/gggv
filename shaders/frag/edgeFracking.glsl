@@ -1,14 +1,3 @@
-#version 330
-
-uniform sampler2D tex0;
-uniform sampler2D lastFrame;
-uniform float windowHeight;
-uniform float windowWidth;
-uniform float time;
-in vec2 fragTexCoord;
-out vec4 outputColor;
-
-
 uniform float sobelForce = 0.012;
 uniform float newFrameStrength = 0.1;
 uniform int millisBetween = 4;

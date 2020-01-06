@@ -1,12 +1,4 @@
-#version 330
-
 uniform float amount;
-
-uniform sampler2D tex0;
-uniform float time;
-in vec2 fragTexCoord;
-in vec2 screenCoord;
-out vec4 outputColor;
 
 //neato code from the lolengine ppl
 //http://lolengine.net/blog/2013/07/27/rgb-to-hsv-in-glsl#

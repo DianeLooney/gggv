@@ -1,18 +1,3 @@
-#version 330
-uniform sampler2D tex0;
-uniform sampler2D lastFrame;
-uniform float tex0Width;
-uniform float tex0Height;
-uniform float time;
-uniform float renderTime;
-uniform float fps;
-uniform float windowHeight;
-uniform float windowWidth;
-uniform float cursorX;
-uniform float cursorY;
-in vec2 fragTexCoord;
-out vec4 outputColor;
-
 float triggerThreshold    = 0.01;
 float similarityThreshold = 0.02;
 float x_step = 1/windowWidth;

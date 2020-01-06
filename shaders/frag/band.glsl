@@ -1,14 +1,3 @@
-#version 330
-
-uniform sampler2D tex0;
-uniform float time;
-uniform float windowWidth;
-uniform float windowHeight;
-
-in vec2 fragTexCoord;
-
-out vec4 outputColor;
-
 uniform float rBands = 2.0;
 uniform float gBands = 2.0;
 uniform float bBands = 2.0;

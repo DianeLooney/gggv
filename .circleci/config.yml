@@ -18,7 +18,7 @@ commands:
       - restore_cache:
           keys:
             - v1-pkg-cache
-      - run: sudo ./build/gggv/configure.sh
+      - run: sudo ./build/configure.sh
       - run: go get -v -t -d ./...
       - save_cache:
           key: v1-pkg-cache
@@ -33,7 +33,7 @@ commands:
           command: choco install mingw pkgconfiglite
       - run:
           name: Setup pkg-config stubs
-          command: ./build/windows/configure.sh
+          command: ./build/configure.sh
       # - run:
       #     name: Install Portaudio
       #     command: |

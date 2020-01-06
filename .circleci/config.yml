@@ -51,19 +51,16 @@ commands:
           command: choco install golang --force
 
 jobs:
-  vet:
-    executor: base-linux
-    steps:
-      - install-deps
-      - run: go vet -unsafeptr=false $(go list ./... | grep -v /wrappers/)
   test:
     executor: base-linux
     environment:
-      CGO_CFLAGS: -w
       COV_FILE: /tmp/coverage/c.out
     steps:
       - install-deps
+      - run: go vet -unsafeptr=false $(go list ./... | grep -v /wrappers/)
       - run:
+          environment:
+            CGO_CFLAGS: -w
           command: |
             mkdir $(dirname ${COV_FILE})
             go test -v ./... -coverprofile=${COV_FILE}
@@ -115,11 +112,9 @@ workflows:
           dockerfile: build/gggv/Dockerfile
   release:
     jobs:
-      - vet
       - test
       - win-build:
           requires:
-            - vet
             - test
           # filters:
           #   branches:
@@ -131,7 +126,6 @@ workflows:
           docker-username: DOCKERHUB_USERNAME
           dockerfile: build/gggv/Dockerfile
           requires:
-            - vet
             - test
           filters:
             branches:

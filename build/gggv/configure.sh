@@ -18,6 +18,9 @@ libs=(
 	libavdevice-dev
 	libswresample-dev
 	libswscale-dev
+
+	# shader tests
+	xvfb
 )
 
 apt-get install --no-install-recommends ${libs[@]}

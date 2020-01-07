@@ -61,33 +61,18 @@ jobs:
     environment:
       CGO_CFLAGS: -w
       COV_FILE: /tmp/coverage/c.out
+      DISPLAY: :0
     steps:
       - install-deps
       - run:
           command: |
             mkdir $(dirname ${COV_FILE})
-            go test -v $(go list ./... | grep -v /vendor/ | grep -v /shaders) -coverprofile=${COV_FILE}
+            Xvfb :0 & go test -v $(go list ./... | grep -v /vendor/) -coverprofile=${COV_FILE}
       - run: go tool cover -html=${COV_FILE} -o ${COV_FILE/%.out/.html}
       - store_artifacts:
           path: /tmp/coverage
   #     - codecov/upload:
   #         file: /tmp/coverage/c.out
-  test-shaders:
-    environment:
-      PKG_CONFIG_PATH: /tmp/pkg-config
-      CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
-      CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
-      LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
-
-    executor:
-      name: win/vs2019
-      shell: bash.exe
-
-    steps:
-      - install-deps-windows
-      - run:
-          name: Test Shaders
-          command: go test ./shaders
 
   win-build:
     environment:

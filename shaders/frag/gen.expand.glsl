@@ -1,8 +1,8 @@
 
 uniform float frequency = 3;
-uniform float spread = 20;
+uniform float spread = 0.05;
 uniform float FPS = 60;
-uniform float lineThickness = 0.005;
+uniform float lineThickness = 0.01;
 
 float randX() {
   return fract(sin(floor(time * frequency)*12.9898) * 43758.5453) * windowWidth / windowHeight;
@@ -25,7 +25,7 @@ void main() {
   vec2 direction = vec2(cos(rnd), sin(rnd));
   vec2 d = distToLine(center, direction);
 
-  float splitSize = fract(time * frequency) / spread;
+  float splitSize = fract(time * frequency) * spread;
   if(length(d) < splitSize) {
     outputColor = vec4(fragTexCoord, 1, 1);
     return;
@@ -36,5 +36,5 @@ void main() {
   }
 
   vec2 unitd = normalize(d);
-  outputColor = texture(lastFrame, fragTexCoord + (-unitd / (FPS * spread)) * vec2(windowHeight / windowWidth, 1));
+  outputColor = texture(lastFrame, fragTexCoord - (unitd * spread * frequency / FPS) * vec2(windowHeight / windowWidth, 1));
 }

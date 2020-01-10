@@ -443,7 +443,7 @@ func (s *Scene) Draw() {
 
 	ord, err := Order("window", s.sources)
 	if err != nil {
-		logs.Error(errors.SceneRenderOrder(err))
+		// logs.Error(errors.SceneRenderOrder(err))
 		return
 	}
 

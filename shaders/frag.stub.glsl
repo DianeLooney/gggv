@@ -58,3 +58,16 @@ vec2 polarToScreen(vec2 polarCoords) {
     polarCoords.x * sin(polarCoords.y)
   ) / vec2(windowWidth, windowHeight);
 }
+
+uniform float rseed = 0;
+float noise(vec2 coord, float t) {
+  return fract(sin(dot(coord, vec2(217.983, 317.42))) * 82615.717 * ((sin(rseed+t) + 1) / 2));
+}
+
+float noise(vec2 coord) {
+  return noise(coord, 0.);
+}
+
+float noise(float t) {
+  return fract(sin(floor(t)*12.9898) * 43758.5453 * (sin(rseed) + 1) / 2);
+}

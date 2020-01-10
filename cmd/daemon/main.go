@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	_ "image/png"
 	"runtime"
 
@@ -75,5 +76,10 @@ func netSetup() {
 	net.Handle(server, "/source.shader/set.global/uniform.timestamp", dmn.SetGlobalUniformTimestamp)
 	net.Handle(server, "/program/create", dmn.CreateProgram)
 	net.Handle(server, "/program/watch", dmn.WatchProgram)
-	server.ListenAndServe()
+	for {
+		err := server.ListenAndServe()
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
 }

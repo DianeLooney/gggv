@@ -108,7 +108,7 @@ workflows:
       - docker/publish:
           image: diane/gggv-base
           tag: latest
-          extra_build_args: "-v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v $HOME/.Xauthority:/root/.Xauthority --target base"
+          extra_build_args: "--target base"
           docker-password: DOCKERHUB_PASS
           docker-username: DOCKERHUB_USERNAME
           dockerfile: build/gggv/Dockerfile

@@ -96,22 +96,6 @@ jobs:
 
 workflows:
   version: 2
-  base-image-update:
-    triggers:
-      - schedule:
-          cron: "0 0 * * 1"
-          filters:
-            branches:
-              only:
-                - master
-    jobs:
-      - docker/publish:
-          image: diane/gggv-base
-          tag: latest
-          extra_build_args: "-v /tmp/.X11-unix/X0:/tmp/.X11-unix/X0 -v $HOME/.Xauthority:/root/.Xauthority --target base"
-          docker-password: DOCKERHUB_PASS
-          docker-username: DOCKERHUB_USERNAME
-          dockerfile: build/gggv/Dockerfile
   release:
     jobs:
       - vet

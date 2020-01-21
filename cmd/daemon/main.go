@@ -29,7 +29,6 @@ func main() {
 
 	dmn = daemon.New()
 
-	dmn.Scene.BindBuffers()
 	dmn.WatchProgramS("window", "shaders/vert/window.glsl", "shaders/geom/window.glsl", "shaders/frag/window.glsl")
 	dmn.Scene.AddWindow()
 
@@ -64,6 +63,7 @@ func netSetup() {
 	net.Handle(server, "/source.ffvideo/set/timescale", dmn.SetFFVideoTimescale)
 	net.Handle(server, "/source.shader/create", dmn.AddSourceShader)
 	net.Handle(server, "/source.shader/set/input", dmn.SetShaderInput)
+	net.Handle(server, "/source.shader/set/buffersize", dmn.SetShaderBufferSize)
 	net.Handle(server, "/source.shader/set/program", dmn.SetShaderProgram)
 	net.Handle(server, "/source.shader/set/uniform1f", dmn.SetUniform)
 	net.Handle(server, "/source.shader/set/uniform3f", dmn.SetUniform3f)

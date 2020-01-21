@@ -135,6 +135,14 @@ func (d *D) SetShaderInput(args net.Shifter) {
 	})
 }
 
+func (d *D) SetShaderBufferSize(args net.Shifter) {
+	name := args.Shift().(string)
+	size := args.Shift().(int32)
+	d.Schedule(func() {
+		d.Scene.SetShaderBufferSize(name, int(size))
+	})
+}
+
 func (d *D) SetShaderProgram(args net.Shifter) {
 	name := args.Shift().(string)
 	program := args.Shift().(string)

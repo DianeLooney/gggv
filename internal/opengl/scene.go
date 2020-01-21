@@ -103,9 +103,6 @@ func finalizeScene(s *Scene) {
 type Scene struct {
 	Window *glfw.Window
 
-	vao uint32
-	vbo uint32
-
 	Camera mgl32.Mat4
 
 	Width  int32
@@ -185,6 +182,14 @@ func (s *Scene) AddSourceShader(name string) {
 		p:          name,
 		flipOutput: true,
 	}
+
+	carbon.GenVertexArrays(1, &sh.vao)
+	carbon.GenBuffers(1, &sh.vbo)
+	r := rect(float32(s.Width), float32(s.Height))
+	sh.vboSize = len(r)
+	carbon.BindBuffer(carbon.ARRAY_BUFFER, sh.vbo)
+	carbon.BufferData(carbon.ARRAY_BUFFER, sh.vboSize*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)
+
 	carbon.GenFramebuffers(1, &sh.fbo)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, sh.fbo)
 	carbon.GenTextures(1, &sh.texture)
@@ -204,10 +209,40 @@ func (s *Scene) AddSourceShader(name string) {
 	s.sources[SourceName(name)] = &sh
 }
 
+func (s *Scene) SetShaderBufferSize(name string, size int) {
+	src, ok := s.sources[SourceName(name)]
+	if !ok {
+		return
+	}
+	sh, ok := src.(*ShaderSource)
+	if !ok {
+		return
+	}
+	r := rect(float32(s.Width), float32(s.Height))
+	if len(r) > size {
+		return
+	}
+	rOld := r
+	r = make([]float32, size)
+	copy(r, rOld)
+	sh.vboSize = size
+	carbon.BufferData(carbon.ARRAY_BUFFER, sh.vboSize*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)
+}
+
 func (s *Scene) AddWindow() {
+	var vao, vbo uint32
+	carbon.GenVertexArrays(1, &vao)
+	carbon.GenBuffers(1, &vbo)
+	r := rect(float32(s.Width), float32(s.Height))
+	carbon.BindBuffer(carbon.ARRAY_BUFFER, vbo)
+	carbon.BufferData(carbon.ARRAY_BUFFER, len(r)*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)
+
 	s.sources[SourceName("window")] = &ShaderSource{
 		name:     SourceName("window"),
 		uniforms: make(map[string]BindUniformer),
+		vao:      vao,
+		vbo:      vbo,
+		vboSize:  len(r),
 		p:        "window",
 	}
 }
@@ -387,14 +422,6 @@ func (s *Scene) LoadProgram(name, vShader, gShader, fShader string) (err error) 
 	return nil
 }
 
-func (s *Scene) BindBuffers() {
-	carbon.GenVertexArrays(1, &s.vao)
-	carbon.BindVertexArray(s.vao)
-
-	carbon.GenBuffers(1, &s.vbo)
-	carbon.BindBuffer(carbon.ARRAY_BUFFER, s.vbo)
-}
-
 func (s *Scene) TextureInit(name string) {
 	if _, ok := s.textures[name]; ok {
 		return
@@ -439,7 +466,6 @@ func (s *Scene) Draw() {
 	}
 
 	s.time = float32(time.Since(tStart)) / NANOSTOSEC
-	carbon.BindVertexArray(s.vao)
 
 	ord, err := Order("window", s.sources)
 	if err != nil {

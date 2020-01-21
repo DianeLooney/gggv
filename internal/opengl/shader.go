@@ -18,6 +18,10 @@ type ShaderSource struct {
 	sources  [SHADER_TEXTURE_COUNT]SourceName
 	uniforms map[string]BindUniformer
 
+	vao     uint32
+	vbo     uint32
+	vboSize int
+
 	fbo     uint32
 	rbo     uint32
 	texture uint32
@@ -35,11 +39,15 @@ func (s *ShaderSource) Children() []SourceName {
 	}
 	return out
 }
+
+func (s *ShaderSource) bindUniforms(prog uint32) {
+
+}
+
 func (s *ShaderSource) Render(scene *Scene) {
 	program := scene.programs[s.p].GLProgram
-	carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.fbo)
 	carbon.UseProgram(program)
-
+	carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.fbo)
 	carbon.ActiveTexture(carbon.TEXTURE0)
 	carbon.BindTexture(carbon.TEXTURE_2D, s.texture)
 
@@ -107,9 +115,11 @@ func (s *ShaderSource) Render(scene *Scene) {
 	w, h := s.Dimensions()
 	projectionMat := proj(float32(w), float32(h))
 	carbon.Uniform(program, "projection", projectionMat)
-	r := rect(float32(w), float32(h))
-	carbon.BufferData(carbon.ARRAY_BUFFER, len(r)*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)
-	carbon.DrawArrays(carbon.TRIANGLES, 0, int32(len(r)/5))
+
+	carbon.BindVertexArray(s.vao)
+	carbon.BindBuffer(carbon.ARRAY_BUFFER, s.vbo)
+
+	carbon.DrawArrays(carbon.TRIANGLES, 0, int32(s.vboSize/5))
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }
 func (s *ShaderSource) SkipRender(scene *Scene) {}

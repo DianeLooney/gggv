@@ -50,7 +50,9 @@ func (d *D) FlushTasks() {
 
 // DrawLoop is for internal use
 func (d *D) DrawLoop() {
+	t := time.NewTicker(time.Second / 60)
 	for !d.Scene.Window.ShouldClose() {
+		<-t.C
 		d.FlushTasks()
 		if !d.Paused {
 			d.Scene.Draw()
@@ -132,6 +134,17 @@ func (d *D) SetShaderInput(args net.Shifter) {
 	shader := args.Shift().(string)
 	d.Schedule(func() {
 		d.Scene.SetShaderInput(name, idx, shader)
+	})
+}
+
+func (d *D) SetShaderGeometry(args net.Shifter) {
+	name := args.Shift().(string)
+	geom := make([]float32, args.Length()-1)
+	for i := 0; i < args.Length()-1; i++ {
+		geom[i] = args.Shift().(float32)
+	}
+	d.Schedule(func() {
+		d.Scene.SetShaderGeometry(name, geom)
 	})
 }
 

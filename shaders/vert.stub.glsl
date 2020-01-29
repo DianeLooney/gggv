@@ -10,6 +10,8 @@ uniform float windowWidth;
 
 in vec3 vert;
 in vec2 vertTexCoord;
+in float vertParticleN;
 
 out vec2 geomTexCoord;
 out vec2 geomScreenCoord;
+out float geomParticleN;

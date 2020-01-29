@@ -18,9 +18,10 @@ type ShaderSource struct {
 	sources  [SHADER_TEXTURE_COUNT]SourceName
 	uniforms map[string]BindUniformer
 
-	fbo     uint32
-	rbo     uint32
-	texture uint32
+	geometry []float32
+	fbo      uint32
+	rbo      uint32
+	texture  uint32
 }
 
 func (s *ShaderSource) Name() SourceName {
@@ -63,13 +64,18 @@ func (s *ShaderSource) Render(scene *Scene) {
 	}
 
 	{
+		const vertexByteSize = 6 * 4
 		vertAttrib := uint32(carbon.GetAttribLocation(program, carbon.Str("vert\x00")))
 		carbon.EnableVertexAttribArray(vertAttrib)
-		carbon.VertexAttribPointer(vertAttrib, 3, carbon.FLOAT, false, 5*4, carbon.PtrOffset(0))
+		carbon.VertexAttribPointer(vertAttrib, 3, carbon.FLOAT, false, vertexByteSize, carbon.PtrOffset(0))
 
 		texCoordAttrib := uint32(carbon.GetAttribLocation(program, carbon.Str("vertTexCoord\x00")))
 		carbon.EnableVertexAttribArray(texCoordAttrib)
-		carbon.VertexAttribPointer(texCoordAttrib, 2, carbon.FLOAT, false, 5*4, carbon.PtrOffset(3*4))
+		carbon.VertexAttribPointer(texCoordAttrib, 2, carbon.FLOAT, false, vertexByteSize, carbon.PtrOffset(3*4))
+
+		particleNAttrib := uint32(carbon.GetAttribLocation(program, carbon.Str("vertParticleN\x00")))
+		carbon.EnableVertexAttribArray(particleNAttrib)
+		carbon.VertexAttribPointer(particleNAttrib, 1, carbon.FLOAT, false, vertexByteSize, carbon.PtrOffset(5*4))
 
 		carbon.Uniform(program, "camera", scene.Camera)
 
@@ -107,9 +113,10 @@ func (s *ShaderSource) Render(scene *Scene) {
 	w, h := s.Dimensions()
 	projectionMat := proj(float32(w), float32(h))
 	carbon.Uniform(program, "projection", projectionMat)
-	r := rect(float32(w), float32(h))
+	r := s.geometry
 	carbon.BufferData(carbon.ARRAY_BUFFER, len(r)*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)
-	carbon.DrawArrays(carbon.TRIANGLES, 0, int32(len(r)/5))
+	carbon.Clear(carbon.COLOR_BUFFER_BIT)
+	carbon.DrawArrays(carbon.TRIANGLES, 0, int32(len(r)/6))
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }
 func (s *ShaderSource) SkipRender(scene *Scene) {}
@@ -135,13 +142,13 @@ func rect(w, h float32) (out []float32) {
 	for x := float32(0); x < size; x++ {
 		for y := float32(0); y < size; y++ {
 			out = append(out, []float32{
-				-w + x*dx, -h + y*dy, 0, 0 + x/size, 0 + y/size,
-				-w + (x+1)*dx, -h + y*dy, 0, 0 + (x+1)/size, 0 + y/size,
-				-w + x*dx, -h + (y+1)*dy, 0, 0 + x/size, 0 + (y+1)/size,
+				-w + x*dx, -h + y*dy, 0, 0 + x/size, 0 + y/size, 0,
+				-w + (x+1)*dx, -h + y*dy, 0, 0 + (x+1)/size, 0 + y/size, 0,
+				-w + x*dx, -h + (y+1)*dy, 0, 0 + x/size, 0 + (y+1)/size, 0,
 				//
-				-w + (x+1)*dx, -h + y*dy, 0, 0 + (x+1)/size, 0 + y/size,
-				-w + x*dx, -h + (y+1)*dy, 0, 0 + x/size, 0 + (y+1)/size,
-				-w + (x+1)*dx, -h + (y+1)*dy, 0, 0 + (x+1)/size, 0 + (y+1)/size,
+				-w + (x+1)*dx, -h + y*dy, 0, 0 + (x+1)/size, 0 + y/size, 0,
+				-w + x*dx, -h + (y+1)*dy, 0, 0 + x/size, 0 + (y+1)/size, 0,
+				-w + (x+1)*dx, -h + (y+1)*dy, 0, 0 + (x+1)/size, 0 + (y+1)/size, 0,
 			}...)
 		}
 	}

@@ -38,6 +38,8 @@ uniform float cursorY;
 //texCoord
 in vec2 fragTexCoord;
 in vec2 screenCoord;
+in float particleN;
+
 //output pixel color
 out vec4 outputColor;
 
@@ -58,3 +60,31 @@ vec2 polarToScreen(vec2 polarCoords) {
     polarCoords.x * sin(polarCoords.y)
   ) / vec2(windowWidth, windowHeight);
 }
+
+vec2 cToP(vec2 coord) {
+  return vec2(
+    length(coord),
+    atan(coord.y, coord.x)
+  );
+}
+
+vec2 pToC(vec2 coord) {
+  return vec2(
+    cos(coord.y) * coord.x,
+    sin(coord.y) * coord.x
+  );
+}
+
+float noise1(vec2 st) {
+    return fract(sin(dot(st.xy,vec2(12.9898,78.233)) * 43758.5453123));
+}
+
+vec2 noise2(vec2 st) {
+    return fract(sin(st.xy * vec2(12.9898,78.233)) * 43758.5453123);
+}
+/*
+vec2 noise2(vec2 coord, float seed) {
+  return fract(1264.2135 * sin((coord + seed) * 17237.28348));
+}*/
+
+vec2 ftc = (fragTexCoord - 0.5) * vec2(windowWidth / windowHeight, 1);

@@ -1,6 +1,8 @@
 package fps
 
-import "time"
+import (
+	"time"
+)
 
 var sec = time.Now()
 var lastSec int

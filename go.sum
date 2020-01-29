@@ -13,6 +13,8 @@ github.com/gosuri/uilive v0.0.0-20170323041506-ac356e6e42cd/go.mod h1:qkLSc0A5EX
 github.com/gosuri/uiprogress v0.0.0-20170224063937-d0567a9d84a1/go.mod h1:C1RTYn4Sc7iEyf6j8ft5dyoZ4212h8G1ol9QQluh5+0=
 github.com/hypebeast/go-osc v0.0.0-20181130121958-adefe22206c1 h1:csLuD/R1zpC5lpYGOQybOfpxI68kHU+eS13QZ26DZrM=
 github.com/hypebeast/go-osc v0.0.0-20181130121958-adefe22206c1/go.mod h1:VCiuhv+/+jPFqHeZAgVC61Cr4drPso5XEEKmEiqCsuU=
+github.com/hypebeast/go-osc v0.0.0-20200115085105-85fee7fed692 h1:a5rmrg0wd6LLuRQGk9lopHHgzyjM8DjH0Ek0iHki5Lc=
+github.com/hypebeast/go-osc v0.0.0-20200115085105-85fee7fed692/go.mod h1:VCiuhv+/+jPFqHeZAgVC61Cr4drPso5XEEKmEiqCsuU=
 github.com/mjibson/go-dsp v0.0.0-20180508042940-11479a337f12 h1:dd7vnTDfjtwCETZDrRe+GPYNLA1jBtbZeyfyE8eZCyk=
 github.com/mjibson/go-dsp v0.0.0-20180508042940-11479a337f12/go.mod h1:i/KKcxEWEO8Yyl11DYafRPKOPVYTrhxiTRigjtEEXZU=
 github.com/radovskyb/watcher v1.0.7 h1:AYePLih6dpmS32vlHfhCeli8127LzkIgwJGcwwe8tUE=

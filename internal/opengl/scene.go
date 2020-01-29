@@ -182,6 +182,7 @@ func (s *Scene) AddSourceShader(name string) {
 	sh := ShaderSource{
 		name:       SourceName(name),
 		uniforms:   make(map[string]BindUniformer),
+		geometry:   rect(1, 1),
 		p:          name,
 		flipOutput: true,
 	}
@@ -189,7 +190,7 @@ func (s *Scene) AddSourceShader(name string) {
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, sh.fbo)
 	carbon.GenTextures(1, &sh.texture)
 	carbon.BindTexture(carbon.TEXTURE_2D, sh.texture)
-	carbon.TexImage2D(carbon.TEXTURE_2D, 0, carbon.RGB, s.Width, s.Height, 0, carbon.RGB, carbon.UNSIGNED_BYTE, nil)
+	carbon.TexImage2D(carbon.TEXTURE_2D, 0, carbon.RGBA, s.Width, s.Height, 0, carbon.RGB, carbon.UNSIGNED_BYTE, nil)
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
 	carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT0, carbon.TEXTURE_2D, sh.texture, 0)
@@ -209,6 +210,7 @@ func (s *Scene) AddWindow() {
 		name:     SourceName("window"),
 		uniforms: make(map[string]BindUniformer),
 		p:        "window",
+		geometry: rect(1, 1),
 	}
 }
 
@@ -234,6 +236,18 @@ func (s *Scene) SetShaderProgram(name, program string) {
 			sh.p = program
 		}
 	}
+}
+
+func (s *Scene) SetShaderGeometry(name string, data []float32) {
+	src, ok := s.sources[SourceName(name)]
+	if !ok {
+		return
+	}
+	sh, ok := src.(*ShaderSource)
+	if !ok {
+		return
+	}
+	sh.geometry = data
 }
 
 func (s *Scene) SetSourceMinFilter(name, value string) {

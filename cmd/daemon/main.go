@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	_ "image/png"
 	"runtime"
 
@@ -50,30 +51,39 @@ func enablePprof() {
 var addr = flag.String("net", ":4200", "Network address to listen at.")
 
 func netSetup() {
-	server := &osc.Server{Addr: *addr}
+	d := osc.NewStandardDispatcher()
+	net.Handle(d, "/pause", dmn.Pause)
+	net.Handle(d, "/play", dmn.Play)
+	net.Handle(d, "/source/set/wrap.s", dmn.SetSourceWrapS)
+	net.Handle(d, "/source/set/wrap.t", dmn.SetSourceWrapT)
+	net.Handle(d, "/source/set/minfilter", dmn.SetSourceMinFilter)
+	net.Handle(d, "/source/set/magfilter", dmn.SetSourceMagFilter)
+	net.Handle(d, "/source.fft/create", dmn.AddSourceFFT)
+	net.Handle(d, "/source.fft/scale", dmn.SetFFTScale)
+	net.Handle(d, "/source.ffvideo/create", dmn.AddSourceFFVideo)
+	net.Handle(d, "/source.ffvideo/set/timescale", dmn.SetFFVideoTimescale)
+	net.Handle(d, "/source.shader/create", dmn.AddSourceShader)
+	net.Handle(d, "/source.shader/set/input", dmn.SetShaderInput)
+	net.Handle(d, "/source.shader/set/program", dmn.SetShaderProgram)
+	net.Handle(d, "/source.shader/set/geometry", dmn.SetShaderGeometry)
+	net.Handle(d, "/source.shader/set/uniform1f", dmn.SetUniform)
+	net.Handle(d, "/source.shader/set/uniform3f", dmn.SetUniform3f)
+	net.Handle(d, "/source.shader/set/uniform.clock", dmn.SetUniformClock)
+	net.Handle(d, "/source.shader/set/uniform.timestamp", dmn.SetUniformTimestamp)
+	net.Handle(d, "/source.shader/set.global/uniform1f", dmn.SetUniform)
+	net.Handle(d, "/source.shader/set.global/uniform3f", dmn.SetGlobalUniform3f)
+	net.Handle(d, "/source.shader/set.global/uniform.clock", dmn.SetGlobalUniformClock)
+	net.Handle(d, "/source.shader/set.global/uniform.timestamp", dmn.SetGlobalUniformTimestamp)
+	net.Handle(d, "/program/create", dmn.CreateProgram)
+	net.Handle(d, "/program/watch", dmn.WatchProgram)
 
-	net.Handle(server, "/pause", dmn.Pause)
-	net.Handle(server, "/play", dmn.Play)
-	net.Handle(server, "/source/set/wrap.s", dmn.SetSourceWrapS)
-	net.Handle(server, "/source/set/wrap.t", dmn.SetSourceWrapT)
-	net.Handle(server, "/source/set/minfilter", dmn.SetSourceMinFilter)
-	net.Handle(server, "/source/set/magfilter", dmn.SetSourceMagFilter)
-	net.Handle(server, "/source.fft/create", dmn.AddSourceFFT)
-	net.Handle(server, "/source.fft/scale", dmn.SetFFTScale)
-	net.Handle(server, "/source.ffvideo/create", dmn.AddSourceFFVideo)
-	net.Handle(server, "/source.ffvideo/set/timescale", dmn.SetFFVideoTimescale)
-	net.Handle(server, "/source.shader/create", dmn.AddSourceShader)
-	net.Handle(server, "/source.shader/set/input", dmn.SetShaderInput)
-	net.Handle(server, "/source.shader/set/program", dmn.SetShaderProgram)
-	net.Handle(server, "/source.shader/set/uniform1f", dmn.SetUniform)
-	net.Handle(server, "/source.shader/set/uniform3f", dmn.SetUniform3f)
-	net.Handle(server, "/source.shader/set/uniform.clock", dmn.SetUniformClock)
-	net.Handle(server, "/source.shader/set/uniform.timestamp", dmn.SetUniformTimestamp)
-	net.Handle(server, "/source.shader/set.global/uniform1f", dmn.SetUniform)
-	net.Handle(server, "/source.shader/set.global/uniform3f", dmn.SetGlobalUniform3f)
-	net.Handle(server, "/source.shader/set.global/uniform.clock", dmn.SetGlobalUniformClock)
-	net.Handle(server, "/source.shader/set.global/uniform.timestamp", dmn.SetGlobalUniformTimestamp)
-	net.Handle(server, "/program/create", dmn.CreateProgram)
-	net.Handle(server, "/program/watch", dmn.WatchProgram)
-	server.ListenAndServe()
+	server := &osc.Server{Addr: *addr, Dispatcher: d}
+	go func() {
+		for {
+			err := server.ListenAndServe()
+			if err != nil {
+				fmt.Println(err)
+			}
+		}
+	}()
 }

@@ -9,5 +9,8 @@ uniform float windowWidth;
 
 in vec2 geomTexCoord[];
 in vec2 geomScreenCoord[];
+in float geomParticleN[];
+
 out vec2 fragTexCoord;
 out vec2 screenCoord;
+out float particleN;

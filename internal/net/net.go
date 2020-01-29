@@ -7,8 +7,8 @@ import (
 	"github.com/hypebeast/go-osc/osc"
 )
 
-func Handle(s *osc.Server, path string, f Handler) {
-	s.Handle(path, func(msg *osc.Message) {
+func Handle(d *osc.StandardDispatcher, path string, f Handler) {
+	d.AddMsgHandler(path, func(msg *osc.Message) {
 		defer func() {
 			if err := recover(); err != nil {
 				logs.Log("recovered from panic", path, err)

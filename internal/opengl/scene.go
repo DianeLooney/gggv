@@ -2,7 +2,9 @@ package opengl
 
 import (
 	"flag"
+	"fmt"
 	"log"
+	"runtime"
 	"strings"
 	"time"
 
@@ -42,10 +44,13 @@ func NewScene() *Scene {
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
 	s := &Scene{
-		programs: make(map[string]Program),
-		textures: make(map[string]uint32),
-		sources:  make(map[SourceName]Source),
-		uniforms: make(map[string]BindUniformer),
+		programs:             make(map[string]Program),
+		textures:             make(map[string]uint32),
+		sources:              make(map[SourceName]Source),
+		uniforms:             make(map[string]BindUniformer),
+		reclaimTextures:      make(chan uint32, 1000),
+		reclaimFramebuffers:  make(chan uint32, 1000),
+		reclaimRenderbuffers: make(chan uint32, 1000),
 	}
 
 	if *borderless {
@@ -118,6 +123,10 @@ type Scene struct {
 	uniforms map[string]BindUniformer
 
 	sources map[SourceName]Source
+
+	reclaimTextures      chan uint32
+	reclaimFramebuffers  chan uint32
+	reclaimRenderbuffers chan uint32
 }
 
 type SourceName string
@@ -185,6 +194,8 @@ func (s *Scene) AddSourceShader(name string) {
 		geometry:   rect(1, 1),
 		p:          name,
 		flipOutput: true,
+		width:      1,
+		height:     1,
 	}
 	carbon.GenFramebuffers(1, &sh.fbo)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, sh.fbo)
@@ -203,6 +214,12 @@ func (s *Scene) AddSourceShader(name string) {
 	carbon.BindRenderbuffer(carbon.RENDERBUFFER, 0)
 	carbon.FramebufferRenderbuffer(carbon.FRAMEBUFFER, carbon.DEPTH_STENCIL_ATTACHMENT, carbon.RENDERBUFFER, sh.rbo)
 	s.sources[SourceName(name)] = &sh
+	runtime.SetFinalizer(&sh, func(sh *ShaderSource) {
+		fmt.Println("GC!")
+		s.reclaimTextures <- sh.texture
+		s.reclaimFramebuffers <- sh.fbo
+		s.reclaimRenderbuffers <- sh.rbo
+	})
 }
 
 func (s *Scene) AddWindow() {
@@ -211,6 +228,8 @@ func (s *Scene) AddWindow() {
 		uniforms: make(map[string]BindUniformer),
 		p:        "window",
 		geometry: rect(1, 1),
+		width:    1,
+		height:   1,
 	}
 }
 
@@ -352,6 +371,18 @@ func (s *Scene) SetShaderInput(layer string, index int32, target string) {
 	src.sources[index] = SourceName(target)
 	s.sources[SourceName(layer)] = src
 }
+func (s *Scene) SetShaderDimensions(name string, width, height float32) {
+	l, ok := s.sources[SourceName(name)]
+	if !ok {
+		return
+	}
+	src, ok := l.(*ShaderSource)
+	if !ok {
+		return
+	}
+	src.width = width
+	src.height = height
+}
 
 func (s *Scene) LoadProgram(name, vShader, gShader, fShader string) (err error) {
 	vertexShader, err := carbon.WrappedCompileShader(vShader+"\x00", carbon.VERTEX_SHADER)
@@ -475,5 +506,15 @@ func (s *Scene) Draw() {
 
 	s.Window.SwapBuffers()
 	fps.Next()
+
+	select {
+	case f := <-s.reclaimTextures:
+		carbon.DeleteTextures(1, &f)
+	case r := <-s.reclaimRenderbuffers:
+		carbon.DeleteRenderbuffers(1, &r)
+	case t := <-s.reclaimFramebuffers:
+		carbon.DeleteFramebuffers(1, &t)
+	default:
+	}
 	glfw.PollEvents()
 }

@@ -20,7 +20,7 @@ func Handle(d *osc.StandardDispatcher, path string, f Handler) {
 			offset:   0,
 			msg:      msg,
 		}
-		logs.Log(path, msg.Arguments)
+		// logs.Log(path, msg.Arguments)
 		f(args)
 	})
 }

@@ -19,6 +19,8 @@ type ShaderSource struct {
 	uniforms map[string]BindUniformer
 
 	geometry []float32
+	width    float32
+	height   float32
 	fbo      uint32
 	rbo      uint32
 	texture  uint32
@@ -110,16 +112,21 @@ func (s *ShaderSource) Render(scene *Scene) {
 		carbon.Uniform(program, "flipOutput", int(0))
 	}
 
-	w, h := s.Dimensions()
-	projectionMat := proj(float32(w), float32(h))
+	projectionMat := proj(s.width, s.height)
 	carbon.Uniform(program, "projection", projectionMat)
 	r := s.geometry
-	carbon.BufferData(carbon.ARRAY_BUFFER, len(r)*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)
 	carbon.Clear(carbon.COLOR_BUFFER_BIT)
+
+	if len(r) > 0 {
+		carbon.BufferData(carbon.ARRAY_BUFFER, len(r)*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)
+	}
 	carbon.DrawArrays(carbon.TRIANGLES, 0, int32(len(r)/6))
+
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }
 func (s *ShaderSource) SkipRender(scene *Scene) {}
+
+// TODO: fix type signature here. It should be float32s and return the struct values
 func (s *ShaderSource) Dimensions() (width, height int32) {
 	return 1, 1
 }

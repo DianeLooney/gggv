@@ -2,6 +2,7 @@ package daemon
 
 import (
 	"flag"
+	"fmt"
 	"io/ioutil"
 	"sync"
 	"time"
@@ -137,6 +138,24 @@ func (d *D) SetShaderInput(args net.Shifter) {
 	})
 }
 
+func (d *D) SetShaderDimensions(args net.Shifter) {
+	name := args.Shift().(string)
+	_width := args.Shift()
+	_height := args.Shift()
+	fmt.Printf("%v %v %v\n", name, _width, _height)
+	var width, height float32
+	var ok bool
+	if width, ok = _width.(float32); !ok {
+		width = float32(_width.(int32))
+	}
+	if height, ok = _height.(float32); !ok {
+		height = float32(_height.(int32))
+	}
+
+	d.Schedule(func() {
+		d.Scene.SetShaderDimensions(name, width, height)
+	})
+}
 func (d *D) SetShaderGeometry(args net.Shifter) {
 	name := args.Shift().(string)
 	geom := make([]float32, args.Length()-1)

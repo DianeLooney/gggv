@@ -18,12 +18,13 @@ type ShaderSource struct {
 	sources  [SHADER_TEXTURE_COUNT]SourceName
 	uniforms map[string]BindUniformer
 
-	geometry []float32
-	width    float32
-	height   float32
-	fbo      uint32
-	rbo      uint32
-	texture  uint32
+	geometry  []float32
+	drawCount int32
+	width     float32
+	height    float32
+	fbo       uint32
+	rbo       uint32
+	texture   uint32
 }
 
 func (s *ShaderSource) Name() SourceName {
@@ -120,7 +121,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 	if len(r) > 0 {
 		carbon.BufferData(carbon.ARRAY_BUFFER, len(r)*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)
 	}
-	carbon.DrawArrays(carbon.TRIANGLES, 0, int32(len(r)/6))
+	carbon.DrawArraysInstanced(carbon.TRIANGLES, 0, int32(len(r)/6), s.drawCount)
 
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }

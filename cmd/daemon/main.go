@@ -66,6 +66,7 @@ func netSetup() {
 	net.Handle(d, "/source.shader/set/input", dmn.SetShaderInput)
 	net.Handle(d, "/source.shader/set/program", dmn.SetShaderProgram)
 	net.Handle(d, "/source.shader/set/geometry", dmn.SetShaderGeometry)
+	net.Handle(d, "/source.shader/set/drawcount", dmn.SetShaderDrawCount)
 	net.Handle(d, "/source.shader/set/dimensions", dmn.SetShaderDimensions)
 	net.Handle(d, "/source.shader/set/uniform1f", dmn.SetUniform)
 	net.Handle(d, "/source.shader/set/uniform3f", dmn.SetUniform3f)

@@ -24,6 +24,7 @@ const NANOSTOSEC = 1000000000
 var tStart = time.Now().Add(-1 * time.Second) // subtracted a second to enforce non-zero times
 
 var borderless = flag.Bool("borderless", false, "Hide borders")
+var floating = flag.Bool("float", false, "Floating window (always on top)")
 var fullscreen = flag.Bool("fullscreen", false, "Start in fullscreen mode")
 
 var vsync = flag.Bool("vsync", true, "Enable/Disable vsync")
@@ -53,6 +54,9 @@ func NewScene() *Scene {
 		reclaimRenderbuffers: make(chan uint32, 1000),
 	}
 
+	if *floating {
+		glfw.WindowHint(glfw.Floating, glfw.True)
+	}
 	if *borderless {
 		glfw.WindowHint(glfw.Decorated, glfw.False)
 	}
@@ -193,6 +197,7 @@ func (s *Scene) AddSourceShader(name string) {
 		uniforms:   make(map[string]BindUniformer),
 		geometry:   rect(1, 1),
 		p:          name,
+		drawCount:  1,
 		flipOutput: true,
 		width:      1,
 		height:     1,
@@ -224,12 +229,13 @@ func (s *Scene) AddSourceShader(name string) {
 
 func (s *Scene) AddWindow() {
 	s.sources[SourceName("window")] = &ShaderSource{
-		name:     SourceName("window"),
-		uniforms: make(map[string]BindUniformer),
-		p:        "window",
-		geometry: rect(1, 1),
-		width:    1,
-		height:   1,
+		name:      SourceName("window"),
+		uniforms:  make(map[string]BindUniformer),
+		p:         "window",
+		geometry:  rect(1, 1),
+		drawCount: 1,
+		width:     1,
+		height:    1,
 	}
 }
 
@@ -245,6 +251,14 @@ func (s *Scene) SetFFTScale(name string, scale float32) {
 	if src, ok := s.sources[SourceName(name)]; ok {
 		if ffv, ok := src.(*Portaudio); ok {
 			ffv.scale = scale
+		}
+	}
+}
+
+func (s *Scene) SetShaderDrawCount(name string, n int32) {
+	if src, ok := s.sources[SourceName(name)]; ok {
+		if sh, ok := src.(*ShaderSource); ok {
+			sh.drawCount = n
 		}
 	}
 }
@@ -477,6 +491,7 @@ func (s *Scene) RebindTexture(name string, width, height int, img []uint8) {
 }
 
 func (s *Scene) Draw() {
+	fps.DrawStart()
 	windowSrc, ok := s.sources["window"]
 	if !ok {
 		logs.Error(errors.SceneMissingWindowSource())
@@ -505,7 +520,6 @@ func (s *Scene) Draw() {
 	windowSrc.Render(s)
 
 	s.Window.SwapBuffers()
-	fps.Next()
 
 	select {
 	case f := <-s.reclaimTextures:
@@ -516,5 +530,6 @@ func (s *Scene) Draw() {
 		carbon.DeleteFramebuffers(1, &t)
 	default:
 	}
+	fps.DrawDone()
 	glfw.PollEvents()
 }

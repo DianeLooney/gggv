@@ -54,7 +54,7 @@ jobs:
   glsl-lint:
     executor: base-linux
     steps:
-      - run: ./glsl-lint.sh
+      - run: ./build/gggv/glsl-lint.sh
   vet:
     executor: base-linux
     steps:

@@ -7,6 +7,6 @@ void main() {
   outputColor *= vec4(bins);
   outputColor = floor(outputColor);
   outputColor /= vec4(bins);
-  outputColor = pow(outputColor, vec4(1.0/gamma));
+  outputColor = pow(outputColor, vec4(1.0 / gamma));
   outputColor.a = 1;
 }

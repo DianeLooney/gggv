@@ -18,42 +18,87 @@ uniform vec3 colorE = vec3(255, 255, 255) / 255.0;
 uniform vec3 colorF = vec3(0, 0, 0) / 255.0;
 
 void main() {
-	vec2 ftc = vec2(
-		floor(fragTexCoord.x * hres + 0.5) / hres,
-		floor(fragTexCoord.y * vres + 0.5) / vres);
-	vec3 actual = texture(tex0, ftc).rgb;
-	float diff0 = distance(actual, color0);
-	float diff1 = distance(actual, color1);
-	float diff2 = distance(actual, color2);
-	float diff3 = distance(actual, color3);
-	float diff4 = distance(actual, color4);
-	float diff5 = distance(actual, color5);
-	float diff6 = distance(actual, color6);
-	float diff7 = distance(actual, color7);
-	float diff8 = distance(actual, color8);
-	float diff9 = distance(actual, color9);
-	float diffA = distance(actual, colorA);
-	float diffB = distance(actual, colorB);
-	float diffC = distance(actual, colorC);
-	float diffD = distance(actual, colorD);
-	float diffE = distance(actual, colorE);
-	float diffF = distance(actual, colorF);
-	
-	outputColor = vec4(0, 0, 0, 1);
-	float diff = diff0; outputColor = vec4(color0, 1);
-	if (diff1 < diff) { diff = diff1; outputColor = vec4(color1, 1); }
-	if (diff2 < diff) { diff = diff2; outputColor = vec4(color2, 1); }
-	if (diff3 < diff) { diff = diff3; outputColor = vec4(color3, 1); }
-	if (diff4 < diff) { diff = diff4; outputColor = vec4(color4, 1); }
-	if (diff5 < diff) { diff = diff5; outputColor = vec4(color5, 1); }
-	if (diff6 < diff) { diff = diff6; outputColor = vec4(color6, 1); }
-	if (diff7 < diff) { diff = diff7; outputColor = vec4(color7, 1); }
-	if (diff8 < diff) { diff = diff8; outputColor = vec4(color8, 1); }
-	if (diff9 < diff) { diff = diff9; outputColor = vec4(color9, 1); }
-	if (diffA < diff) { diff = diffA; outputColor = vec4(colorA, 1); }
-	if (diffB < diff) { diff = diffB; outputColor = vec4(colorB, 1); }
-	if (diffC < diff) { diff = diffC; outputColor = vec4(colorC, 1); }
-	if (diffD < diff) { diff = diffD; outputColor = vec4(colorD, 1); }
-	if (diffE < diff) { diff = diffE; outputColor = vec4(colorE, 1); }
-	if (diffF < diff) { diff = diffF; outputColor = vec4(colorF, 1); }
+  vec2 ftc = vec2(floor(fragTexCoord.x * hres + 0.5) / hres,
+                  floor(fragTexCoord.y * vres + 0.5) / vres);
+  vec3 actual = texture(tex0, ftc).rgb;
+  float diff0 = distance(actual, color0);
+  float diff1 = distance(actual, color1);
+  float diff2 = distance(actual, color2);
+  float diff3 = distance(actual, color3);
+  float diff4 = distance(actual, color4);
+  float diff5 = distance(actual, color5);
+  float diff6 = distance(actual, color6);
+  float diff7 = distance(actual, color7);
+  float diff8 = distance(actual, color8);
+  float diff9 = distance(actual, color9);
+  float diffA = distance(actual, colorA);
+  float diffB = distance(actual, colorB);
+  float diffC = distance(actual, colorC);
+  float diffD = distance(actual, colorD);
+  float diffE = distance(actual, colorE);
+  float diffF = distance(actual, colorF);
+
+  outputColor = vec4(0, 0, 0, 1);
+  float diff = diff0;
+  outputColor = vec4(color0, 1);
+  if (diff1 < diff) {
+    diff = diff1;
+    outputColor = vec4(color1, 1);
+  }
+  if (diff2 < diff) {
+    diff = diff2;
+    outputColor = vec4(color2, 1);
+  }
+  if (diff3 < diff) {
+    diff = diff3;
+    outputColor = vec4(color3, 1);
+  }
+  if (diff4 < diff) {
+    diff = diff4;
+    outputColor = vec4(color4, 1);
+  }
+  if (diff5 < diff) {
+    diff = diff5;
+    outputColor = vec4(color5, 1);
+  }
+  if (diff6 < diff) {
+    diff = diff6;
+    outputColor = vec4(color6, 1);
+  }
+  if (diff7 < diff) {
+    diff = diff7;
+    outputColor = vec4(color7, 1);
+  }
+  if (diff8 < diff) {
+    diff = diff8;
+    outputColor = vec4(color8, 1);
+  }
+  if (diff9 < diff) {
+    diff = diff9;
+    outputColor = vec4(color9, 1);
+  }
+  if (diffA < diff) {
+    diff = diffA;
+    outputColor = vec4(colorA, 1);
+  }
+  if (diffB < diff) {
+    diff = diffB;
+    outputColor = vec4(colorB, 1);
+  }
+  if (diffC < diff) {
+    diff = diffC;
+    outputColor = vec4(colorC, 1);
+  }
+  if (diffD < diff) {
+    diff = diffD;
+    outputColor = vec4(colorD, 1);
+  }
+  if (diffE < diff) {
+    diff = diffE;
+    outputColor = vec4(colorE, 1);
+  }
+  if (diffF < diff) {
+    diff = diffF;
+    outputColor = vec4(colorF, 1);
+  }
 }

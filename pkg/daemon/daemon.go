@@ -365,6 +365,11 @@ func (d *D) SetSourceMagFilter(args net.Shifter) {
 }
 
 func (d *D) SetUniform(args net.Shifter) {
+	if args.Length() == 6 {
+		d.SetUniform4f(args)
+		return
+	}
+
 	if args.Length() == 5 {
 		d.SetUniform3f(args)
 		return
@@ -413,6 +418,32 @@ func (d *D) SetGlobalUniformClock(args net.Shifter) {
 	uniform := args.Shift().(string)
 	d.Schedule(func() {
 		d.Scene.SetGlobalUniformClock(uniform, time.Now())
+	})
+}
+
+func (d *D) SetUniform4f(args net.Shifter) {
+	layer := args.Shift().(string)
+	uniform := args.Shift().(string)
+	var f0, f1, f2, f3 float32
+	var ok bool
+	v0 := args.Shift()
+	if f0, ok = v0.(float32); !ok {
+		f0 = float32(v0.(int32))
+	}
+	v1 := args.Shift()
+	if f1, ok = v1.(float32); !ok {
+		f1 = float32(v1.(int32))
+	}
+	v2 := args.Shift()
+	if f2, ok = v2.(float32); !ok {
+		f2 = float32(v2.(int32))
+	}
+	v3 := args.Shift()
+	if f3, ok = v3.(float32); !ok {
+		f3 = float32(v3.(int32))
+	}
+	d.Schedule(func() {
+		d.Scene.SetUniform(layer, uniform, [4]float32{f0, f1, f2, f3})
 	})
 }
 

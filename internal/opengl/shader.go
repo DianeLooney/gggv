@@ -48,16 +48,21 @@ func (s *ShaderSource) Render(scene *Scene) {
 	carbon.BindTexture(carbon.TEXTURE_2D, s.texture)
 
 	for i, name := range s.sources {
+		carbon.ActiveTexture(carbon.TEXTURE1 + uint32(i))
 		if name == "" || name == "-" {
+			carbon.BindTexture(carbon.TEXTURE_2D, 0)
+			carbon.Uniform(program, fmt.Sprintf("hasTex%v", i), 0)
 			continue
 		}
 
 		source, ok := scene.sources[name]
 		if !ok {
+			carbon.BindTexture(carbon.TEXTURE_2D, 0)
+			carbon.Uniform(program, fmt.Sprintf("hasTex%v", i), 0)
 			continue
 		}
-		carbon.ActiveTexture(carbon.TEXTURE1 + uint32(i))
 		carbon.BindTexture(carbon.TEXTURE_2D, source.Texture())
+		carbon.Uniform(program, fmt.Sprintf("hasTex%v", i), 1)
 
 		switch src := source.(type) {
 		case *FFVideoSource:

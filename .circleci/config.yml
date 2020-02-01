@@ -51,6 +51,10 @@ commands:
           command: choco install golang --force
 
 jobs:
+  glsl-lint:
+    executor: base-linux
+    steps:
+      - run: ./glsl-lint.sh
   vet:
     executor: base-linux
     steps:
@@ -71,8 +75,6 @@ jobs:
       - run: go tool cover -html=${COV_FILE} -o ${COV_FILE/%.out/.html}
       - store_artifacts:
           path: /tmp/coverage
-  #     - codecov/upload:
-  #         file: /tmp/coverage/c.out
 
   win-build:
     environment:
@@ -98,12 +100,14 @@ workflows:
   version: 2
   release:
     jobs:
-      - vet
+      - glsl-lint
       - test
+      - vet
       - win-build:
           requires:
-            - vet
+            - glsl-lint
             - test
+            - vet
           filters:
             branches:
               only: master
@@ -114,8 +118,9 @@ workflows:
           docker-username: DOCKERHUB_USERNAME
           dockerfile: build/gggv/Dockerfile
           requires:
-            - vet
+            - glsl-lint
             - test
+            - vet
           filters:
             branches:
               only: master

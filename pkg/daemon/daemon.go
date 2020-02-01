@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"math"
 	"sync"
 	"time"
 
@@ -164,6 +165,21 @@ func (d *D) SetShaderGeometry(args net.Shifter) {
 	}
 	d.Schedule(func() {
 		d.Scene.SetShaderGeometry(name, geom)
+	})
+}
+
+func (d *D) SetShaderDrawCount(args net.Shifter) {
+	name := args.Shift().(string)
+	var n int32
+	var ok bool
+	_n := args.Shift()
+	n, ok = _n.(int32)
+	if !ok {
+		n = int32(math.Round(float64(_n.(float32))))
+	}
+
+	d.Schedule(func() {
+		d.Scene.SetShaderDrawCount(name, n)
 	})
 }
 

@@ -15,8 +15,9 @@ void main() {
     coords.x = -coords.x;
   }
   coords.y = mod(coords.y, PI / flakes);
-  coords.x += (coords.y / 50) *  cos(coords.y * 8);
-  if (coords.y > PI / (2*flakes)) coords.y = PI / flakes - coords.y;
+  coords.x += (coords.y / 50) * cos(coords.y * 8);
+  if (coords.y > PI / (2 * flakes))
+    coords.y = PI / flakes - coords.y;
   coords = polarToScreen(coords);
   outputColor = texture(tex0, coords);
 }

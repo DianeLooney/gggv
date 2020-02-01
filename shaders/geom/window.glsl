@@ -3,13 +3,13 @@ void main() {
   fragTexCoord = geomTexCoord[0];
   particleN = geomParticleN[0];
   EmitVertex();
-  gl_Position = gl_in[1].gl_Position; 
+  gl_Position = gl_in[1].gl_Position;
   fragTexCoord = geomTexCoord[1];
   particleN = geomParticleN[1];
   EmitVertex();
-  gl_Position = gl_in[2].gl_Position; 
+  gl_Position = gl_in[2].gl_Position;
   fragTexCoord = geomTexCoord[2];
   particleN = geomParticleN[2];
   EmitVertex();
   EndPrimitive();
-}  
+}

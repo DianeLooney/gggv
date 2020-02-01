@@ -1,7 +1,7 @@
 #version 150 core
 
-layout (triangles) in;
-layout (triangle_strip, max_vertices = 3) out;
+layout(triangles) in;
+layout(triangle_strip, max_vertices = 3) out;
 
 uniform float time;
 uniform float windowHeight;

@@ -1,8 +1,5 @@
 vec2 func(vec2 o, vec2 c) {
-    return c + vec2(
-        o.x * o.x - o.y * o.y,
-        2 * o.x * o.y
-    );
+  return c + vec2(o.x * o.x - o.y * o.y, 2 * o.x * o.y);
 }
 
 void main() {
@@ -18,10 +15,10 @@ void main() {
   for (float i = 0; i < iter; i++) {
     v = func(v, c);
     if (length(v) > r) {
-      float x = ( i / iter) * iterMult;
+      float x = (i / iter) * iterMult;
       outputColor = vec4(x / 49, x / 7, x, 1);
       return;
     }
   }
-  outputColor = vec4(0,0,0,1);
+  outputColor = vec4(0, 0, 0, 1);
 }

@@ -45,6 +45,8 @@ func Uniform(program uint32, name string, value interface{}) {
 		Uniform2f(u, v[0], v[1])
 	case [3]float32:
 		Uniform3f(u, v[0], v[1], v[2])
+	case [4]float32:
+		Uniform4f(u, v[0], v[1], v[2], v[3])
 	}
 }
 

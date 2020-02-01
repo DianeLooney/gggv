@@ -92,7 +92,7 @@ func NewScene() *Scene {
 	// Configure global settings
 	carbon.PixelStorei(carbon.UNPACK_ALIGNMENT, 1)
 
-	carbon.ClearColor(0, 0, 0, 1)
+	carbon.ClearColor(0, 0, 0, 0)
 	if *vsync {
 		glfw.SwapInterval(1)
 	} else {

@@ -121,7 +121,6 @@ func (s *ShaderSource) Render(scene *Scene) {
 	projectionMat := proj(s.width, s.height)
 	carbon.Uniform(program, "projection", projectionMat)
 	r := s.geometry
-	carbon.Clear(carbon.COLOR_BUFFER_BIT)
 
 	if len(r) > 0 {
 		carbon.BufferData(carbon.ARRAY_BUFFER, len(r)*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)

@@ -41,6 +41,7 @@ func (s *ShaderSource) Children() []SourceName {
 }
 func (s *ShaderSource) Render(scene *Scene) {
 	program := scene.programs[s.p].GLProgram
+	carbon.Clear(carbon.COLOR_BUFFER_BIT)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.fbo)
 	carbon.UseProgram(program)
 
@@ -142,7 +143,7 @@ func (s *ShaderSource) Texture() uint32 {
 const sqrt3 = 1.732
 
 func proj(w, h float32) mgl32.Mat4 {
-	return mgl32.Ortho(-w/2, w/2, -h/2, h/2, 0.1, 10)
+	return mgl32.Ortho(-w, w, -h, h, 0.1, 10)
 }
 
 const size = 5

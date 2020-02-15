@@ -211,19 +211,11 @@ func (s *Scene) AddSourceShader(name string) {
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
 	carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT0, carbon.TEXTURE_2D, sh.texture, 0)
 
-	carbon.GenRenderbuffers(1, &sh.rbo)
-
-	carbon.BindRenderbuffer(carbon.RENDERBUFFER, sh.rbo)
-
-	carbon.RenderbufferStorage(carbon.RENDERBUFFER, carbon.DEPTH24_STENCIL8, s.Width, s.Height)
-	carbon.BindRenderbuffer(carbon.RENDERBUFFER, 0)
-	carbon.FramebufferRenderbuffer(carbon.FRAMEBUFFER, carbon.DEPTH_STENCIL_ATTACHMENT, carbon.RENDERBUFFER, sh.rbo)
 	s.sources[SourceName(name)] = &sh
 	runtime.SetFinalizer(&sh, func(sh *ShaderSource) {
 		fmt.Println("GC!")
 		s.reclaimTextures <- sh.texture
 		s.reclaimFramebuffers <- sh.fbo
-		s.reclaimRenderbuffers <- sh.rbo
 	})
 }
 

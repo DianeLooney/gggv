@@ -23,7 +23,6 @@ type ShaderSource struct {
 	width     float32
 	height    float32
 	fbo       uint32
-	rbo       uint32
 	texture   uint32
 }
 

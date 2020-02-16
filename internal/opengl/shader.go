@@ -18,12 +18,13 @@ type ShaderSource struct {
 	sources  [SHADER_TEXTURE_COUNT]SourceName
 	uniforms map[string]BindUniformer
 
-	geometry  []float32
-	drawCount int32
-	width     float32
-	height    float32
-	fbo       uint32
-	texture   uint32
+	geometry    []float32
+	drawCount   int32
+	width       float32
+	height      float32
+	fbo         uint32
+	texture     uint32
+	backbuffers []uint32
 }
 
 func (s *ShaderSource) Name() SourceName {
@@ -87,9 +88,21 @@ func (s *ShaderSource) Render(scene *Scene) {
 
 		carbon.Uniform(program, "camera", scene.Camera)
 
-		carbon.UniformTex(program, "lastFrame", 0)
-		for i := 0; i < SHADER_TEXTURE_COUNT; i++ {
-			carbon.UniformTex(program, fmt.Sprintf("tex%v", i), int32(i)+1)
+		{
+			n := int32(0)
+			carbon.UniformTex(program, "lastFrame", n)
+			n = n + 1
+			for i := 0; i < SHADER_TEXTURE_COUNT; i++ {
+				carbon.UniformTex(program, fmt.Sprintf("tex%v", i), n)
+				n = n + 1
+			}
+			for i, t := range s.backbuffers {
+				carbon.UniformTex(program, fmt.Sprintf("storage%v", i), n)
+				carbon.ActiveTexture(carbon.TEXTURE0 + uint32(n))
+				carbon.BindTexture(carbon.TEXTURE_2D, t)
+				carbon.BindImageTexture(uint32(i), t, 0, false, 0, carbon.READ_WRITE, carbon.RGBA8)
+				n = n + 1
+			}
 		}
 
 		carbon.Uniform(program, "time", scene.time)
@@ -127,6 +140,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 	}
 	carbon.DrawArraysInstanced(carbon.TRIANGLES, 0, int32(len(r)/6), s.drawCount)
 
+	carbon.MemoryBarrier(carbon.SHADER_IMAGE_ACCESS_BARRIER_BIT)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }
 func (s *ShaderSource) SkipRender(scene *Scene) {}

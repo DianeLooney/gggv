@@ -2,7 +2,6 @@ package opengl
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"runtime"
 	"strings"
@@ -45,13 +44,12 @@ func NewScene() *Scene {
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
 	s := &Scene{
-		programs:             make(map[string]Program),
-		textures:             make(map[string]uint32),
-		sources:              make(map[SourceName]Source),
-		uniforms:             make(map[string]BindUniformer),
-		reclaimTextures:      make(chan uint32, 1000),
-		reclaimFramebuffers:  make(chan uint32, 1000),
-		reclaimRenderbuffers: make(chan uint32, 1000),
+		programs:            make(map[string]Program),
+		textures:            make(map[string]uint32),
+		sources:             make(map[SourceName]Source),
+		uniforms:            make(map[string]BindUniformer),
+		reclaimTextures:     make(chan uint32, 1000),
+		reclaimFramebuffers: make(chan uint32, 1000),
 	}
 
 	if *floating {
@@ -128,9 +126,8 @@ type Scene struct {
 
 	sources map[SourceName]Source
 
-	reclaimTextures      chan uint32
-	reclaimFramebuffers  chan uint32
-	reclaimRenderbuffers chan uint32
+	reclaimTextures     chan uint32
+	reclaimFramebuffers chan uint32
 }
 
 type SourceName string
@@ -192,15 +189,17 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 }
 
 func (s *Scene) AddSourceShader(name string) {
+	const BACKBUFFER_COUNT = 16
 	sh := ShaderSource{
-		name:       SourceName(name),
-		uniforms:   make(map[string]BindUniformer),
-		geometry:   rect(1, 1),
-		p:          name,
-		drawCount:  1,
-		flipOutput: true,
-		width:      1,
-		height:     1,
+		name:        SourceName(name),
+		uniforms:    make(map[string]BindUniformer),
+		geometry:    rect(1, 1),
+		p:           name,
+		drawCount:   1,
+		flipOutput:  true,
+		width:       1,
+		height:      1,
+		backbuffers: make([]uint32, BACKBUFFER_COUNT),
 	}
 	carbon.GenFramebuffers(1, &sh.fbo)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, sh.fbo)
@@ -211,9 +210,17 @@ func (s *Scene) AddSourceShader(name string) {
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
 	carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT0, carbon.TEXTURE_2D, sh.texture, 0)
 
+	carbon.GenTextures(BACKBUFFER_COUNT, &sh.backbuffers[0])
+	for i, t := range sh.backbuffers {
+		carbon.ActiveTexture(t)
+		carbon.BindTexture(carbon.TEXTURE_2D, t)
+		carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
+		carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
+		carbon.TexImage2D(carbon.TEXTURE_2D, 0, carbon.RGBA, s.Width, s.Height, 0, carbon.RGB, carbon.UNSIGNED_BYTE, nil)
+		carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT1+uint32(i), carbon.TEXTURE_2D, t, 0)
+	}
 	s.sources[SourceName(name)] = &sh
 	runtime.SetFinalizer(&sh, func(sh *ShaderSource) {
-		fmt.Println("GC!")
 		s.reclaimTextures <- sh.texture
 		s.reclaimFramebuffers <- sh.fbo
 	})
@@ -409,6 +416,7 @@ func (s *Scene) LoadProgram(name, vShader, gShader, fShader string) (err error) 
 		GLProgram: program,
 	}
 
+	carbon.BindFragDataLocation(program, 0, carbon.Str("outputColor\x00"))
 	carbon.AttachShader(program, vertexShader)
 	carbon.AttachShader(program, geometryShader)
 	carbon.AttachShader(program, fragmentShader)
@@ -431,7 +439,6 @@ func (s *Scene) LoadProgram(name, vShader, gShader, fShader string) (err error) 
 	}
 	s.programs[name] = p
 
-	carbon.BindFragDataLocation(program, 0, carbon.Str("outputColor\x00"))
 	carbon.DeleteShader(vertexShader)
 	carbon.DeleteShader(fragmentShader)
 
@@ -484,11 +491,6 @@ func (s *Scene) RebindTexture(name string, width, height int, img []uint8) {
 
 func (s *Scene) Draw() {
 	fps.DrawStart()
-	windowSrc, ok := s.sources["window"]
-	if !ok {
-		logs.Error(errors.SceneMissingWindowSource())
-		return
-	}
 
 	s.time = float32(time.Since(tStart)) / NANOSTOSEC
 	carbon.BindVertexArray(s.vao)
@@ -509,15 +511,12 @@ func (s *Scene) Draw() {
 			source.SkipRender(s)
 		}
 	}
-	windowSrc.Render(s)
 
 	s.Window.SwapBuffers()
 
 	select {
 	case f := <-s.reclaimTextures:
 		carbon.DeleteTextures(1, &f)
-	case r := <-s.reclaimRenderbuffers:
-		carbon.DeleteRenderbuffers(1, &r)
 	case t := <-s.reclaimFramebuffers:
 		carbon.DeleteFramebuffers(1, &t)
 	default:

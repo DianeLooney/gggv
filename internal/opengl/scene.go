@@ -238,10 +238,8 @@ func (s *Scene) AddShaderStorage(name, buff string) {
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
 	carbon.TexImage2D(carbon.TEXTURE_2D, 0, carbon.RGBA, s.Width, s.Height, 0, carbon.RGB, carbon.UNSIGNED_BYTE, nil)
-	carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT1+sh.storageI, carbon.TEXTURE_2D, t, 0)
+	carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT1+uint32(len(sh.storage)), carbon.TEXTURE_2D, t, 0)
 	sh.storage[buff] = t
-
-	sh.storageI = sh.storageI + 1
 }
 
 func (s *Scene) AddWindow() {

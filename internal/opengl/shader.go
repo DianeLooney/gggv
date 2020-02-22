@@ -24,7 +24,6 @@ type ShaderSource struct {
 	height    float32
 	fbo       uint32
 	texture   uint32
-	storageI  uint32
 	storage   map[string]uint32
 }
 

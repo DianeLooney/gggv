@@ -18,13 +18,13 @@ type ShaderSource struct {
 	sources  [SHADER_TEXTURE_COUNT]SourceName
 	uniforms map[string]BindUniformer
 
-	geometry    []float32
-	drawCount   int32
-	width       float32
-	height      float32
-	fbo         uint32
-	texture     uint32
-	backbuffers []uint32
+	geometry  []float32
+	drawCount int32
+	width     float32
+	height    float32
+	fbo       uint32
+	texture   uint32
+	storage   []uint32
 }
 
 func (s *ShaderSource) Name() SourceName {
@@ -96,7 +96,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 				carbon.UniformTex(program, fmt.Sprintf("tex%v", i), n)
 				n = n + 1
 			}
-			for i, t := range s.backbuffers {
+			for i, t := range s.storage {
 				carbon.UniformTex(program, fmt.Sprintf("storage%v", i), n)
 				carbon.ActiveTexture(carbon.TEXTURE0 + uint32(n))
 				carbon.BindTexture(carbon.TEXTURE_2D, t)

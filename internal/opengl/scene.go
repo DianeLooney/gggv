@@ -191,15 +191,15 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 func (s *Scene) AddSourceShader(name string) {
 	const BACKBUFFER_COUNT = 16
 	sh := ShaderSource{
-		name:        SourceName(name),
-		uniforms:    make(map[string]BindUniformer),
-		geometry:    rect(1, 1),
-		p:           name,
-		drawCount:   1,
-		flipOutput:  true,
-		width:       1,
-		height:      1,
-		backbuffers: make([]uint32, BACKBUFFER_COUNT),
+		name:       SourceName(name),
+		uniforms:   make(map[string]BindUniformer),
+		geometry:   rect(1, 1),
+		p:          name,
+		drawCount:  1,
+		flipOutput: true,
+		width:      1,
+		height:     1,
+		storage:    make([]uint32, BACKBUFFER_COUNT),
 	}
 	carbon.GenFramebuffers(1, &sh.fbo)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, sh.fbo)
@@ -210,8 +210,8 @@ func (s *Scene) AddSourceShader(name string) {
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
 	carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT0, carbon.TEXTURE_2D, sh.texture, 0)
 
-	carbon.GenTextures(BACKBUFFER_COUNT, &sh.backbuffers[0])
-	for i, t := range sh.backbuffers {
+	carbon.GenTextures(BACKBUFFER_COUNT, &sh.storage[0])
+	for i, t := range sh.storage {
 		carbon.ActiveTexture(t)
 		carbon.BindTexture(carbon.TEXTURE_2D, t)
 		carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)

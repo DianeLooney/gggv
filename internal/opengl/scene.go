@@ -2,7 +2,6 @@ package opengl
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"runtime"
 	"strings"
@@ -211,22 +210,38 @@ func (s *Scene) AddSourceShader(name string) {
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
 	carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT0, carbon.TEXTURE_2D, sh.texture, 0)
 
-	ls := make([]uint32, BACKBUFFER_COUNT)
-	carbon.GenTextures(BACKBUFFER_COUNT, &ls[0])
-	for i, t := range ls {
-		carbon.ActiveTexture(t)
-		carbon.BindTexture(carbon.TEXTURE_2D, t)
-		carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
-		carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
-		carbon.TexImage2D(carbon.TEXTURE_2D, 0, carbon.RGBA, s.Width, s.Height, 0, carbon.RGB, carbon.UNSIGNED_BYTE, nil)
-		carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT1+uint32(i), carbon.TEXTURE_2D, t, 0)
-		sh.storage[fmt.Sprintf("storage%v", i)] = t
-	}
 	s.sources[SourceName(name)] = &sh
 	runtime.SetFinalizer(&sh, func(sh *ShaderSource) {
 		s.reclaimTextures <- sh.texture
 		s.reclaimFramebuffers <- sh.fbo
 	})
+
+	s.AddShaderStorage(name, "storage0")
+}
+
+func (s *Scene) AddShaderStorage(name, buff string) {
+	src, ok := s.sources[SourceName(name)]
+	if !ok {
+		return
+	}
+	sh, ok := src.(*ShaderSource)
+	if !ok {
+		return
+	}
+
+	var t uint32
+	carbon.BindFramebuffer(carbon.FRAMEBUFFER, sh.fbo)
+	carbon.GenTextures(1, &t)
+
+	carbon.ActiveTexture(t)
+	carbon.BindTexture(carbon.TEXTURE_2D, t)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
+	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
+	carbon.TexImage2D(carbon.TEXTURE_2D, 0, carbon.RGBA, s.Width, s.Height, 0, carbon.RGB, carbon.UNSIGNED_BYTE, nil)
+	carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT1+sh.storageI, carbon.TEXTURE_2D, t, 0)
+	sh.storage[buff] = t
+
+	sh.storageI = sh.storageI + 1
 }
 
 func (s *Scene) AddWindow() {

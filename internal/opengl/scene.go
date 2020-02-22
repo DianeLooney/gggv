@@ -2,6 +2,7 @@ package opengl
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"runtime"
 	"strings"
@@ -199,7 +200,7 @@ func (s *Scene) AddSourceShader(name string) {
 		flipOutput: true,
 		width:      1,
 		height:     1,
-		storage:    make([]uint32, BACKBUFFER_COUNT),
+		storage:    make(map[string]uint32),
 	}
 	carbon.GenFramebuffers(1, &sh.fbo)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, sh.fbo)
@@ -210,14 +211,16 @@ func (s *Scene) AddSourceShader(name string) {
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
 	carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT0, carbon.TEXTURE_2D, sh.texture, 0)
 
-	carbon.GenTextures(BACKBUFFER_COUNT, &sh.storage[0])
-	for i, t := range sh.storage {
+	ls := make([]uint32, BACKBUFFER_COUNT)
+	carbon.GenTextures(BACKBUFFER_COUNT, &ls[0])
+	for i, t := range ls {
 		carbon.ActiveTexture(t)
 		carbon.BindTexture(carbon.TEXTURE_2D, t)
 		carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
 		carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
 		carbon.TexImage2D(carbon.TEXTURE_2D, 0, carbon.RGBA, s.Width, s.Height, 0, carbon.RGB, carbon.UNSIGNED_BYTE, nil)
 		carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT1+uint32(i), carbon.TEXTURE_2D, t, 0)
+		sh.storage[fmt.Sprintf("storage%v", i)] = t
 	}
 	s.sources[SourceName(name)] = &sh
 	runtime.SetFinalizer(&sh, func(sh *ShaderSource) {

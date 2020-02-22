@@ -24,7 +24,7 @@ type ShaderSource struct {
 	height    float32
 	fbo       uint32
 	texture   uint32
-	storage   []uint32
+	storage   map[string]uint32
 }
 
 func (s *ShaderSource) Name() SourceName {
@@ -96,12 +96,14 @@ func (s *ShaderSource) Render(scene *Scene) {
 				carbon.UniformTex(program, fmt.Sprintf("tex%v", i), n)
 				n = n + 1
 			}
-			for i, t := range s.storage {
-				carbon.UniformTex(program, fmt.Sprintf("storage%v", i), n)
+			i := 0
+			for k, t := range s.storage {
+				carbon.UniformTex(program, k, n)
 				carbon.ActiveTexture(carbon.TEXTURE0 + uint32(n))
 				carbon.BindTexture(carbon.TEXTURE_2D, t)
 				carbon.BindImageTexture(uint32(i), t, 0, false, 0, carbon.READ_WRITE, carbon.RGBA8)
 				n = n + 1
+				i = i + 1
 			}
 		}
 

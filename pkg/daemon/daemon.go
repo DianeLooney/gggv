@@ -120,6 +120,15 @@ func (d *D) AddSourceShader(args net.Shifter) {
 	})
 }
 
+func (d *D) AddShaderStorage(args net.Shifter) {
+	name := args.Shift().(string)
+	buff := args.Shift().(string)
+
+	d.Schedule(func() {
+		d.Scene.AddShaderStorage(name, buff)
+	})
+}
+
 // SetShaderInput - /source.shader/set/input
 //
 // Accepts three arguments

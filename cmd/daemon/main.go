@@ -63,6 +63,7 @@ func netSetup() {
 	net.Handle(d, "/source.ffvideo/create", dmn.AddSourceFFVideo)
 	net.Handle(d, "/source.ffvideo/set/timescale", dmn.SetFFVideoTimescale)
 	net.Handle(d, "/source.shader/create", dmn.AddSourceShader)
+	net.Handle(d, "/source.shader/add/storage", dmn.AddShaderStorage)
 	net.Handle(d, "/source.shader/set/input", dmn.SetShaderInput)
 	net.Handle(d, "/source.shader/set/program", dmn.SetShaderProgram)
 	net.Handle(d, "/source.shader/set/geometry", dmn.SetShaderGeometry)

@@ -215,8 +215,6 @@ func (s *Scene) AddSourceShader(name string) {
 		s.reclaimTextures <- sh.texture
 		s.reclaimFramebuffers <- sh.fbo
 	})
-
-	s.AddShaderStorage(name, "storage0")
 }
 
 func (s *Scene) AddShaderStorage(name, buff string) {

@@ -17,8 +17,8 @@ func TestShader(t *testing.T) {
 		return
 	}
 	glfw.WindowHint(glfw.Visible, glfw.False)
-	glfw.WindowHint(glfw.ContextVersionMajor, 4)
-	glfw.WindowHint(glfw.ContextVersionMinor, 5)
+	glfw.WindowHint(glfw.ContextVersionMajor, 3)
+	glfw.WindowHint(glfw.ContextVersionMinor, 2)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 	w, err := glfw.CreateWindow(1920, 1080, "gggv-test", nil, nil)

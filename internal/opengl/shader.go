@@ -23,8 +23,8 @@ type ShaderSource struct {
 	width     float32
 	height    float32
 	fbo       uint32
-	rbo       uint32
 	texture   uint32
+	storage   map[string]uint32
 }
 
 func (s *ShaderSource) Name() SourceName {
@@ -41,6 +41,7 @@ func (s *ShaderSource) Children() []SourceName {
 }
 func (s *ShaderSource) Render(scene *Scene) {
 	program := scene.programs[s.p].GLProgram
+	carbon.Clear(carbon.COLOR_BUFFER_BIT)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.fbo)
 	carbon.UseProgram(program)
 
@@ -87,9 +88,23 @@ func (s *ShaderSource) Render(scene *Scene) {
 
 		carbon.Uniform(program, "camera", scene.Camera)
 
-		carbon.UniformTex(program, "lastFrame", 0)
-		for i := 0; i < SHADER_TEXTURE_COUNT; i++ {
-			carbon.UniformTex(program, fmt.Sprintf("tex%v", i), int32(i)+1)
+		{
+			n := int32(0)
+			carbon.UniformTex(program, "lastFrame", n)
+			n = n + 1
+			for i := 0; i < SHADER_TEXTURE_COUNT; i++ {
+				carbon.UniformTex(program, fmt.Sprintf("tex%v", i), n)
+				n = n + 1
+			}
+			i := 0
+			for k, t := range s.storage {
+				carbon.UniformTex(program, k, n)
+				carbon.ActiveTexture(carbon.TEXTURE0 + uint32(n))
+				carbon.BindTexture(carbon.TEXTURE_2D, t)
+				carbon.BindImageTexture(uint32(i), t, 0, false, 0, carbon.READ_WRITE, carbon.RGBA8)
+				n = n + 1
+				i = i + 1
+			}
 		}
 
 		carbon.Uniform(program, "time", scene.time)
@@ -121,13 +136,13 @@ func (s *ShaderSource) Render(scene *Scene) {
 	projectionMat := proj(s.width, s.height)
 	carbon.Uniform(program, "projection", projectionMat)
 	r := s.geometry
-	carbon.Clear(carbon.COLOR_BUFFER_BIT)
 
 	if len(r) > 0 {
 		carbon.BufferData(carbon.ARRAY_BUFFER, len(r)*4, carbon.Ptr(&r[0]), carbon.STATIC_DRAW)
 	}
 	carbon.DrawArraysInstanced(carbon.TRIANGLES, 0, int32(len(r)/6), s.drawCount)
 
+	carbon.MemoryBarrier(carbon.SHADER_IMAGE_ACCESS_BARRIER_BIT)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }
 func (s *ShaderSource) SkipRender(scene *Scene) {}
@@ -143,7 +158,7 @@ func (s *ShaderSource) Texture() uint32 {
 const sqrt3 = 1.732
 
 func proj(w, h float32) mgl32.Mat4 {
-	return mgl32.Ortho(-w/2, w/2, -h/2, h/2, 0.1, 10)
+	return mgl32.Ortho(-w, w, -h, h, 0.1, 10)
 }
 
 const size = 5

@@ -93,9 +93,15 @@ jobs:
       - run:
           name: Build Daemon
           command: go build -o=daemon.exe cmd/daemon/main.go
+      - run:
+          name: Build VHS
+          command: go build -o=vhs.exe cmd/vhs/main.go
       - store_artifacts:
           path: daemon.exe
           destination: daemon.exe
+      - store_artifacts:
+          path: vhs.exe
+          destination: vhs.exe
 
 workflows:
   version: 2

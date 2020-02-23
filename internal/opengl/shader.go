@@ -8,7 +8,7 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 )
 
-const SHADER_TEXTURE_COUNT = 10
+const SHADER_TEXTURE_COUNT = 4
 
 type ShaderSource struct {
 	name       SourceName
@@ -89,6 +89,8 @@ func (s *ShaderSource) Render(scene *Scene) {
 		carbon.Uniform(program, "camera", scene.Camera)
 
 		{
+			// var cap int32
+			// carbon.GetIntegerv(carbon.MAX_FRAGMENT_IMAGE_UNIFORMS, &cap)
 			n := int32(0)
 			carbon.UniformTex(program, "lastFrame", n)
 			n = n + 1
@@ -101,7 +103,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 				carbon.UniformTex(program, k, n)
 				carbon.ActiveTexture(carbon.TEXTURE0 + uint32(n))
 				carbon.BindTexture(carbon.TEXTURE_2D, t)
-				carbon.BindImageTexture(uint32(i), t, 0, false, 0, carbon.READ_WRITE, carbon.RGBA8)
+				carbon.BindImageTexture(uint32(n), t, 0, false, 0, carbon.READ_WRITE, carbon.RGBA8)
 				n = n + 1
 				i = i + 1
 			}

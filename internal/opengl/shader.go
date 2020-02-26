@@ -40,7 +40,7 @@ func (s *ShaderSource) Children() []SourceName {
 	return out
 }
 func (s *ShaderSource) Render(scene *Scene) {
-	program := scene.programs[s.p].GLProgram
+	program := scene.Programs[s.p].GLProgram
 	carbon.Clear(carbon.COLOR_BUFFER_BIT)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.fbo)
 	carbon.UseProgram(program)
@@ -56,7 +56,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 			continue
 		}
 
-		source, ok := scene.sources[name]
+		source, ok := scene.Sources[name]
 		if !ok {
 			carbon.BindTexture(carbon.TEXTURE_2D, 0)
 			carbon.Uniform(program, fmt.Sprintf("hasTex%v", i), 0)
@@ -86,7 +86,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 		carbon.EnableVertexAttribArray(particleNAttrib)
 		carbon.VertexAttribPointer(particleNAttrib, 1, carbon.FLOAT, false, vertexByteSize, carbon.PtrOffset(5*4))
 
-		carbon.Uniform(program, "camera", scene.Camera)
+		carbon.Uniform(program, "camera", scene.camera)
 
 		{
 			// var cap int32
@@ -109,7 +109,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 			}
 		}
 
-		carbon.Uniform(program, "time", scene.time)
+		carbon.Uniform(program, "time", scene.Time)
 		carbon.Uniform(program, "fps", float32(fps.LastSec()))
 		carbon.Uniform(program, "renderTime", float32(fps.FrameDuration())/NANOSTOSEC)
 		x, y := scene.Window.GetCursorPos()
@@ -121,7 +121,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 		carbon.Uniform(program, "windowSize", [2]float32{float32(windowWidth), float32(windowHeight)})
 	}
 
-	for _, u := range scene.uniforms {
+	for _, u := range scene.Uniforms {
 		u.BindUniform(program)
 	}
 

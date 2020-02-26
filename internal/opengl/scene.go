@@ -44,10 +44,10 @@ func NewScene() *Scene {
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
 
 	s := &Scene{
-		programs:            make(map[string]Program),
+		Programs:            make(map[string]Program),
 		textures:            make(map[string]uint32),
-		sources:             make(map[SourceName]Source),
-		uniforms:            make(map[string]BindUniformer),
+		Sources:             make(map[SourceName]Source),
+		Uniforms:            make(map[string]BindUniformer),
 		reclaimTextures:     make(chan uint32, 1000),
 		reclaimFramebuffers: make(chan uint32, 1000),
 	}
@@ -85,7 +85,7 @@ func NewScene() *Scene {
 		log.Fatalf("Unable to initialize glow: %v", err)
 	}
 
-	s.Camera = mgl32.LookAtV(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
+	s.camera = mgl32.LookAtV(mgl32.Vec3{0, 0, 3}, mgl32.Vec3{0, 0, 0}, mgl32.Vec3{0, 1, 0})
 
 	// Configure global settings
 	carbon.PixelStorei(carbon.UNPACK_ALIGNMENT, 1)
@@ -113,18 +113,18 @@ type Scene struct {
 	vao uint32
 	vbo uint32
 
-	Camera mgl32.Mat4
+	camera mgl32.Mat4
 
 	Width  int32
 	Height int32
 
-	time float32
+	Time float32
 
-	programs map[string]Program
+	Programs map[string]Program
 	textures map[string]uint32
-	uniforms map[string]BindUniformer
+	Uniforms map[string]BindUniformer
 
-	sources map[SourceName]Source
+	Sources map[SourceName]Source
 
 	reclaimTextures     chan uint32
 	reclaimFramebuffers chan uint32
@@ -167,7 +167,7 @@ type BindUniformer interface {
 }
 
 func (s *Scene) AddSourceFFT(name string) {
-	s.sources[SourceName(name)] = NewPortaudio()
+	s.Sources[SourceName(name)] = NewPortaudio()
 }
 
 func (s *Scene) AddSourceFFVideo(name, path string) {
@@ -181,7 +181,7 @@ func (s *Scene) AddSourceFFVideo(name, path string) {
 	carbon.BindTexture(carbon.TEXTURE_2D, t)
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, carbon.LINEAR)
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
-	s.sources[SourceName(name)] = &FFVideoSource{
+	s.Sources[SourceName(name)] = &FFVideoSource{
 		name:    SourceName(name),
 		decoder: reader,
 		texture: t,
@@ -210,7 +210,7 @@ func (s *Scene) AddSourceShader(name string) {
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, carbon.LINEAR)
 	carbon.FramebufferTexture2D(carbon.FRAMEBUFFER, carbon.COLOR_ATTACHMENT0, carbon.TEXTURE_2D, sh.texture, 0)
 
-	s.sources[SourceName(name)] = &sh
+	s.Sources[SourceName(name)] = &sh
 	runtime.SetFinalizer(&sh, func(sh *ShaderSource) {
 		s.reclaimTextures <- sh.texture
 		s.reclaimFramebuffers <- sh.fbo
@@ -218,7 +218,7 @@ func (s *Scene) AddSourceShader(name string) {
 }
 
 func (s *Scene) AddShaderStorage(name, buff string) {
-	src, ok := s.sources[SourceName(name)]
+	src, ok := s.Sources[SourceName(name)]
 	if !ok {
 		return
 	}
@@ -241,7 +241,7 @@ func (s *Scene) AddShaderStorage(name, buff string) {
 }
 
 func (s *Scene) AddWindow() {
-	s.sources[SourceName("window")] = &ShaderSource{
+	s.Sources[SourceName("window")] = &ShaderSource{
 		name:      SourceName("window"),
 		uniforms:  make(map[string]BindUniformer),
 		p:         "window",
@@ -253,7 +253,7 @@ func (s *Scene) AddWindow() {
 }
 
 func (s *Scene) SetFFVideoTimescale(name string, timescale float64) {
-	if src, ok := s.sources[SourceName(name)]; ok {
+	if src, ok := s.Sources[SourceName(name)]; ok {
 		if ffv, ok := src.(*FFVideoSource); ok {
 			ffv.decoder.Timescale(timescale)
 		}
@@ -261,7 +261,7 @@ func (s *Scene) SetFFVideoTimescale(name string, timescale float64) {
 }
 
 func (s *Scene) SetFFTScale(name string, scale float32) {
-	if src, ok := s.sources[SourceName(name)]; ok {
+	if src, ok := s.Sources[SourceName(name)]; ok {
 		if ffv, ok := src.(*Portaudio); ok {
 			ffv.scale = scale
 		}
@@ -269,7 +269,7 @@ func (s *Scene) SetFFTScale(name string, scale float32) {
 }
 
 func (s *Scene) SetShaderDrawCount(name string, n int32) {
-	if src, ok := s.sources[SourceName(name)]; ok {
+	if src, ok := s.Sources[SourceName(name)]; ok {
 		if sh, ok := src.(*ShaderSource); ok {
 			sh.drawCount = n
 		}
@@ -277,7 +277,7 @@ func (s *Scene) SetShaderDrawCount(name string, n int32) {
 }
 
 func (s *Scene) SetShaderProgram(name, program string) {
-	if src, ok := s.sources[SourceName(name)]; ok {
+	if src, ok := s.Sources[SourceName(name)]; ok {
 		if sh, ok := src.(*ShaderSource); ok {
 			sh.p = program
 		}
@@ -285,7 +285,7 @@ func (s *Scene) SetShaderProgram(name, program string) {
 }
 
 func (s *Scene) SetShaderGeometry(name string, data []float32) {
-	src, ok := s.sources[SourceName(name)]
+	src, ok := s.Sources[SourceName(name)]
 	if !ok {
 		return
 	}
@@ -308,7 +308,7 @@ func (s *Scene) SetSourceMinFilter(name, value string) {
 	if !ok {
 		return
 	}
-	src := s.sources[SourceName(name)]
+	src := s.Sources[SourceName(name)]
 	carbon.ActiveTexture(src.Texture())
 	//TODO: better error handling on all of these.
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MIN_FILTER, opt)
@@ -321,7 +321,7 @@ func (s *Scene) SetSourceMagFilter(name, value string) {
 	if !ok {
 		return
 	}
-	src := s.sources[SourceName(name)]
+	src := s.Sources[SourceName(name)]
 	carbon.ActiveTexture(src.Texture())
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_MAG_FILTER, opt)
 }
@@ -336,7 +336,7 @@ func (s *Scene) SetSourceWrapS(name, value string) {
 	if !ok {
 		return
 	}
-	src := s.sources[SourceName(name)]
+	src := s.Sources[SourceName(name)]
 	carbon.ActiveTexture(src.Texture())
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_WRAP_S, opt)
 }
@@ -351,13 +351,13 @@ func (s *Scene) SetSourceWrapT(name, value string) {
 	if !ok {
 		return
 	}
-	src := s.sources[SourceName(name)]
+	src := s.Sources[SourceName(name)]
 	carbon.ActiveTexture(src.Texture())
 	carbon.TexParameteri(carbon.TEXTURE_2D, carbon.TEXTURE_WRAP_T, opt)
 }
 
 func (s *Scene) SetUniform(layer, name string, value interface{}) {
-	src, ok := s.sources[SourceName(layer)]
+	src, ok := s.Sources[SourceName(layer)]
 	if !ok {
 		return
 	}
@@ -367,11 +367,11 @@ func (s *Scene) SetUniform(layer, name string, value interface{}) {
 }
 
 func (s *Scene) SetGlobalUniform(name string, value interface{}) {
-	s.uniforms[name] = ValueUniform{name, value}
+	s.Uniforms[name] = ValueUniform{name, value}
 }
 
 func (s *Scene) SetUniformClock(layer, name string, offset time.Time) {
-	src, ok := s.sources[SourceName(layer)]
+	src, ok := s.Sources[SourceName(layer)]
 	if !ok {
 		return
 	}
@@ -381,11 +381,11 @@ func (s *Scene) SetUniformClock(layer, name string, offset time.Time) {
 }
 
 func (s *Scene) SetGlobalUniformClock(name string, offset time.Time) {
-	s.uniforms[name] = ClockUniform{name, offset}
+	s.Uniforms[name] = ClockUniform{name, offset}
 }
 
 func (s *Scene) SetShaderInput(layer string, index int32, target string) {
-	l, ok := s.sources[SourceName(layer)]
+	l, ok := s.Sources[SourceName(layer)]
 	if !ok {
 		logs.Error("Attempted to set input on layer, but the layer was not found", layer)
 		return
@@ -396,10 +396,10 @@ func (s *Scene) SetShaderInput(layer string, index int32, target string) {
 		return
 	}
 	src.sources[index] = SourceName(target)
-	s.sources[SourceName(layer)] = src
+	s.Sources[SourceName(layer)] = src
 }
 func (s *Scene) SetShaderDimensions(name string, width, height float32) {
-	l, ok := s.sources[SourceName(name)]
+	l, ok := s.Sources[SourceName(name)]
 	if !ok {
 		return
 	}
@@ -448,10 +448,10 @@ func (s *Scene) LoadProgram(name, vShader, gShader, fShader string) (err error) 
 		return errors.GLLinkProgram(name, log)
 	}
 
-	if old, ok := s.programs[name]; ok {
+	if old, ok := s.Programs[name]; ok {
 		carbon.DeleteProgram(old.GLProgram)
 	}
-	s.programs[name] = p
+	s.Programs[name] = p
 
 	carbon.DeleteShader(vertexShader)
 	carbon.DeleteShader(fragmentShader)
@@ -506,10 +506,10 @@ func (s *Scene) RebindTexture(name string, width, height int, img []uint8) {
 func (s *Scene) Draw() {
 	fps.DrawStart()
 
-	s.time = float32(time.Since(tStart)) / NANOSTOSEC
+	s.Time = float32(time.Since(tStart)) / NANOSTOSEC
 	carbon.BindVertexArray(s.vao)
 
-	ord, err := Order("window", s.sources)
+	ord, err := Order("window", s.Sources)
 	if err != nil {
 		logs.Error(errors.SceneRenderOrder(err))
 		return
@@ -517,10 +517,10 @@ func (s *Scene) Draw() {
 
 	rendered := make(map[SourceName]bool, len(ord))
 	for _, source := range ord {
-		s.sources[source].Render(s)
+		s.Sources[source].Render(s)
 		rendered[source] = true
 	}
-	for name, source := range s.sources {
+	for name, source := range s.Sources {
 		if !rendered[name] {
 			source.SkipRender(s)
 		}

@@ -1,11 +1,15 @@
 package net
 
 import (
+	"flag"
+
 	"github.com/dianelooney/gggv/internal/errors"
 	"github.com/dianelooney/gggv/internal/logs"
 
 	"github.com/hypebeast/go-osc/osc"
 )
+
+var verbose = flag.Bool("v", false, "Verbose output, logs osc endpoints")
 
 func Handle(d *osc.StandardDispatcher, path string, f Handler) {
 	d.AddMsgHandler(path, func(msg *osc.Message) {
@@ -20,7 +24,9 @@ func Handle(d *osc.StandardDispatcher, path string, f Handler) {
 			offset:   0,
 			msg:      msg,
 		}
-		// logs.Log(path, msg.Arguments)
+		if *verbose {
+			logs.Log(path, msg.Arguments)
+		}
 		f(args)
 	})
 }

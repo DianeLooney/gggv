@@ -393,6 +393,11 @@ func (d *D) SetUniform(args net.Shifter) {
 }
 
 func (d *D) SetGlobalUniform(args net.Shifter) {
+	if args.Length() == 4 {
+		d.SetGlobalUniform3f(args)
+		return
+	}
+
 	name := args.Shift().(string)
 	value := args.Shift()
 	d.Schedule(func() {

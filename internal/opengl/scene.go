@@ -192,9 +192,9 @@ func (s *Scene) AddSourceShader(name string) {
 	const BACKBUFFER_COUNT = 16
 	sh := ShaderSource{
 		name:       SourceName(name),
-		uniforms:   make(map[string]BindUniformer),
+		Uniforms:   make(map[string]BindUniformer),
 		geometry:   rect(1, 1),
-		p:          name,
+		P:          name,
 		drawCount:  1,
 		flipOutput: true,
 		width:      1,
@@ -243,8 +243,8 @@ func (s *Scene) AddShaderStorage(name, buff string) {
 func (s *Scene) AddWindow() {
 	s.Sources[SourceName("window")] = &ShaderSource{
 		name:      SourceName("window"),
-		uniforms:  make(map[string]BindUniformer),
-		p:         "window",
+		Uniforms:  make(map[string]BindUniformer),
+		P:         "window",
 		geometry:  rect(1, 1),
 		drawCount: 1,
 		width:     1,
@@ -279,7 +279,7 @@ func (s *Scene) SetShaderDrawCount(name string, n int32) {
 func (s *Scene) SetShaderProgram(name, program string) {
 	if src, ok := s.Sources[SourceName(name)]; ok {
 		if sh, ok := src.(*ShaderSource); ok {
-			sh.p = program
+			sh.P = program
 		}
 	}
 }
@@ -362,7 +362,7 @@ func (s *Scene) SetUniform(layer, name string, value interface{}) {
 		return
 	}
 	if shader, ok := src.(*ShaderSource); ok {
-		shader.uniforms[name] = ValueUniform{name, value}
+		shader.Uniforms[name] = ValueUniform{name, value}
 	}
 }
 
@@ -376,7 +376,7 @@ func (s *Scene) SetUniformClock(layer, name string, offset time.Time) {
 		return
 	}
 	if shader, ok := src.(*ShaderSource); ok {
-		shader.uniforms[name] = ClockUniform{name, offset}
+		shader.Uniforms[name] = ClockUniform{name, offset}
 	}
 }
 

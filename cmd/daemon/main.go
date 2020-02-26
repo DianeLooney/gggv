@@ -4,13 +4,18 @@ import (
 	"flag"
 	"fmt"
 	_ "image/png"
+	"log"
 	"runtime"
+
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 
 	"github.com/dianelooney/gggv/internal/net"
 
 	"github.com/hypebeast/go-osc/osc"
 
 	"github.com/dianelooney/gggv/pkg/daemon"
+	"github.com/dianelooney/gggv/pkg/gql"
 	_ "github.com/dianelooney/gggv/wrappers/opengl" // necessary to fill carbon stubs
 
 	"net/http"
@@ -35,6 +40,7 @@ func main() {
 	dmn.Scene.AddWindow()
 
 	go netSetup()
+	go gqlSetup(dmn)
 	dmn.DrawLoop()
 }
 
@@ -89,4 +95,10 @@ func netSetup() {
 			}
 		}
 	}()
+}
+
+func gqlSetup(d *daemon.D) {
+	schema := graphql.MustParseSchema(gql.S, gql.NewSchema(d))
+	http.Handle("/query", &relay.Handler{Schema: schema})
+	log.Fatal(http.ListenAndServe(":8080", nil))
 }

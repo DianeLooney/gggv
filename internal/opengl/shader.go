@@ -14,9 +14,9 @@ type ShaderSource struct {
 	name       SourceName
 	flipOutput bool
 
-	p        string
+	P        string
 	sources  [SHADER_TEXTURE_COUNT]SourceName
-	uniforms map[string]BindUniformer
+	Uniforms map[string]BindUniformer
 
 	geometry  []float32
 	drawCount int32
@@ -40,7 +40,7 @@ func (s *ShaderSource) Children() []SourceName {
 	return out
 }
 func (s *ShaderSource) Render(scene *Scene) {
-	program := scene.Programs[s.p].GLProgram
+	program := scene.Programs[s.P].GLProgram
 	carbon.Clear(carbon.COLOR_BUFFER_BIT)
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, s.fbo)
 	carbon.UseProgram(program)
@@ -125,7 +125,7 @@ func (s *ShaderSource) Render(scene *Scene) {
 		u.BindUniform(program)
 	}
 
-	for _, u := range s.uniforms {
+	for _, u := range s.Uniforms {
 		u.BindUniform(program)
 	}
 

@@ -82,8 +82,12 @@ jobs:
     environment:
       HOMEBREW_NO_AUTO_UPDATE: 1
     steps:
-      - brew tap dianelooney/gggv
-      - HOMEBREW_GGGV_REVISION=$CIRCLE_SHA1 brew install gggv
+      - run:
+          name: Brew tap
+          command: brew tap dianelooney/gggv
+      - run:
+          name: Install gggv
+          command: HOMEBREW_GGGV_REVISION=$CIRCLE_SHA1 brew install gggv
   win-build:
     environment:
       PKG_CONFIG_PATH: /tmp/pkg-config

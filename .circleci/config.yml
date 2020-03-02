@@ -92,7 +92,7 @@ jobs:
       - install-deps-windows
       - run:
           name: Build Daemon
-          command: go build -o=daemon.exe cmd/daemon/main.go
+          command: go build -o=gggv.exe cmd/daemon/gggv.go
       - run:
           name: Build VHS
           command: go build -o=vhs.exe cmd/vhs/main.go

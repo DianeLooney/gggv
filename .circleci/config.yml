@@ -117,6 +117,11 @@ workflows:
       - glsl-lint
       - test
       - vet
+      - macos-build:
+          requires:
+            - glsl-lint
+            - test
+            - vet
       - win-build:
           requires:
             - glsl-lint

@@ -76,7 +76,14 @@ jobs:
       - run: go tool cover -html=${COV_FILE} -o ${COV_FILE/%.out/.html}
       - store_artifacts:
           path: /tmp/coverage
-
+  macos-build:
+    macos:
+      xcode: 11.3.0
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - brew tap dianelooney/gggv
+      - HOMEBREW_GGGV_REVISION=$CIRCLE_SHA1 brew install gggv
   win-build:
     environment:
       PKG_CONFIG_PATH: /tmp/pkg-config

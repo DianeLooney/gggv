@@ -144,9 +144,10 @@ func (s *ShaderSource) Render(scene *Scene) {
 	}
 	carbon.DrawArraysInstanced(carbon.TRIANGLES, 0, int32(len(r)/6), s.drawCount)
 
-	carbon.MemoryBarrier(carbon.SHADER_IMAGE_ACCESS_BARRIER_BIT)
+	s.memoryBarrier()
 	carbon.BindFramebuffer(carbon.FRAMEBUFFER, 0)
 }
+
 func (s *ShaderSource) SkipRender(scene *Scene) {}
 
 // TODO: fix type signature here. It should be float32s and return the struct values

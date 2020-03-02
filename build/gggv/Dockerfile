@@ -57,6 +57,6 @@ COPY . .
 
 ENV GO111MODULE=on
 RUN go get -d -v ./...
-RUN go build cmd/daemon/main.go
+RUN go build cmd/daemon/gggv.go
 
 ENV DISPLAY=:0

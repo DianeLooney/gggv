@@ -56,11 +56,60 @@ jobs:
     steps:
       - checkout
       - run: ./glsl-lint.sh
+
   vet:
     executor: base-linux
     steps:
       - install-deps
       - run: go vet -unsafeptr=false $(go list ./... | grep -v /wrappers/)
+
+  macos-build:
+    macos:
+      xcode: 11.3.0
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - run:
+          name: Brew tap
+          command: brew tap dianelooney/gggv
+      - run:
+          name: Install gggv
+          command: HOMEBREW_GGGV_REVISION=$CIRCLE_SHA1 brew install gggv
+
+  win-build:
+    environment:
+      PKG_CONFIG_PATH: /tmp/pkg-config
+      CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
+      CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
+      LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
+    executor:
+      name: win/vs2019
+      shell: bash.exe
+    steps:
+      - install-deps-windows
+      - run:
+          name: Build Daemon
+          command: go build -o=gggv.exe cmd/daemon/gggv.go
+      - run:
+          name: Build VHS
+          command: go build -o=vhs.exe cmd/vhs/main.go
+      - store_artifacts:
+          path: daemon.exe
+          destination: daemon.exe
+      - store_artifacts:
+          path: vhs.exe
+          destination: vhs.exe
+  
+  linux-build:
+    executor: base-linux
+    environment:
+      CGL_CFLAGS: -w
+    steps:
+      - install-deps
+      - run: go build -o=/tmp/gggv cmd/daemon/gggv.go
+      - store_artifacts:
+          path: /tmp/gggv
+
   test:
     executor: base-linux
     environment:
@@ -76,43 +125,6 @@ jobs:
       - run: go tool cover -html=${COV_FILE} -o ${COV_FILE/%.out/.html}
       - store_artifacts:
           path: /tmp/coverage
-  macos-build:
-    macos:
-      xcode: 11.3.0
-    environment:
-      HOMEBREW_NO_AUTO_UPDATE: 1
-    steps:
-      - run:
-          name: Brew tap
-          command: brew tap dianelooney/gggv
-      - run:
-          name: Install gggv
-          command: HOMEBREW_GGGV_REVISION=$CIRCLE_SHA1 brew install gggv
-  win-build:
-    environment:
-      PKG_CONFIG_PATH: /tmp/pkg-config
-      CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
-      CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
-      LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
-
-    executor:
-      name: win/vs2019
-      shell: bash.exe
-
-    steps:
-      - install-deps-windows
-      - run:
-          name: Build Daemon
-          command: go build -o=gggv.exe cmd/daemon/gggv.go
-      - run:
-          name: Build VHS
-          command: go build -o=vhs.exe cmd/vhs/main.go
-      - store_artifacts:
-          path: daemon.exe
-          destination: daemon.exe
-      - store_artifacts:
-          path: vhs.exe
-          destination: vhs.exe
 
 workflows:
   version: 2
@@ -121,6 +133,11 @@ workflows:
       - glsl-lint
       - test
       - vet
+      - linux-build:
+          requires:
+            - glsl-lint
+            - test
+            - vet
       - macos-build:
           requires:
             - glsl-lint
@@ -131,9 +148,6 @@ workflows:
             - glsl-lint
             - test
             - vet
-          filters:
-            branches:
-              only: master
       - docker/publish:
           image: diane/gggv
           tag: latest

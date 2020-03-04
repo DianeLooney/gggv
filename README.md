@@ -4,22 +4,14 @@ OSC based video editing environment. Not intended for use as a package.
 
 ## Installing
 
-### MacOS
+### MacOS + Linux
 
-Available via homebrew:
+Available via homebrew/linuxbrew:
 
 ```sh
 brew tap dianelooney/gggv
 brew install gggv
 ```
-
-### Linux
-
-Maybe available through homebrew for linux, but this is untested. Try the mac steps. If that doesn't work then use `build/gggv/configure.sh` to get set up to build from source, and run `go install cmd/daemon/gggv.go` to install.
-
-### Docker
-
-Image is hosted on dockerhub as `diane/gggv`.
 
 ### Windows
 

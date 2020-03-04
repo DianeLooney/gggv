@@ -106,7 +106,7 @@ jobs:
       CGL_CFLAGS: -w
     steps:
       - install-deps
-      - run: go build -o=/tmp/gggv cmd/daemon/gggv.go
+      - run: go build -ldflags "-linkmode external -extldflags -static" -o=/tmp/gggv cmd/daemon/gggv.go
       - store_artifacts:
           path: /tmp/gggv
 

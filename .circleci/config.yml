@@ -25,7 +25,44 @@ commands:
           paths:
             - /go/pkg
 
-  install-deps-windows:
+jobs:
+  glsl-lint:
+    executor: base-linux
+    steps:
+      - checkout
+      - run: ./glsl-lint.sh
+
+  vet:
+    executor: base-linux
+    steps:
+      - install-deps
+      - run: go vet -unsafeptr=false $(go list ./... | grep -v /wrappers/)
+  
+  macos-brew-install:
+    macos:
+      xcode: 11.3.0
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - run:
+          name: Brew Tap
+          command: brew tap dianelooney/gggv
+      - run:
+          name: Brew Install
+          command: HOMEBREW_GGGV_REVISION=$CIRCLE_SHA1 brew install gggv
+      - run:
+          name: Integration Tests
+          command: ruby screenshots.rb
+
+  win-build:
+    environment:
+      PKG_CONFIG_PATH: /tmp/pkg-config
+      CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
+      CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
+      LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
+    executor:
+      name: win/vs2019
+      shell: bash.exe
     steps:
       - checkout
       - run:
@@ -49,44 +86,6 @@ commands:
       - run:
           name: Install go 1.13
           command: choco install golang --force
-
-jobs:
-  glsl-lint:
-    executor: base-linux
-    steps:
-      - checkout
-      - run: ./glsl-lint.sh
-
-  vet:
-    executor: base-linux
-    steps:
-      - install-deps
-      - run: go vet -unsafeptr=false $(go list ./... | grep -v /wrappers/)
-
-  macos-build:
-    macos:
-      xcode: 11.3.0
-    environment:
-      HOMEBREW_NO_AUTO_UPDATE: 1
-    steps:
-      - run:
-          name: Brew tap
-          command: brew tap dianelooney/gggv
-      - run:
-          name: Install gggv
-          command: HOMEBREW_GGGV_REVISION=$CIRCLE_SHA1 brew install gggv
-
-  win-build:
-    environment:
-      PKG_CONFIG_PATH: /tmp/pkg-config
-      CGO_LDFLAGS: -L/tmp/ffmpeg-latest-win64-dev/lib/ -lavcodec -lavformat -lavutil -lswscale -lswresample -lavdevice -lavfilter
-      CGO_CFLAGS: -I/tmp/ffmpeg-latest-win64-dev/include -w
-      LD_LIBRARY_PATH: /tmp/ffmpeg-latest-win64-dev/lib
-    executor:
-      name: win/vs2019
-      shell: bash.exe
-    steps:
-      - install-deps-windows
       - run:
           name: Build Daemon
           command: go build -o=gggv.exe cmd/daemon/gggv.go
@@ -100,16 +99,6 @@ jobs:
           path: vhs.exe
           destination: vhs.exe
   
-  linux-build:
-    executor: base-linux
-    environment:
-      CGL_CFLAGS: -w
-    steps:
-      - install-deps
-      - run: go build -ldflags "-linkmode external -extldflags -static" -o=/tmp/gggv cmd/daemon/gggv.go
-      - store_artifacts:
-          path: /tmp/gggv
-
   test:
     executor: base-linux
     environment:
@@ -138,7 +127,12 @@ workflows:
             - glsl-lint
             - test
             - vet
-      - macos-build:
+      - linux-brew-install:
+          requires:
+            - glsl-lint
+            - test
+            - vet
+      - macos-brew-install:
           requires:
             - glsl-lint
             - test
@@ -153,7 +147,7 @@ workflows:
           tag: latest
           docker-password: DOCKERHUB_PASS
           docker-username: DOCKERHUB_USERNAME
-          dockerfile: build/gggv/Dockerfile
+          dockerfile: build/linux/Dockerfile
           requires:
             - glsl-lint
             - test

@@ -1,0 +1,145 @@
+[
+  {
+    "Time": "2020-03-05T20:36:13.799889922-05:00",
+    "Addr": "/program/watch",
+    "Args": [
+      "frag72",
+      "shaders/vert/default.glsl",
+      "shaders/geom/default.glsl",
+      "fixtures/ex1.glsl"
+    ]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.800267139-05:00",
+    "Addr": "/source.shader/create",
+    "Args": ["frag72"]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.806198392-05:00",
+    "Addr": "/source.shader/set/program",
+    "Args": ["frag72", "frag72"]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.810538551-05:00",
+    "Addr": "/source/set/magfilter",
+    "Args": ["frag72", "NEAREST"]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.816223042-05:00",
+    "Addr": "/source.shader/set/dimensions",
+    "Args": ["frag72", 1, 1]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.820104971-05:00",
+    "Addr": "/source.shader/set/drawcount",
+    "Args": ["frag72", 1]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.826741102-05:00",
+    "Addr": "/source.shader/set/geometry",
+    "Args": [
+      "frag72",
+      -1,
+      -1,
+      0,
+      0,
+      0,
+      0,
+      1,
+      -1,
+      0,
+      1,
+      0,
+      0,
+      -1,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      -1,
+      0,
+      1,
+      0,
+      0,
+      -1,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0
+    ]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.830854046-05:00",
+    "Addr": "/source.shader/add/storage",
+    "Args": ["frag72", "x"]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.835983517-05:00",
+    "Addr": "/source.shader/set/uniform1f",
+    "Args": ["frag72", "u83", 14.952]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.841227965-05:00",
+    "Addr": "/source.shader/set/uniform1f",
+    "Args": ["frag72", "u80", 1]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.846293604-05:00",
+    "Addr": "/source.shader/set/uniform1f",
+    "Args": ["frag72", "u75", 0.5]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.85126435-05:00",
+    "Addr": "/source.shader/set/uniform1f",
+    "Args": ["frag72", "u81", 1]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.856336537-05:00",
+    "Addr": "/source.shader/set/uniform1f",
+    "Args": ["frag72", "u73", 1]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.86274746-05:00",
+    "Addr": "/source.shader/set/uniform1f",
+    "Args": ["frag72", "u78", 0.6, 0.6, 0.6]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.867909835-05:00",
+    "Addr": "/source.shader/set/uniform1f",
+    "Args": ["frag72", "u77", 1, 1, 1]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.872950355-05:00",
+    "Addr": "/source.shader/set/uniform1f",
+    "Args": ["frag72", "u74", 10.5]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.878246463-05:00",
+    "Addr": "/source.shader/set/uniform1f",
+    "Args": ["frag72", "u79", 0.3, 0.3, 0.3]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.883048578-05:00",
+    "Addr": "/source.shader/set/uniform1f",
+    "Args": ["frag72", "u82", 1]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.888010021-05:00",
+    "Addr": "/source.shader/set/uniform1f",
+    "Args": ["frag72", "u76", 54]
+  },
+  {
+    "Time": "2020-03-05T20:36:13.893416472-05:00",
+    "Addr": "/source.shader/set/input",
+    "Args": ["window", 0, "frag72"]
+  }
+]

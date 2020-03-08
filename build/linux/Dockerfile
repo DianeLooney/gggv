@@ -8,15 +8,8 @@ RUN apt-get update \
     automake \
     build-essential \
     libass-dev \
-    libavcodec-dev \ 
-    libavdevice-dev \ 
-    libavfilter-dev \ 
-    libavformat-dev \ 
-    libavutil-dev \
     libfreetype6-dev \
     libsdl1.2-dev \
-    libswresample-dev \ 
-    libswscale-dev \ 
     libtheora-dev \
     libtool \
     libva-dev \
@@ -29,11 +22,6 @@ RUN apt-get update \
     texi2html \
     yasm \
     zlib1g-dev \
-    # begin github.com/go-gl/gl
-    libgl1-mesa-dev \
-    xorg-dev \
-    # begin github.com/ggordonklaus/portaudio
-    portaudio19-dev \
     # cleanup
     && rm -rf /var/list/apt/lists/*
 

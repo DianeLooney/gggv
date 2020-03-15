@@ -4,12 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"os/signal"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/go-redis/redis/v7"
 
 	"github.com/hypebeast/go-osc/osc"
 )
@@ -21,6 +24,72 @@ type Msg struct {
 }
 
 var exit sync.WaitGroup
+
+func inRedis(s string) <-chan Msg {
+	pw := os.Getenv("REDIS_AUTH")
+	client := redis.NewClient(&redis.Options{
+		Addr:     s,
+		Password: pw, // no password set
+		DB:       0,  // use default DB
+	})
+	sub := client.Subscribe("osc")
+	ch := make(chan Msg)
+
+	go func() {
+		defer fmt.Println("Done with things")
+
+		for {
+			msg, err := sub.ReceiveMessage()
+			if err != nil {
+				panic(err)
+			}
+			var m Msg
+			if err := json.Unmarshal([]byte(msg.Payload), &m); err != nil {
+				panic(err)
+			}
+			ch <- m
+		}
+	}()
+
+	return ch
+}
+
+func outRedis(s string) chan<- Msg {
+	pw := os.Getenv("REDIS_AUTH")
+	redis.NewClient(&redis.Options{})
+	client := redis.NewClient(&redis.Options{
+		Addr:     s,
+		Password: pw, // no password set
+		DB:       0,  // use default DB
+	})
+	ch := make(chan Msg)
+	exit.Add(1)
+
+	go func() {
+		defer exit.Done()
+
+		for {
+			m, ok := <-ch
+			if !ok {
+				fmt.Println("Done")
+				return
+			}
+			data, err := json.Marshal(m)
+			if err != nil {
+				log.Fatalln(err)
+				fmt.Println("Couldnt marshal json")
+				return
+			}
+
+			if err := client.Publish("osc", string(data)); err.Err() != nil {
+				fmt.Printf("Couldn't publish:\n%v\n", err)
+				log.Fatalln(err)
+			}
+		}
+	}()
+
+	return ch
+}
 
 func inUDP(s string) <-chan Msg {
 	ch := make(chan Msg)
@@ -163,6 +232,10 @@ func main() {
 			ins = append(ins, inUDP(target))
 		case "ou":
 			outs = append(outs, outUDP(target))
+		case "ir":
+			ins = append(ins, inRedis(target))
+		case "or":
+			outs = append(outs, outRedis(target))
 		default:
 			panic("unrecognized handler " + kind)
 		}

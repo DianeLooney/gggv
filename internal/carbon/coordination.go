@@ -37,6 +37,8 @@ func Uniform(program uint32, name string, value interface{}) {
 		Uniform1f(u, v)
 	case float64:
 		Uniform1f(u, float32(v))
+	case int32:
+		Uniform1f(u, float32(v))
 	case int:
 		Uniform1f(u, float32(v))
 	case mgl32.Mat4:

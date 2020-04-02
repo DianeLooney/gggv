@@ -108,8 +108,8 @@ jobs:
           name: Build VHS
           command: go build -o=vhs.exe cmd/vhs/main.go
       - store_artifacts:
-          path: daemon.exe
-          destination: daemon.exe
+          path: gggv.exe
+          destination: gggv.exe
       - store_artifacts:
           path: vhs.exe
           destination: vhs.exe

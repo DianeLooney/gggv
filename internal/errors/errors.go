@@ -42,5 +42,5 @@ var (
 	SceneMissingWindowProgram = newErr("SceneMissingWindowProgram", "unable to render scene, window program is missing")
 	SceneRenderOrder          = newErr("SceneRenderOrder", "unable to determine source render order: %v")
 	SourceDependencyLoop      = newErr("SourceDependencyLoop", "dependency loop found in sources: %s")
-	SourceMissing             = newErr("SourceMissing", "source %s is missing")
+	SourceMissing             = newErr("SourceMissing", "source '%s' requires '%s', but no definition for '%s' was found. defined sources are: %v")
 )

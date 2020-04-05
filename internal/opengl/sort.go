@@ -68,12 +68,42 @@ func (s *sorter) genError(name SourceName) error {
 	}
 }
 
+func (s *sorter) checkDeps(name SourceName) error {
+	checked := make(map[SourceName]bool, len(s.sources))
+	sources := []SourceName{name}
+	for _, name := range sources {
+		if checked[name] {
+			continue
+		}
+		source := s.sources[name]
+
+		for _, child := range source.Children() {
+			sources = append(sources, child)
+			if s.sources[child] != nil {
+				continue
+			}
+
+			var srcs []SourceName
+			for src := range s.sources {
+				srcs = append(srcs, src)
+			}
+			return errors.SourceMissing(name, child, child, srcs)
+		}
+		checked[name] = true
+	}
+	return nil
+}
+
 func Order(target SourceName, sources map[SourceName]Source) (order []SourceName, err error) {
 	s := sorter{
 		sources:   sources,
 		ordered:   make(map[SourceName]bool, len(sources)),
 		loopCheck: make(map[SourceName]bool, len(sources)),
 		ordering:  nil,
+	}
+	err = s.checkDeps(target)
+	if err != nil {
+		return nil, err
 	}
 	err = s.order(target)
 	order = s.ordering
